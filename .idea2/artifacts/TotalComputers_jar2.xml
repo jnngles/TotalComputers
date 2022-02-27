@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="TotalComputers:jar2">
+    <output-path>$USER_HOME$/Desktop</output-path>
+    <root id="archive" name="TotalComputers.jar">
+      <element id="module-output" name="TotalComputers" />
+    </root>
+  </artifact>
+</component>

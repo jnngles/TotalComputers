@@ -122,6 +122,7 @@ public class Desktop extends State {
      */
     @Override
     public void processInput(int x, int y, TotalComputers.InputInfo.InteractType type) {
+        WindowApplication moveToTop = null;
         if(!taskbar.processInput(x, y, type)) {
             if(type == TotalComputers.InputInfo.InteractType.RIGHT_CLICK) {
                 if(wantToMove != null) {
@@ -140,6 +141,7 @@ public class Desktop extends State {
             ListIterator<WindowApplication> iterator = drawable.listIterator(drawable.size());
             while(iterator.hasPrevious()) {
                 WindowApplication application = iterator.previous();
+                moveToTop = application;
                 if(application.isMinimized()) continue;
                 if(x >= application.getX() && x <= application.getX()+application.getWidth()+5 && y >= application.getY()-titleBarHeight && y <= application.getY()+application.getHeight()+5) {
                     if(y <= application.getY()) { // Title bar
@@ -152,13 +154,13 @@ public class Desktop extends State {
                             if(x >= application.getX() + yellowX && x <= application.getX() + yellowX + buttonSize) {
                                 // Yellow Light
                                 application.minimize();
-                                return;
+                                break;
                             }
                             if(x >= application.getX() + greenX && x <= application.getX() + greenX + buttonSize) {
                                 // Green Light
                                 if(application.isMaximized()) application.unmaximize();
                                 else application.maximize(titleBarHeight);
-                                return;
+                                break;
                             }
                         }
 
@@ -166,16 +168,20 @@ public class Desktop extends State {
                         wantToMove = application;
                         wtOffsetX = application.getX()-x;
                         wtOffsetY = application.getY()-y;
-                        return;
+                        break;
                     } else if(x >= application.getX() && x <= application.getX()+application.getWidth() && y >= application.getY() && y <= application.getY()+application.getHeight()) { // App touch
                         application.processInput(x - application.getX(), y - application.getY(), type);
-                        return;
+                        break;
                     } else { // Resize touch
                         wantToResize = application;
-                        return;
+                        break;
                     }
                 }
             }
+        }
+        if(moveToTop != null) {
+            drawable.remove(moveToTop);
+            drawable.add(moveToTop);
         }
     }
 

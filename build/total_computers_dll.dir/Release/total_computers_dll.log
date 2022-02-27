@@ -1,0 +1,19 @@
+﻿  Building Custom Rule C:/Users/JNNGL/IdeaProjects/TotalComputers/CMakeLists.txt
+cl : командная строка warning D9002: пропуск неизвестного параметра "-std=c++17"
+  awt.cpp
+  io.cpp
+  j_env.cpp
+  lang.cpp
+  math.cpp
+  net.cpp
+  nio.cpp
+  object.cpp
+  security.cpp
+  text.cpp
+  total_computers.cpp
+  util.cpp
+  utils.cpp
+C:\Users\JNNGL\IdeaProjects\TotalComputers\src\utils.cpp(9,5): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\JNNGL\IdeaProjects\TotalComputers\src\utils.cpp(60,9): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  Создание кода...
+  total_computers_dll.vcxproj -> C:\Users\JNNGL\IdeaProjects\TotalComputers\build\Release\total_computers_dll.dll

@@ -10,6 +10,45 @@
       <element id="directory" name="sys">
         <element id="dir-copy" path="$PROJECT_DIR$/sys" />
       </element>
+      <element id="file-copy" path="$PROJECT_DIR$/native.dll" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/joml-1.10.3.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-linux-arm32.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-linux-arm64.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-linux.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-macos-arm64.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-macos.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-windows-arm64.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-windows-x86.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-windows.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-linux-arm32.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-linux-arm64.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-linux.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-macos-arm64.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-macos.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-windows-arm64.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-windows-x86.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-windows.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-linux-arm32.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-linux-arm64.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-linux.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-macos-arm64.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-macos.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-windows-arm64.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-windows-x86.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-windows.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-linux-arm32.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-linux-arm64.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-linux.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-macos-arm64.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-macos.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-windows-arm64.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-windows-x86.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-windows.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl-stb.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/lwjgl/lwjgl.jar" />
+      <element id="library" level="project" name="TotalComputers" />
     </root>
   </artifact>
 </component>

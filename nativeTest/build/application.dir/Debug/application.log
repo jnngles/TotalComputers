@@ -1,0 +1,32 @@
+﻿  Building Custom Rule C:/Users/JNNGL/IdeaProjects/TotalComputers/nativeTest/CMakeLists.txt
+cl : командная строка warning D9002: пропуск неизвестного параметра "-std=c++17"
+  main.cpp
+  native.cc
+  Создание кода...
+total_computers.lib(awt.obj) : error LNK2038: обнаружено несоответствие для "_ITERATOR_DEBUG_LEVEL": значение "0" не соответствует значению "2" в main.obj
+total_computers.lib(awt.obj) : error LNK2038: обнаружено несоответствие для "RuntimeLibrary": значение "MT_StaticRelease" не соответствует значению "MTd_StaticDebug" в main.obj
+total_computers.lib(total_computers.obj) : error LNK2038: обнаружено несоответствие для "_ITERATOR_DEBUG_LEVEL": значение "0" не соответствует значению "2" в main.obj
+total_computers.lib(total_computers.obj) : error LNK2038: обнаружено несоответствие для "RuntimeLibrary": значение "MT_StaticRelease" не соответствует значению "MTd_StaticDebug" в main.obj
+total_computers.lib(utils.obj) : error LNK2038: обнаружено несоответствие для "_ITERATOR_DEBUG_LEVEL": значение "0" не соответствует значению "2" в main.obj
+total_computers.lib(utils.obj) : error LNK2038: обнаружено несоответствие для "RuntimeLibrary": значение "MT_StaticRelease" не соответствует значению "MTd_StaticDebug" в main.obj
+total_computers.lib(object.obj) : error LNK2038: обнаружено несоответствие для "_ITERATOR_DEBUG_LEVEL": значение "0" не соответствует значению "2" в main.obj
+total_computers.lib(object.obj) : error LNK2038: обнаружено несоответствие для "RuntimeLibrary": значение "MT_StaticRelease" не соответствует значению "MTd_StaticDebug" в main.obj
+total_computers.lib(lang.obj) : error LNK2038: обнаружено несоответствие для "_ITERATOR_DEBUG_LEVEL": значение "0" не соответствует значению "2" в main.obj
+total_computers.lib(lang.obj) : error LNK2038: обнаружено несоответствие для "RuntimeLibrary": значение "MT_StaticRelease" не соответствует значению "MTd_StaticDebug" в main.obj
+total_computers.lib(util.obj) : error LNK2038: обнаружено несоответствие для "_ITERATOR_DEBUG_LEVEL": значение "0" не соответствует значению "2" в main.obj
+total_computers.lib(util.obj) : error LNK2038: обнаружено несоответствие для "RuntimeLibrary": значение "MT_StaticRelease" не соответствует значению "MTd_StaticDebug" в main.obj
+total_computers.lib(math.obj) : error LNK2038: обнаружено несоответствие для "_ITERATOR_DEBUG_LEVEL": значение "0" не соответствует значению "2" в main.obj
+total_computers.lib(math.obj) : error LNK2038: обнаружено несоответствие для "RuntimeLibrary": значение "MT_StaticRelease" не соответствует значению "MTd_StaticDebug" в main.obj
+total_computers.lib(text.obj) : error LNK2038: обнаружено несоответствие для "_ITERATOR_DEBUG_LEVEL": значение "0" не соответствует значению "2" в main.obj
+total_computers.lib(text.obj) : error LNK2038: обнаружено несоответствие для "RuntimeLibrary": значение "MT_StaticRelease" не соответствует значению "MTd_StaticDebug" в main.obj
+total_computers.lib(io.obj) : error LNK2038: обнаружено несоответствие для "_ITERATOR_DEBUG_LEVEL": значение "0" не соответствует значению "2" в main.obj
+total_computers.lib(io.obj) : error LNK2038: обнаружено несоответствие для "RuntimeLibrary": значение "MT_StaticRelease" не соответствует значению "MTd_StaticDebug" в main.obj
+total_computers.lib(nio.obj) : error LNK2038: обнаружено несоответствие для "_ITERATOR_DEBUG_LEVEL": значение "0" не соответствует значению "2" в main.obj
+total_computers.lib(nio.obj) : error LNK2038: обнаружено несоответствие для "RuntimeLibrary": значение "MT_StaticRelease" не соответствует значению "MTd_StaticDebug" в main.obj
+total_computers.lib(net.obj) : error LNK2038: обнаружено несоответствие для "_ITERATOR_DEBUG_LEVEL": значение "0" не соответствует значению "2" в main.obj
+total_computers.lib(net.obj) : error LNK2038: обнаружено несоответствие для "RuntimeLibrary": значение "MT_StaticRelease" не соответствует значению "MTd_StaticDebug" в main.obj
+total_computers.lib(security.obj) : error LNK2038: обнаружено несоответствие для "_ITERATOR_DEBUG_LEVEL": значение "0" не соответствует значению "2" в main.obj
+total_computers.lib(security.obj) : error LNK2038: обнаружено несоответствие для "RuntimeLibrary": значение "MT_StaticRelease" не соответствует значению "MTd_StaticDebug" в main.obj
+     Создается библиотека C:/Users/JNNGL/IdeaProjects/TotalComputers/nativeTest/build/Debug/application.lib и объект C:/Users/JNNGL/IdeaProjects/TotalComputers/nativeTest/build/Debug/application.exp
+LINK : warning LNK4098: библиотека по умолчанию "LIBCMT" конфликтует с использованием других библиотек; используйте /NODEFAULTLIB:library
+C:\Users\JNNGL\IdeaProjects\TotalComputers\nativeTest\build\Debug\application.dll : fatal error LNK1319: обнаружено несоответствий: 24

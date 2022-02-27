@@ -216,6 +216,7 @@ public class TotalOS {
         Graphics2D g = image.createGraphics();
         g.setColor(Color.BLACK);
         g.clearRect(0, 0, screenWidth, screenHeight);
+        g.clearRect(0, 0, screenWidth, screenHeight);
         if(currentState == ComputerState.OFF) {
             g.dispose();
             return;

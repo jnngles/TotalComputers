@@ -18,6 +18,7 @@
 
 package com.jnngl.totalcomputers.system;
 
+import com.jnngl.system.NativeWindowApplication;
 import com.jnngl.totalcomputers.system.desktop.TaskBarLink;
 
 import javax.imageio.ImageIO;
@@ -25,6 +26,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
@@ -74,6 +76,21 @@ public class FileSystem {
         rootfs = new File("rootfs/"+name);
         rootfs.mkdirs();
 
+        try {
+            String libName = "native.dll";
+            URL url = FileSystem.class.getResource("/" + libName);
+            File tmpDir = Files.createTempDirectory("libs").toFile();
+            tmpDir.deleteOnExit();
+            File nativeLibTmpFile = new File(tmpDir, libName);
+            nativeLibTmpFile.deleteOnExit();
+            try (InputStream in = url.openStream()) {
+                Files.copy(in, nativeLibTmpFile.toPath());
+            }
+            System.load(nativeLibTmpFile.getAbsolutePath());
+        } catch (Exception e) {
+            System.loadLibrary("native");
+        }
+
         images = new HashMap<>();
         associationMap = new HashMap<>();
 
@@ -97,7 +114,7 @@ public class FileSystem {
                 this.name.createNewFile();
                 associations.createNewFile();
                 Files.writeString(this.name.toPath(), name);
-                Files.writeString(this.taskbar.toPath(), "Files\n!/sys/bin/Files.app");
+                Files.writeString(this.taskbar.toPath(), "Files\n!/sys/bin/Files.app\nApp Store\n!/sys/bin/AppStore.app\n");
                 Files.writeString(this.wallpaper.toPath(), "/res/system/wallpaper.png");
                 Files.writeString(this.associations.toPath(), "png,jpg: /sys/bin/ImageViewer.app");
             } catch (IOException e) {
@@ -238,7 +255,7 @@ public class FileSystem {
                 try {
                     result = ImageIO.read(new File(_path));
                 } catch (IOException ex) {
-                    ex.printStackTrace();
+                    System.err.println("Failed to load image.");
                     return null;
                 }
             }
@@ -246,11 +263,40 @@ public class FileSystem {
         return result;
     }
 
-    public void launchApplication(String path, String className, String... args) {
+    public void launchApplication(String Rpath, String className, String... args) {
         URL url;
         String _path;
-        if(path.startsWith("/")) _path = path.substring(1);
-        else _path = path;
+        if(Rpath.startsWith("/")) _path = Rpath.substring(1);
+        else _path = Rpath;
+        String path = new File(_path).getAbsolutePath();
+        if(className.contains(":")) {
+            try {
+                String[] parts = className.split(":");
+                String appName = parts[0].trim();
+
+                String[] nArgs = new String[args.length+1];
+                nArgs[0] = path;
+                System.arraycopy(args, 0, nArgs, 1, args.length);
+
+                if(!(new File(root()+"/usr/Applications/"+appName+".app/application.jar").exists())) {
+                    NativeWindowApplication.main(nArgs);
+                    return;
+                }
+
+                String clsName = parts[1].trim();
+
+                URLClassLoader child = new URLClassLoader(
+                        new URL[] { new File(root()+"/usr/Applications/"+appName+".app/application.jar").toURI().toURL() },
+                        this.getClass().getClassLoader()
+                );
+                Class<?> cls = Class.forName(clsName, true, child);
+                Method main = cls.getMethod("main", String[].class);
+                main.invoke(null, (Object) nArgs);
+            } catch (IllegalAccessException | InvocationTargetException | ClassNotFoundException | NoSuchMethodException | MalformedURLException e) {
+                System.err.println("Failed to launch application.");
+            }
+            return;
+        }
         try { // Try to load from jar
             URLClassLoader child = new URLClassLoader(
                     new URL[] { new URL("jar:"+FileSystem.class.getProtectionDomain().getCodeSource().getLocation()+"!/"+_path) },
@@ -274,7 +320,7 @@ public class FileSystem {
                     if(!file.exists()) throw new IOException();
                     url = file.toURI().toURL();
                 } catch (IOException ex) { // Failed to load =(
-                    ex.printStackTrace();
+                    System.err.println("Failed to launch application.");
                     return;
                 }
             }
@@ -389,4 +435,26 @@ public class FileSystem {
         }
     }
 
+    public String root() {
+        return rootfs.getPath();
+    }
+
+    public void addTaskBarEntry(String name, String app) {
+        try {
+            Files.writeString(taskbar.toPath(), Files.readString(taskbar.toPath()) + name+"\n!" + app + "\n");
+        } catch (IOException e) {
+            System.err.println("Failed to access system files.");
+        }
+    }
+
+    public void removeTaskBarEntry(String name) {
+        try {
+            String contents = Files.readString(taskbar.toPath());
+            if(!contents.contains(name)) return;
+            String path = contents.split(name+"\n")[1].split("\n")[0];
+            Files.writeString(taskbar.toPath(), contents.replace(name+"\n"+path+"\n", ""));
+        } catch (IOException e) {
+            System.err.println("Failed to access system files.");
+        }
+    }
 }

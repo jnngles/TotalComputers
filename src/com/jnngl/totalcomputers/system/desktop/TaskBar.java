@@ -68,6 +68,10 @@ public class TaskBar {
         updateBody();
     }
 
+    public List<Application> applications() {
+        return applications;
+    }
+
     public void render(Graphics2D g) {
         body.setColor(light);
         body.render(g);

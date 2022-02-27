@@ -31,7 +31,7 @@ public abstract class WindowApplication extends Application {
 
     }
 
-    private BufferedImage canvas;
+    protected BufferedImage canvas;
     private int x, y, width, height;
 
     private boolean maximized;
@@ -53,6 +53,12 @@ public abstract class WindowApplication extends Application {
     }
 
     public WindowApplication(TotalOS os, String title, int x, int y, int width, int height, String path) {
+        this(path, os, title, x, y, width, height);
+        start();
+        renderCanvas();
+    }
+
+    protected WindowApplication(String path, TotalOS os, String title, int x, int y, int width, int height) {
         super(os, title);
         this.x = x;
         this.y = y;
@@ -68,8 +74,6 @@ public abstract class WindowApplication extends Application {
         moveEvents = new ArrayList<>();
         minimizeEvents = new ArrayList<>();
         applicationPath = path;
-        start();
-        renderCanvas();
     }
 
     @Override
@@ -79,8 +83,12 @@ public abstract class WindowApplication extends Application {
     }
 
     @Override
-    public void close() {
-        if(onClose()) ApplicationHandler.unregisterApplication(this);
+    public boolean close() {
+        if(onClose()) {
+            ApplicationHandler.unregisterApplication(this);
+            return true;
+        }
+        return false;
     }
 
     public abstract void update();
@@ -172,6 +180,7 @@ public abstract class WindowApplication extends Application {
 
     public void setX(int x) {
         this.x = x;
+        for(MoveEvent moveEvent : moveEvents) moveEvent.onMove(x, y);
     }
 
     public int getY() {
@@ -180,6 +189,7 @@ public abstract class WindowApplication extends Application {
 
     public void setY(int y) {
         this.y = y;
+        for(MoveEvent moveEvent : moveEvents) moveEvent.onMove(x, y);
     }
 
     public int getWidth() {
@@ -189,6 +199,7 @@ public abstract class WindowApplication extends Application {
     public void setWidth(int width) {
         this.width = width;
         canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        for(ResizeEvent resizeEvent : resizeEvents) resizeEvent.onUnmaximize(width, height);
     }
 
     public int getHeight() {
@@ -198,6 +209,7 @@ public abstract class WindowApplication extends Application {
     public void setHeight(int height) {
         this.height = height;
         canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        for(ResizeEvent resizeEvent : resizeEvents) resizeEvent.onUnmaximize(width, height);
     }
 
     public boolean isMaximized() {

@@ -119,6 +119,14 @@ public interface Localization {
      */
     String wrongPassword();
 
+    String download();
+
+    String delete();
+
+    String search();
+
+    String downloading();
+
     /**
      * English localization
      */
@@ -202,6 +210,26 @@ public interface Localization {
         @Override
         public String wrongPassword() {
             return "Wrong password!";
+        }
+
+        @Override
+        public String download() {
+            return "Download";
+        }
+
+        @Override
+        public String delete() {
+            return "Delete";
+        }
+
+        @Override
+        public String search() {
+            return "Search";
+        }
+
+        @Override
+        public String downloading() {
+            return "Downloading";
         }
     }
 
@@ -288,6 +316,26 @@ public interface Localization {
         @Override
         public String wrongPassword() {
             return "Неправильный пароль.";
+        }
+
+        @Override
+        public String download() {
+            return "Скачать";
+        }
+
+        @Override
+        public String delete() {
+            return "Удалить";
+        }
+
+        @Override
+        public String search() {
+            return "Искать";
+        }
+
+        @Override
+        public String downloading() {
+            return "Скачивание";
         }
     }
 

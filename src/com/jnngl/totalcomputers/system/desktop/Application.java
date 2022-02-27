@@ -24,8 +24,8 @@ abstract class Application {
         this.icon = icon;
     }
 
-    protected void close() {
-        onClose();
+    protected boolean close() {
+        return onClose();
     }
 
     protected void start() {

@@ -1,0 +1,10 @@
+^C:\USERS\JNNGL\IDEAPROJECTS\TOTALCOMPUTERS\BROWSER\BUILD\CMAKEFILES\E259A3B7B1F571424F7BEC0B8C759B01\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/JNNGL/IdeaProjects/TotalComputers/browser -BC:/Users/JNNGL/IdeaProjects/TotalComputers/browser/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/JNNGL/IdeaProjects/TotalComputers/browser/build/tcmp_browser.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

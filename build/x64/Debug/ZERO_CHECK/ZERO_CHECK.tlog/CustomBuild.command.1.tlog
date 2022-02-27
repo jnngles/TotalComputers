@@ -1,0 +1,10 @@
+^C:\USERS\JNNGL\IDEAPROJECTS\TOTALCOMPUTERS\BUILD\CMAKEFILES\7A4BE5742A4F84B843C18E5918E624C8\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/JNNGL/IdeaProjects/TotalComputers -BC:/Users/JNNGL/IdeaProjects/TotalComputers/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/JNNGL/IdeaProjects/TotalComputers/build/total_computers.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

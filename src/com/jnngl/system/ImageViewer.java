@@ -118,4 +118,5 @@ public class ImageViewer extends WindowApplication {
         updateLayout();
         renderCanvas();
     }
+
 }
