@@ -38,11 +38,6 @@
       <root url="jar://$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-windows.jar!/" />
       <root url="jar://$PROJECT_DIR$/lwjgl/lwjgl-stb.jar!/" />
       <root url="jar://$PROJECT_DIR$/lwjgl/lwjgl.jar!/" />
-      <root url="jar://$PROJECT_DIR$/jcef/gluegen-rt-natives-windows-amd64.jar!/" />
-      <root url="jar://$PROJECT_DIR$/jcef/gluegen-rt.jar!/" />
-      <root url="jar://$PROJECT_DIR$/jcef/jcef.jar!/" />
-      <root url="jar://$PROJECT_DIR$/jcef/jogl-all-natives-windows-amd64.jar!/" />
-      <root url="jar://$PROJECT_DIR$/jcef/jogl-all.jar!/" />
     </CLASSES>
     <JAVADOC />
     <NATIVE>
