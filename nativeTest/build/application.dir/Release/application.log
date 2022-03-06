@@ -1,7 +1,0 @@
-﻿  Building Custom Rule C:/Users/JNNGL/IdeaProjects/TotalComputers/nativeTest/CMakeLists.txt
-cl : командная строка warning D9002: пропуск неизвестного параметра "-std=c++17"
-  main.cpp
-  native.cc
-  Создание кода...
-     Создается библиотека C:/Users/JNNGL/IdeaProjects/TotalComputers/nativeTest/build/Release/application.lib и объект C:/Users/JNNGL/IdeaProjects/TotalComputers/nativeTest/build/Release/application.exp
-  application.vcxproj -> C:\Users\JNNGL\IdeaProjects\TotalComputers\nativeTest\build\Release\application.dll

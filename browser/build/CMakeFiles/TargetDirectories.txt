@@ -1,3 +1,0 @@
-C:/Users/JNNGL/IdeaProjects/TotalComputers/browser/build/CMakeFiles/application.dir
-C:/Users/JNNGL/IdeaProjects/TotalComputers/browser/build/CMakeFiles/ALL_BUILD.dir
-C:/Users/JNNGL/IdeaProjects/TotalComputers/browser/build/CMakeFiles/ZERO_CHECK.dir

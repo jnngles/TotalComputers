@@ -34,3 +34,33 @@ Set `_legacyUndefinedCheck: true` on element class to enable.", source: https://
 [0227/182523.439:INFO:CONSOLE(41)] "Unrecognized feature: 'attribution-reporting'.", source: https://www.googletagmanager.com/gtm.js?id=GTM-TK47DZ (41)
 [0227/182524.370:WARNING:spdy_session.cc(3501)] Received HEADERS for invalid stream 1
 [0227/184337.916:WARNING:spdy_session.cc(3501)] Received HEADERS for invalid stream 1
+[0228/130442.767:WARNING:spdy_session.cc(3501)] Received HEADERS for invalid stream 31
+[0228/142608.764:ERROR:frame_sink_video_capturer_impl.cc(210)] Invalid resolutions constraints: 1634887535x1766203501 must not be greater than 1634887535x1766203501; and also within media::limits.
+[0228/143029.125:ERROR:frame_sink_video_capturer_impl.cc(210)] Invalid resolutions constraints: 1667853424x1869182049 must not be greater than 1667853424x1869182049; and also within media::limits.
+[0228/143929.743:INFO:child_thread_impl.cc(903)] ChildThreadImpl::EnsureConnected()
+[0228/150633.691:INFO:child_thread_impl.cc(903)] ChildThreadImpl::EnsureConnected()
+[0228/152917.292:INFO:child_thread_impl.cc(903)] ChildThreadImpl::EnsureConnected()
+[0228/155045.698:WARNING:spdy_session.cc(3501)] Received HEADERS for invalid stream 33
+[0228/155236.760:ERROR:gpu_init.cc(457)] Passthrough is not supported, GL is disabled, ANGLE is 
+[0228/190653.296:INFO:CONSOLE(0)] "Error with Permissions-Policy header: Unrecognized feature: 'ch-ua-full-version-list'.", source:  (0)
+[0228/190653.939:WARNING:browser_info.cc(298)] Returning a speculative frame for 25769803781 [6,5]
+[0228/190654.413:WARNING:browser_info.cc(298)] Returning a speculative frame for 25769803781 [6,5]
+[0228/190654.421:INFO:CONSOLE(0)] "Refused to display 'https://accounts.google.com/' in a frame because it set 'X-Frame-Options' to 'deny'.", source: chrome-error://chromewebdata/ (0)
+[0228/190654.631:INFO:CONSOLE(4249)] "LegacyDataMixin will be applied to all legacy elements.
+Set `_legacyUndefinedCheck: true` on element class to enable.", source: https://www.youtube.com/s/desktop/ecd7151d/jsbin/desktop_polymer.vflset/desktop_polymer.js (4249)
+[0228/190658.112:INFO:CONSOLE(0)] "The resource https://i.ytimg.com/generate_204 was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.", source: https://www.youtube.com/ (0)
+[0228/190823.932:WARNING:spdy_session.cc(3501)] Received HEADERS for invalid stream 157
+[0228/191710.871:WARNING:spdy_session.cc(3501)] Received HEADERS for invalid stream 5
+[0228/191710.921:WARNING:spdy_session.cc(3501)] Received HEADERS for invalid stream 3
+[0228/195555.441:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
+[0228/195555.720:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
+[0228/195624.545:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
+[0228/195624.822:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
+[0228/211907.439:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
+[0228/211907.716:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
+[0228/211946.057:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
+[0228/211946.320:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
+[0228/211946.326:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
+[0228/211946.594:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
+[0228/212033.358:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
+[0228/212033.642:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101

@@ -7,11 +7,11 @@ namespace tc {
 
 namespace app {
 
-void OnStart(char* path, int argc, char* argv[]);
-bool OnClose();
-void Update();
-void Render(awt::Graphics2D g);
-void ProcessInput(int x, int y, tc::InteractType type);
+void OnStart(long long uid, char* path, int argc, char* argv[]);
+bool OnClose(long long uid);
+void Update(long long uid);
+void Render(long long uid, awt::Graphics2D g);
+void ProcessInput(long long uid, int x, int y, tc::InteractType type);
 
 extern WindowApplication* application;
 

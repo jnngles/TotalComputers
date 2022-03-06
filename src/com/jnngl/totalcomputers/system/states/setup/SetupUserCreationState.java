@@ -1,6 +1,6 @@
 /*
-    Computers are now in minecraft!
-    Copyright (C) 2021  JNNGL
+    Plugin for computers in vanilla minecraft!
+    Copyright (C) 2022  JNNGL
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

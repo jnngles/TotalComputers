@@ -1,7 +1,0 @@
-{
-    "makefile.extensionOutputFolder": "./.vscode",
-    "files.associations": {
-        "type_traits": "cpp",
-        "*.rh": "cpp"
-    }
-}

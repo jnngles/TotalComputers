@@ -1,4 +1,0 @@
-﻿cl : командная строка warning D9002: пропуск неизвестного параметра "-std=c++17"
-  main.cpp
-     Создается библиотека C:/Users/JNNGL/IdeaProjects/TotalComputers/browser/build/Release/application.lib и объект C:/Users/JNNGL/IdeaProjects/TotalComputers/browser/build/Release/application.exp
-  application.vcxproj -> C:\Users\JNNGL\IdeaProjects\TotalComputers\browser\build\Release\application.dll

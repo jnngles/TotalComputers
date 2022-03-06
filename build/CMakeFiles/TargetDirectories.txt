@@ -1,4 +1,0 @@
-C:/Users/JNNGL/IdeaProjects/TotalComputers/build/CMakeFiles/total_computers_dll.dir
-C:/Users/JNNGL/IdeaProjects/TotalComputers/build/CMakeFiles/total_computers_lib.dir
-C:/Users/JNNGL/IdeaProjects/TotalComputers/build/CMakeFiles/ALL_BUILD.dir
-C:/Users/JNNGL/IdeaProjects/TotalComputers/build/CMakeFiles/ZERO_CHECK.dir

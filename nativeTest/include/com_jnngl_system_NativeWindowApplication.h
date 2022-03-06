@@ -10,42 +10,42 @@ extern "C" {
 /*
  * Class:     com_jnngl_system_NativeWindowApplication
  * Method:    _Init
- * Signature: (Ljava/lang/String;[Ljava/lang/String;)V
+ * Signature: (JLjava/lang/String;[Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_com_jnngl_system_NativeWindowApplication__1Init
-  (JNIEnv *, jobject, jstring, jobjectArray);
+  (JNIEnv *, jobject, jlong, jstring, jobjectArray);
 
 /*
  * Class:     com_jnngl_system_NativeWindowApplication
  * Method:    _OnClose
- * Signature: ()Z
+ * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL Java_com_jnngl_system_NativeWindowApplication__1OnClose
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jlong);
 
 /*
  * Class:     com_jnngl_system_NativeWindowApplication
  * Method:    _Update
- * Signature: ()V
+ * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_com_jnngl_system_NativeWindowApplication__1Update
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jlong);
 
 /*
  * Class:     com_jnngl_system_NativeWindowApplication
  * Method:    _Render
- * Signature: (Ljava/awt/Graphics2D;)V
+ * Signature: (JLjava/awt/Graphics2D;)V
  */
 JNIEXPORT void JNICALL Java_com_jnngl_system_NativeWindowApplication__1Render
-  (JNIEnv *, jobject, jobject);
+  (JNIEnv *, jobject, jlong, jobject);
 
 /*
  * Class:     com_jnngl_system_NativeWindowApplication
  * Method:    _ProcessInput
- * Signature: (IIZ)V
+ * Signature: (JIIZ)V
  */
 JNIEXPORT void JNICALL Java_com_jnngl_system_NativeWindowApplication__1ProcessInput
-  (JNIEnv *, jobject, jint, jint, jboolean);
+  (JNIEnv *, jobject, jlong, jint, jint, jboolean);
 
 #ifdef __cplusplus
 }

@@ -1,6 +1,6 @@
 /*
-    Computers are now in minecraft!
-    Copyright (C) 2021  JNNGL
+    Plugin for computers in vanilla minecraft!
+    Copyright (C) 2022  JNNGL
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -77,7 +77,7 @@ public class FileSystem {
         rootfs.mkdirs();
 
         try {
-            String libName = "native.dll";
+            String libName = "total_computers.dll";
             URL url = FileSystem.class.getResource("/" + libName);
             File tmpDir = Files.createTempDirectory("libs").toFile();
             tmpDir.deleteOnExit();
@@ -88,7 +88,7 @@ public class FileSystem {
             }
             System.load(nativeLibTmpFile.getAbsolutePath());
         } catch (Exception e) {
-            System.loadLibrary("native");
+            System.loadLibrary("total_computers");
         }
 
         images = new HashMap<>();
