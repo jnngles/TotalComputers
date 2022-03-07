@@ -80,13 +80,13 @@ public class FileSystem {
             String libName = "total_computers.dll";
             URL url = FileSystem.class.getResource("/" + libName);
             File tmpDir = Files.createTempDirectory("libs").toFile();
-            tmpDir.deleteOnExit();
             File nativeLibTmpFile = new File(tmpDir, libName);
-            nativeLibTmpFile.deleteOnExit();
             try (InputStream in = url.openStream()) {
                 Files.copy(in, nativeLibTmpFile.toPath());
             }
             System.load(nativeLibTmpFile.getAbsolutePath());
+            nativeLibTmpFile.deleteOnExit();
+            tmpDir.deleteOnExit();
         } catch (Exception e) {
             System.loadLibrary("total_computers");
         }

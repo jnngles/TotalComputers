@@ -1,0 +1,53 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="TotalComputers">
+    <output-path>$USER_HOME$/Desktop/server/lobby/plugins</output-path>
+    <root id="archive" name="TotalComputers.jar">
+      <element id="module-output" name="TotalComputers" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-linux-arm32.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-stb.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/joml-1.10.3.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-linux-arm32.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-linux-arm64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-linux.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-macos-arm64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-macos.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-windows-arm64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-windows-x86.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw-natives-windows.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-glfw.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-linux-arm32.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-linux-arm64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-linux.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-macos-arm64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-macos.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-windows-arm64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-windows-x86.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-natives-windows.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-linux-arm64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-linux.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-macos-arm64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-macos.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-windows-arm64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-windows-x86.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl-natives-windows.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-opengl.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-linux-arm32.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-linux-arm64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-linux.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-macos-arm64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-macos.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-windows-arm64.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-windows-x86.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lwjgl/lwjgl-stb-natives-windows.jar" path-in-jar="/" />
+      <element id="file-copy" path="$PROJECT_DIR$/total_computers.dll" />
+      <element id="directory" name="res">
+        <element id="dir-copy" path="$PROJECT_DIR$/res" />
+      </element>
+      <element id="directory" name="sys">
+        <element id="dir-copy" path="$PROJECT_DIR$/sys" />
+      </element>
+      <element id="file-copy" path="$PROJECT_DIR$/FreeSans.ttf" />
+    </root>
+  </artifact>
+</component>

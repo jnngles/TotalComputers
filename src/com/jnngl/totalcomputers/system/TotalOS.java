@@ -251,11 +251,11 @@ public class TotalOS {
             turnOn();
             return;
         }
-        if(information.isControlTaken()) {
+        if(information != null && information.isControlTaken()) {
             information.processInput(x, y, type);
             return;
         }
-        if(keyboard.isControlTaken()) {
+        if(keyboard != null && keyboard.isControlTaken()) {
             keyboard.processInput(x, y, type);
             return;
         }
@@ -305,14 +305,14 @@ public class TotalOS {
                 ex.printStackTrace();
             }
         }
-        keyboard = new Keyboard(this);
         information = new Information(this);
+        keyboard = new Keyboard(this);
 
         if(!firstRun) loadDataFromFileSystem();
         fs.loadResources();
 
 //        stateManager.setState(new SplashScreen(stateManager, this));
-        stateManager.setState(new Desktop(stateManager, this));
+        stateManager.setState(new Desktop(stateManager, this)); // For testing
 
     }
 

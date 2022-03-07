@@ -101,6 +101,14 @@ public class AppStore extends WindowApplication {
         setMinHeight((int)(os.screenHeight * 0.6f));
     }
 
+    private void scaleUI() {
+        search.setWidth(getWidth()-(int) (os.screenWidth * 0.1f));
+        searchBt.setX(search.getWidth());
+        up.setX(getWidth()-search.getHeight());
+        down.setX(up.getX());
+        down.setY(getHeight()-search.getHeight());
+    }
+
     @Override
     protected void onStart() {
         setIcon(os.fs.loadImage(applicationPath + "/icon.png"));
@@ -145,16 +153,19 @@ public class AppStore extends WindowApplication {
         addResizeEvent(new ResizeEvent() {
             @Override
             public void onResize(int width, int height) {
+                scaleUI();
                 renderCanvas();
             }
 
             @Override
             public void onMaximize(int width, int height) {
+                scaleUI();
                 renderCanvas();
             }
 
             @Override
             public void onUnmaximize(int width, int height) {
+                scaleUI();
                 renderCanvas();
             }
         });
@@ -179,8 +190,7 @@ public class AppStore extends WindowApplication {
 
     @Override
     protected boolean onClose() {
-        if(!installing.isEmpty()) return false;
-        return true;
+        return installing.isEmpty();
     }
 
     @Override

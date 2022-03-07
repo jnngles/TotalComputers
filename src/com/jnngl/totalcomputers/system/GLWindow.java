@@ -55,16 +55,20 @@ public abstract class GLWindow extends WindowApplication {
     }
 
     private void init(int w, int h, String title) {
-        GLFW.glfwInit();
-        GLFW.glfwDefaultWindowHints();
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
-        GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
-        GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
-        handle = GLFW.glfwCreateWindow(w, h, "TotalComputers: "+title, 0, 0);
-        GLFW.glfwMakeContextCurrent(handle);
-        GL.createCapabilities();
-        createBuffer(w,h);
+        try {
+            GLFW.glfwInit();
+            GLFW.glfwDefaultWindowHints();
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
+            GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
+            GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
+            handle = GLFW.glfwCreateWindow(w, h, "TotalComputers: " + title, 0, 0);
+            GLFW.glfwMakeContextCurrent(handle);
+            GL.createCapabilities();
+            createBuffer(w, h);
+        } catch(Exception e) {
+            System.err.println("Something went wrong! ("+e.getClass().getSimpleName()+")");
+        }
     }
 
     protected void createBuffer(int w, int h) {

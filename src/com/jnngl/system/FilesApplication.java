@@ -88,7 +88,9 @@ public class FilesApplication extends WindowApplication {
                     }
                     else {
                         String[] parts = dir.split("\\.");
-                        os.fs.launchFromApplication(os.fs.getAssociatedProgram(parts[parts.length-1]), dir);
+                        String association = os.fs.getAssociatedProgram(parts[parts.length-1]);
+                        if(association != null)
+                            os.fs.launchFromApplication(association, dir);
                     }
                 }
                 contents.clear();
