@@ -29,14 +29,23 @@ import java.io.File;
 
 public class FilesApplication extends WindowApplication {
 
-    public FilesApplication(TotalOS os, String path) {
+    public FilesApplication(TotalOS os, String path, String[] args) {
         super(os, "Files", (int)(os.screenWidth * 0.66f), (int)(os.screenHeight * 0.66f), path);
+        if(args.length > 1) {
+            directory = args[1].replace("\\","/");
+            File file = os.fs.toFile(directory.replace(new File(".").getAbsolutePath(), ""));
+            contents.clear();
+            contents.addEntries("<--");
+            contents.addEntries(file.list());
+            contents.unsetSelected();
+            renderCanvas();
+        }
         setMinWidth((int)(os.screenWidth * 0.33f));
         setMinHeight((int)(os.screenHeight * 0.33f));
     }
 
     public static void main(String[] args) {
-        ApplicationHandler.open(FilesApplication.class, args[0]);
+        ApplicationHandler.open(FilesApplication.class, args[0], args);
     }
 
     private ElementList list, contents;
@@ -87,10 +96,7 @@ public class FilesApplication extends WindowApplication {
                         file = temp;
                     }
                     else {
-                        String[] parts = dir.split("\\.");
-                        String association = os.fs.getAssociatedProgram(parts[parts.length-1]);
-                        if(association != null)
-                            os.fs.launchFromApplication(association, dir);
+                        os.fs.executeFile(new File(dir));
                     }
                 }
                 contents.clear();

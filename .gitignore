@@ -1,0 +1,6 @@
+/rootfs/
+/build
+/nativeTest/build
+/browser/build
+/browser/cef_data
+/GPUCache

@@ -4,6 +4,9 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/rootfs/test/usr/Desktop/folder" />
+      <excludeFolder url="file://$MODULE_DIR$/rootfs/test/usr/Applications" />
+      <excludeFolder url="file://$MODULE_DIR$/rootfs/test/sys" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

@@ -24,6 +24,7 @@ import com.jnngl.totalcomputers.system.states.Desktop;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Comparator;
 
 public class ApplicationHandler {
 
@@ -36,7 +37,9 @@ public class ApplicationHandler {
     public static void registerApplication(Application application) {
         if(desktop == null) return;
         desktop.taskbar.addApplication(application);
-        if(application instanceof WindowApplication) desktop.drawable.add((WindowApplication) application);
+        if(application instanceof WindowApplication) {
+            desktop.drawable.add((WindowApplication) application);
+        }
     }
 
     public static void unregisterApplication(Application application) {

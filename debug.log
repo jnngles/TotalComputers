@@ -64,3 +64,6 @@ Set `_legacyUndefinedCheck: true` on element class to enable.", source: https://
 [0228/211946.594:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
 [0228/212033.358:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
 [0228/212033.642:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
+[0307/201735.550:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
+[0307/201735.817:ERROR:ssl_client_socket_impl.cc(983)] handshake failed; returned -1, SSL error code 1, net_error -101
+[0307/201932.714:ERROR:gpu_init.cc(457)] Passthrough is not supported, GL is disabled, ANGLE is 

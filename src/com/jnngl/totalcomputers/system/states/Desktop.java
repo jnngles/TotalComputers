@@ -27,6 +27,8 @@ import com.jnngl.totalcomputers.system.desktop.Wallpaper;
 import com.jnngl.totalcomputers.system.desktop.WindowApplication;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -35,6 +37,14 @@ import java.util.ListIterator;
  * Desktop
  */
 public class Desktop extends State {
+
+    private class DesktopIconInfo {
+        int x;
+        int y;
+        int width;
+        int height;
+        File file;
+    }
 
     public final List<WindowApplication> drawable;
     public final TaskBar taskbar;
@@ -46,6 +56,63 @@ public class Desktop extends State {
 
     private final Wallpaper wallpaper;
     private final Font uiFont;
+
+    private final BufferedImage desktop;
+
+    private int selectedIconIndex = -1;
+    private final List<DesktopIconInfo> icons;
+
+    public void updateDesktop() {
+        Font font = os.baseFont.deriveFont((float) os.screenHeight/128*3);
+        FontMetrics metrics = Utils.getFontMetrics(font);
+        int offset = (int) (metrics.getHeight()*2);
+        int x = offset;
+        int y = offset;
+        File[] files = new File(os.fs.root(), "usr/Desktop").listFiles();
+        if(files == null) return;
+        selectedIconIndex = -1;
+        icons.clear();
+        Graphics2D g = desktop.createGraphics();
+        g.setColor(new Color(0, 0, 0, 0));
+        g.fillRect(0, 0, os.screenWidth, os.screenHeight);
+        g.setColor(Color.BLACK);
+        g.setFont(font);
+        for(File file : files) {
+            DesktopIconInfo info = new DesktopIconInfo();
+            info.x = x-5;
+            info.y = y-5;
+            info.file = file;
+            String name = file.getName();
+            String croppedName = name;
+            if(name.contains(".")) {
+                String[] parts = name.split("\\.");
+                String ext = parts[parts.length - 1];
+                croppedName = name.substring(0, name.length() - 1 - ext.length());
+            }
+            BufferedImage icon = os.fs.getIconForFile(file);
+
+            g.drawImage(icon, x, y, taskbar.getIconSize(), taskbar.getIconSize(), null);
+
+            if(croppedName.length() >= 10) {
+                croppedName = croppedName.substring(0, 9)+"...";
+            }
+
+            y += taskbar.getIconSize()+offset;
+            g.drawString(croppedName, x+taskbar.getIconSize()/2-metrics.stringWidth(croppedName)/2, y-10-offset/3);
+            y += 10;
+
+            info.width = taskbar.getIconSize() + 10;
+            info.height = y - info.y - 5;
+
+            icons.add(info);
+
+            if(y >= os.screenHeight-taskbar.getIconSize()-offset-10) {
+                y = offset;
+                x += taskbar.getIconSize()+offset+10;
+            }
+        }
+        g.dispose();
+    }
 
     /**
      * Constructor
@@ -70,6 +137,9 @@ public class Desktop extends State {
         taskbar = new TaskBar(os);
         wallpaper = new Wallpaper(this);
         drawable = new ArrayList<>();
+        icons = new ArrayList<>();
+        desktop = new BufferedImage(os.screenWidth, os.screenHeight, BufferedImage.TYPE_INT_ARGB);
+        updateDesktop();
         ApplicationHandler.init(this);
     }
 
@@ -88,6 +158,12 @@ public class Desktop extends State {
     @Override
     public void render(Graphics2D g) {
         wallpaper.render(g);
+        if(selectedIconIndex >= 0) {
+            DesktopIconInfo selected = icons.get(selectedIconIndex);
+            g.setColor(new Color(255, 255, 255, 128));
+            g.fillRoundRect(selected.x, selected.y, selected.width, selected.height, 4, 4);
+        }
+        g.drawImage(desktop, 0, 0, null);
         for(WindowApplication application : drawable) {
             if(application.isMinimized()) continue;
             g.setColor(Color.WHITE);
@@ -122,6 +198,7 @@ public class Desktop extends State {
      */
     @Override
     public void processInput(int x, int y, TotalComputers.InputInfo.InteractType type) {
+        boolean handled = false;
         WindowApplication moveToTop = null;
         if(!taskbar.processInput(x, y, type)) {
             if(type == TotalComputers.InputInfo.InteractType.RIGHT_CLICK) {
@@ -144,6 +221,7 @@ public class Desktop extends State {
                 moveToTop = application;
                 if(application.isMinimized()) continue;
                 if(x >= application.getX() && x <= application.getX()+application.getWidth()+5 && y >= application.getY()-titleBarHeight && y <= application.getY()+application.getHeight()+5) {
+                    handled = true;
                     if(y <= application.getY()) { // Title bar
                         boolean _y = (y >= application.getY()+buttonY && y <= application.getY()+buttonY+buttonSize);
                         if(_y) {
@@ -178,11 +256,23 @@ public class Desktop extends State {
                     }
                 }
             }
-        }
+        } else selectedIconIndex = -1;
         if(moveToTop != null) {
             drawable.remove(moveToTop);
             drawable.add(moveToTop);
         }
+        if(!handled) {
+            for(DesktopIconInfo iconInfo : icons) {
+                if(x >= iconInfo.x && y >= iconInfo.y && x <= iconInfo.x+iconInfo.width && y <= iconInfo.y+iconInfo.height) {
+                    int pressed = icons.indexOf(iconInfo);
+                    if(selectedIconIndex == pressed) {
+                        os.fs.executeFile(iconInfo.file);
+                        selectedIconIndex = -1;
+                    } else selectedIconIndex = pressed;
+                    break;
+                }
+            }
+        } else selectedIconIndex = -1;
     }
 
     public TotalOS getOS() {

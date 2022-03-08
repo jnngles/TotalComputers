@@ -199,6 +199,61 @@ public class FileSystem {
         }
     }
 
+    public BufferedImage getIconForFile(File file) { return getIconForFileI(file, 10); }
+    private BufferedImage getIconForFileI(File file, int depth) {
+        if(depth <= 0) return getResourceImage("icon-unknown-file");
+        if(file.isDirectory()) {
+            if(file.getName().endsWith(".app")) {
+                File icon = new File(file, "icon.png");
+                if(icon.exists()) {
+                    try {
+                        return ImageIO.read(icon);
+                    } catch (IOException ignored) {}
+                }
+            }
+            return getResourceImage("icon-folder");
+        }
+        if(!file.getName().contains(".")) return getResourceImage("icon-unknown-file");
+        String name = file.getName();
+        String[] parts = name.split("\\.");
+        String ext = parts[parts.length-1];
+        if(ext.equalsIgnoreCase("lnk")) {
+            try {
+                String path = Files.readString(file.toPath()).trim();
+                if(path.startsWith("/")) path = root()+path;
+                return getIconForFileI(new File(path), depth-1);
+            } catch (IOException e) {
+                return null;
+            }
+        }
+        BufferedImage icon = getResourceImage("icon-ext:"+ext);
+        if(icon == null) icon = getResourceImage("icon-unknown-file");
+        return icon;
+    }
+
+    public void executeFile(File file) { executeFileI(file, 10); }
+    private void executeFileI(File file, int depth) {
+        if(file.isDirectory()) {
+            if(file.getName().endsWith(".app")) {
+                launchFromApplication(file.getPath().replace(new File(".").getAbsolutePath(), "").replace("\\", "/"));
+                return;
+            }
+            launchFromApplication("/sys/bin/Files.app", file.getPath());
+        }
+        String name = file.getName();
+        if(name.toLowerCase().endsWith(".lnk")) {
+            try {
+                String path = Files.readString(file.toPath()).trim();
+                if(path.startsWith("/")) path = root()+path;
+                executeFileI(new File(path), depth-1);
+            } catch (IOException ignored) {}
+        }
+        String[] parts = name.split("\\.");
+        String association = getAssociatedProgram(parts[parts.length-1]);
+        if(association != null)
+            launchFromApplication(association, file.getPath());
+    }
+
     /**
      * Loads all resources
      */
@@ -207,6 +262,22 @@ public class FileSystem {
         addResourceImage("warning", loadImage("res/system/warning.png"));
         addResourceImage("done", loadImage("res/system/done.png"));
         addResourceImage("default-icon", loadImage("res/system/default_icon.png"));
+        addResourceImage("icon-ext:png", loadImage("res/system/icons/image.png"), "icon-ext:jpg");
+        addResourceImage("icon-folder", loadImage("res/system/icons/folder.png"));
+        addResourceImage("icon-unknown-file", loadImage("res/system/icons/unknown.png"));
+        addResourceImage("icon-ext:h", loadImage("res/system/icons/c-header.png"));
+        addResourceImage("icon-ext:hpp", loadImage("res/system/icons/cpp-header.png"), "icon-ext:hxx", "icon-ext:h++");
+        addResourceImage("icon-ext:cpp", loadImage("res/system/icons/cpp-source.png"), "icon-ext:cxx", "icon-ext:c++", "icon-ext:cc");
+        addResourceImage("icon-ext:c", loadImage("res/system/icons/c-source.png"));
+        addResourceImage("icon-ext:cs", loadImage("res/system/icons/cs-source.png"));
+        addResourceImage("icon-ext:ttf", loadImage("res/system/icons/font-file.png"), "icon-ext:otf");
+        addResourceImage("icon-ext:html", loadImage("res/system/icons/html-markup.png"));
+        addResourceImage("icon-ext:js", loadImage("res/system/icons/js-source.png"));
+        addResourceImage("icon-ext:md", loadImage("res/system/icons/markup-document.png"));
+        addResourceImage("icon-ext:yml", loadImage("res/system/icons/markup-file.png"), "icon-ext:yaml", "icon-ext:xml");
+        addResourceImage("icon-ext:php", loadImage("res/system/icons/php-source.png"));
+        addResourceImage("icon-ext:sh", loadImage("res/system/icons/script-file.png"));
+        addResourceImage("icon-ext:txt", loadImage("res/system/icons/text-file.png"));
         loadAssociations();
     }
 
@@ -216,9 +287,10 @@ public class FileSystem {
      * @param image Data
      * @return Whether the resource was successfully added or not
      */
-    public boolean addResourceImage(String name, BufferedImage image) {
+    public boolean addResourceImage(String name, BufferedImage image, String... aliases) {
         if(images.containsKey(name)) return false;
         images.put(name, image);
+        for(String alias : aliases) images.put(alias, image);
         return true;
     }
 
@@ -393,7 +465,8 @@ public class FileSystem {
         }
     }
 
-    public File toFile(String path) {
+    public File toFile(String Rpath) {
+        String path = Rpath.replace("\\", "/");
         String _path;
         if(path.startsWith("/")) _path = path.substring(1);
         else _path = path;
