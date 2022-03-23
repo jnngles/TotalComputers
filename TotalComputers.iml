@@ -21,7 +21,7 @@
         </SOURCES>
       </library>
     </orderEntry>
-    <orderEntry type="library" name="TotalComputers" level="project" />
+    <orderEntry type="library" exported="" name="TotalComputers" level="project" />
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
@@ -355,15 +355,6 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES />
-        <JAVADOC />
-        <NATIVE>
-          <root url="file://$MODULE_DIR$/win64" />
-        </NATIVE>
-        <SOURCES />
-      </library>
-    </orderEntry>
+    <orderEntry type="library" name="JCEF Deps" level="project" />
   </component>
 </module>

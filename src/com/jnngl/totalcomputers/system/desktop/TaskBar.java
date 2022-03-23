@@ -20,6 +20,7 @@ package com.jnngl.totalcomputers.system.desktop;
 
 import com.jnngl.totalcomputers.TotalComputers;
 import com.jnngl.totalcomputers.system.TotalOS;
+import com.jnngl.totalcomputers.system.ui.ContextMenu;
 import com.jnngl.totalcomputers.system.ui.RoundRectangle;
 
 import java.util.ArrayList;
@@ -40,9 +41,13 @@ public class TaskBar {
 
     private RoundRectangle body;
     private final Color light, dark;
+    private final Font font;
 
-    public TaskBar(TotalOS os) {
+    private ContextMenu contextMenu;
+
+    public TaskBar(TotalOS os, Font font) {
         this.os = os;
+        this.font = font;
         light = new Color(1, 1, 1, 0.75f);
         dark = new Color(0, 0, 0, 0.75f);
         applications = new ArrayList<>(os.fs.loadTaskBarLinks(os));
@@ -104,19 +109,41 @@ public class TaskBar {
             }
             x+=iconSize+offset;
         }
+        if(contextMenu != null) contextMenu.render(g);
     }
 
     public boolean processInput(int x, int y, TotalComputers.InputInfo.InteractType type) {
+        if(contextMenu != null && contextMenu.processInput(x, y, type)) return true;
         if(x > body.getX() && y > body.getY() && x <= body.getX() + body.getWidth()) {
-            if(type == TotalComputers.InputInfo.InteractType.LEFT_CLICK) {
-                int index = ((int)Math.ceil((x-startX)/(float)(offset+iconSize)))-1;
-                if(index < 0 || index >= applications.size()) return true;
-                Application application = applications.get(index);
-                if(application instanceof TaskBarLink) {
+            int index = ((int)Math.ceil((x-startX)/(float)(offset+iconSize)))-1;
+            if(index < 0 || index >= applications.size()) return true;
+            Application application = applications.get(index);
+            if(application instanceof TaskBarLink) {
+                if(type == TotalComputers.InputInfo.InteractType.LEFT_CLICK) {
                     application.start();
-                } else if(application instanceof WindowApplication windowApplication) {
+                } else {
+                    contextMenu = new ContextMenu(font);
+                    contextMenu.addEntry("Open", false, application::start);
+                    contextMenu.addSeparator();
+                    contextMenu.addEntry("Unpin", false,
+                            () -> ApplicationHandler.removeTaskBarEntry(application.name));
+                    contextMenu.show(x, y-contextMenu.getHeight());
+                }
+            } else if(application instanceof WindowApplication windowApplication) {
+                if(type == TotalComputers.InputInfo.InteractType.LEFT_CLICK) {
                     if(windowApplication.isMinimized()) windowApplication.unminimize();
                     else windowApplication.minimize();
+                } else {
+                    contextMenu = new ContextMenu(font);
+                    contextMenu.addEntry("Close", false, windowApplication::close);
+                    contextMenu.addSeparator();
+                    contextMenu.addEntry("Maximize", false,
+                            () -> windowApplication.maximize(os.screenHeight/32));
+                    contextMenu.addEntry("Unmaximize", false, windowApplication::unmaximize);
+                    contextMenu.addSeparator();
+                    contextMenu.addEntry("Minimize", false, windowApplication::minimize);
+                    contextMenu.addEntry("Unminimize", false, windowApplication::unminimize);
+                    contextMenu.show(x, y-contextMenu.getHeight());
                 }
             }
             return true;

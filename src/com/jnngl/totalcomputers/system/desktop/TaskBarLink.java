@@ -34,7 +34,8 @@ public class TaskBarLink extends Application {
 
     @Override
     protected void onStart() {
-        os.fs.launchFromApplication(path);
+        if(!os.fs.launchFromApplication(path))
+            os.fs.executeFile(os.fs.toFile(path));
     }
 
     @Override

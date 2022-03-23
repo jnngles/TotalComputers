@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * Chain of the radio boxes
  */
-public class RadioBoxSystem {
+public class RadioBoxSystem implements ComponentUI {
 
     /**
      * Simple interface

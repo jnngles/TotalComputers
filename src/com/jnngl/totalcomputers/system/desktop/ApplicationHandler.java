@@ -48,34 +48,38 @@ public class ApplicationHandler {
         if(application instanceof WindowApplication) desktop.drawable.remove((WindowApplication) application);
     }
 
-    public static Application open(Class<? extends Application> cls, String path) {
-        try {
-            Constructor<? extends Application> constructor = cls.getConstructor(TotalOS.class, String.class);
-            return constructor.newInstance(desktop.getOS(), path);
-        } catch (NoSuchMethodException e) {
-            System.err.println("Constructor '"+cls.getSimpleName()+"(TotalOS, String)' not found.");
-        } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
-            e.printStackTrace();
-            System.err.println("Failed to create new instance. ("+e.getClass().getSimpleName()+")");
-        }
-        return null;
+    public static void open(Class<? extends Application> cls, String path) {
+        if(desktop == null) return;
+        desktop.getOS().runInSystemThread(() -> {
+            try {
+                Constructor<? extends Application> constructor = cls.getConstructor(TotalOS.class, String.class);
+                constructor.newInstance(desktop.getOS(), path);
+            } catch (NoSuchMethodException e) {
+                System.err.println("Constructor '"+cls.getSimpleName()+"(TotalOS, String)' not found.");
+            } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                e.printStackTrace();
+                System.err.println("Failed to create new instance. ("+e.getClass().getSimpleName()+")");
+            }
+        });
     }
 
-    public static Application open(Class<? extends Application> cls, String path, String[] args) {
-        try {
-            Constructor<? extends Application> constructor = cls.getConstructor(TotalOS.class, String.class, String[].class);
-            return constructor.newInstance(desktop.getOS(), path, args);
-        } catch (NoSuchMethodException e) {
-            System.err.println("Constructor '"+cls.getSimpleName()+"(TotalOS, String)' not found.");
-        } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
-            System.err.println("Failed to create new instance.");
-        }
-        return null;
+    public static void open(Class<? extends Application> cls, String path, String[] args) {
+        if(desktop == null) return;
+        desktop.getOS().runInSystemThread(() -> {
+            try {
+                Constructor<? extends Application> constructor = cls.getConstructor(TotalOS.class, String.class, String[].class);
+                constructor.newInstance(desktop.getOS(), path, args);
+            } catch (NoSuchMethodException e) {
+                System.err.println("Constructor '"+cls.getSimpleName()+"(TotalOS, String)' not found.");
+            } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                System.err.println("Failed to create new instance.");
+            }
+        });
     }
 
-    public static void addTaskBarEntry(String name, String app, BufferedImage icon) {
-        desktop.taskbar.addApplication(new TaskBarLink(desktop.getOS(), name, app, icon));
-        desktop.getOS().fs.addTaskBarEntry(name, app);
+    public static void addTaskBarEntry(String name, String link, BufferedImage icon) {
+        desktop.taskbar.addApplication(new TaskBarLink(desktop.getOS(), name, link, icon));
+        desktop.getOS().fs.addTaskBarEntry(name, link);
     }
 
     public static void removeTaskBarEntry(String name) {
@@ -90,4 +94,9 @@ public class ApplicationHandler {
         desktop.taskbar.removeApplication(toRemove);
         desktop.getOS().fs.removeTaskBarEntry(name);
     }
+
+    public static void refreshDesktop() {
+        desktop.updateDesktop();
+    }
+
 }

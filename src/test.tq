@@ -1,0 +1,5 @@
+function main(int i) {
+    var int i = 2;
+    var int i1 = 3;
+    print(i+i1);
+}

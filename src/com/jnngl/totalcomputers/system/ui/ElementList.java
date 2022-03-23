@@ -29,7 +29,7 @@ import java.util.List;
 /**
  * Selectable list of elements
  */
-public class ElementList {
+public class ElementList implements ComponentUI {
 
     private final List<String> entries;
     private int iOffset = 0;

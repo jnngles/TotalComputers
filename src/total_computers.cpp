@@ -91,6 +91,8 @@ WindowApplication::WindowApplication(jobject instance)
     }, {});
 }
 
+WindowApplication::~WindowApplication() {}
+
 void WindowApplication::Move(int x, int y) {
     jEnv->CallVoidMethod(METHOD(clsWindowApplication, 0), (jint)x, (jint)y);
 }

@@ -108,6 +108,7 @@ public abstract class GLWindow extends WindowApplication {
 
     @Override
     public void renderCanvas() {
+        if(!isInitialized()) return;
         renderGL();
 
         glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo[dma]);

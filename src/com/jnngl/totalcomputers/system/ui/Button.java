@@ -30,7 +30,7 @@ import java.util.ArrayList;
 /**
  * Button element
  */
-public class Button {
+public class Button implements ComponentUI {
 
     /**
      * Represents color of button

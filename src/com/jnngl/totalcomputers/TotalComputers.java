@@ -230,7 +230,8 @@ public class TotalComputers extends JavaPlugin implements Listener {
 
         final MapView map = Bukkit.createMap(loc.getWorld());
 
-        @SuppressWarnings("deprecation") ItemStack is = new ItemStack(Material.MAP, 1, map.getId()); // Information: Use of deprecated API
+        @SuppressWarnings("deprecation")
+        ItemStack is = new ItemStack(Material.MAP, 1, map.getId()); // Information: Use of deprecated API
 
         for(MapRenderer renderer : map.getRenderers())
             map.removeRenderer(renderer);
@@ -684,12 +685,20 @@ public class TotalComputers extends JavaPlugin implements Listener {
      * @param name Name of computer to remove
      */
     private void removeComputer(String name) {
+        boolean renderThreadFinished = false;
         List<MonitorPiece> monitor = monitors.get(name);
         for(MonitorPiece piece : monitor) {
             final MapView map = piece.mapView;
             final ItemFrame frame = piece.frame;
-            for(MapRenderer renderer : map.getRenderers())
+            for(MapRenderer renderer : map.getRenderers()) {
                 map.removeRenderer(renderer);
+                if(renderer instanceof TotalOS.Renderer r) {
+                    if(!renderThreadFinished) {
+                        r.getSystem().turnOff();
+                        renderThreadFinished = true;
+                    }
+                }
+            }
 
             interactiveTiles.remove(frame);
             frame.remove();
@@ -703,6 +712,7 @@ public class TotalComputers extends JavaPlugin implements Listener {
         registeredComputers.remove(name);
         computersPhysicalData.remove(name);
         monitors.remove(name);
+        if(!renderThreadFinished) System.err.println("Failed to finish render loop.");
     }
 
     /**

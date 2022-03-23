@@ -110,8 +110,30 @@ public class Terminal extends ConsoleApplication {
                 break;
             }
 
+            case "open": {
+                if(args.length > 0) {
+                    String filename = args[0];
+                    File file =new File(path, filename);
+                    if(!file.exists()) {
+                        putString("`"+filename+"'").putString(" does not exists.");
+                        break;
+                    }
+                    os.fs.executeFile(file);
+                } else putString("open <file>");
+                break;
+            }
+
             default: {
-                putString(name).putString(": command not found\n");
+                if(!os.fs.launchFromApplication("/sys/bin/"+name)
+                    && !os.fs.launchFromApplication("/sys/bin/"+name+".app")) {
+                    if(!os.fs.launchFromApplication("/usr/Applications"+name)
+                        && !os.fs.launchFromApplication("/sys/bin/"+name+".app")) {
+                        if(!os.fs.launchFromApplication(path.getPath()+"/"+name)
+                            && !os.fs.launchFromApplication("/sys/bin/"+name+".app")) {
+                            putString(name).putString(": command not found\n");
+                        }
+                    }
+                }
                 break;
             }
         }

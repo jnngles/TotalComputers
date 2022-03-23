@@ -160,7 +160,7 @@ void tc::app::ProcessInput(long long uid, int x, int y, tc::InteractType type) {
     browser[uid]->GetHost()->SendMouseClickEvent(
         _cef_mouse_event_t{ x, y, (uint32)cef_event_flags_t::EVENTFLAG_NONE },
         (CefBrowserHost::MouseButtonType)((int)type * 2), false, 1);
-    Sleep(2);
+    Sleep(5);
     browser[uid]->GetHost()->SendMouseClickEvent(
         _cef_mouse_event_t{ x, y, (uint32)cef_event_flags_t::EVENTFLAG_NONE },
         (CefBrowserHost::MouseButtonType)((int)type * 2), true, 1);

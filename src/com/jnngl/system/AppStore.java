@@ -250,7 +250,8 @@ public class AppStore extends WindowApplication {
                         installed.remove(app.uuid);
                         deleteDirectory(new File(os.fs.root()+"/usr/Applications/"+app.name+".app"));
                         renderCanvas();
-                        ApplicationHandler.removeTaskBarEntry(app.name);
+                        new File(os.fs.root()+"/usr/Desktop", app.name+".lnk").delete();
+                        ApplicationHandler.refreshDesktop();
                     } catch (IOException e) {
                         System.err.println("Failed to delete app.");
                     }
@@ -285,7 +286,10 @@ public class AppStore extends WindowApplication {
                                 Files.writeString(file.toPath(), Files.readString(file.toPath()) + "\n" + app.uuid);
                                 installed.add(app.uuid);
                                 new File(basePath + "/data.zip").delete();
-                                ApplicationHandler.addTaskBarEntry(app.name, basePath, app.image);
+                                File dst = new File(os.fs.root()+"/usr/Desktop", app.name+".lnk");
+                                dst.createNewFile();
+                                Files.writeString(dst.toPath(), basePath);
+                                ApplicationHandler.refreshDesktop();
                             }
                         } catch (IOException e) {
                             System.err.println("Failed to install app. (" + e.getClass().getSimpleName() + ")");

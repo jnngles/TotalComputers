@@ -27,7 +27,7 @@ import java.awt.*;
 /**
  * Text Field Component
  */
-public class Field {
+public class Field implements ComponentUI {
 
     private boolean isLocked;
     private int x, y, width, height;

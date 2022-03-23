@@ -43,6 +43,8 @@
     <NATIVE>
       <root url="file://$PROJECT_DIR$" />
     </NATIVE>
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/other_libs/powermock-mockito-1.4.8-full.jar!/" />
+    </SOURCES>
   </library>
 </component>

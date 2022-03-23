@@ -60,6 +60,8 @@ public abstract class WindowApplication extends Application {
     private int maxWidth, maxHeight;
     private boolean resizable;
 
+    private boolean initialized = false;
+
     private final List<ResizeEvent> resizeEvents;
     private final List<MoveEvent> moveEvents;
     private final List<MinimizeEvent> minimizeEvents;
@@ -98,6 +100,7 @@ public abstract class WindowApplication extends Application {
     protected void start() {
         ApplicationHandler.registerApplication(this);
         onStart();
+        initialized = true;
     }
 
     @Override
@@ -109,7 +112,11 @@ public abstract class WindowApplication extends Application {
         return false;
     }
 
-    public abstract void update();
+    public boolean isInitialized() {
+        return initialized;
+    }
+
+    protected abstract void update();
     protected abstract void render(Graphics2D g);
     public abstract void processInput(int x, int y, TotalComputers.InputInfo.InteractType type);
 
@@ -183,9 +190,14 @@ public abstract class WindowApplication extends Application {
     }
 
     public void renderCanvas() {
+        if(!initialized) return;
         Graphics2D graphics = canvas.createGraphics();
         render(graphics);
         graphics.dispose();
+    }
+
+    public void updateApplication() {
+        if(initialized) update();
     }
 
     public BufferedImage getCanvas() {

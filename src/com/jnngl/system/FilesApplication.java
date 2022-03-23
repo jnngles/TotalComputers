@@ -96,7 +96,7 @@ public class FilesApplication extends WindowApplication {
                         file = temp;
                     }
                     else {
-                        os.fs.executeFile(new File(dir));
+                        os.fs.executeFile(os.fs.toFile(dir));
                     }
                 }
                 contents.clear();

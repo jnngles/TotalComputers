@@ -25,10 +25,14 @@ import com.jnngl.totalcomputers.system.desktop.ApplicationHandler;
 import com.jnngl.totalcomputers.system.desktop.TaskBar;
 import com.jnngl.totalcomputers.system.desktop.Wallpaper;
 import com.jnngl.totalcomputers.system.desktop.WindowApplication;
+import com.jnngl.totalcomputers.system.overlays.Keyboard;
+import com.jnngl.totalcomputers.system.ui.ContextMenu;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -38,7 +42,7 @@ import java.util.ListIterator;
  */
 public class Desktop extends State {
 
-    private class DesktopIconInfo {
+    private static class DesktopIconInfo {
         int x;
         int y;
         int width;
@@ -57,10 +61,13 @@ public class Desktop extends State {
     private final Wallpaper wallpaper;
     private final Font uiFont;
 
-    private final BufferedImage desktop;
+    private BufferedImage desktop;
 
     private int selectedIconIndex = -1;
     private final List<DesktopIconInfo> icons;
+
+    private final ContextMenu contextMenu;
+    private ContextMenu fileMenu;
 
     public void updateDesktop() {
         Font font = os.baseFont.deriveFont((float) os.screenHeight/128*3);
@@ -72,9 +79,8 @@ public class Desktop extends State {
         if(files == null) return;
         selectedIconIndex = -1;
         icons.clear();
+        desktop = new BufferedImage(os.screenWidth, os.screenHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = desktop.createGraphics();
-        g.setColor(new Color(0, 0, 0, 0));
-        g.fillRect(0, 0, os.screenWidth, os.screenHeight);
         g.setColor(Color.BLACK);
         g.setFont(font);
         for(File file : files) {
@@ -134,11 +140,66 @@ public class Desktop extends State {
         greenX = yellowX+buttonSize+offset;
         titleX = greenX+buttonSize*2-offset;
         titleY = Utils.getFontMetrics(uiFont).getHeight()/2;
-        taskbar = new TaskBar(os);
+        taskbar = new TaskBar(os, uiFont);
         wallpaper = new Wallpaper(this);
         drawable = new ArrayList<>();
         icons = new ArrayList<>();
-        desktop = new BufferedImage(os.screenWidth, os.screenHeight, BufferedImage.TYPE_INT_ARGB);
+        contextMenu = new ContextMenu(new Rectangle(0, 0, os.screenWidth, os.screenHeight), uiFont);
+        contextMenu.addEntry("Create file", false, () ->
+                os.keyboard.invokeKeyboard(new Keyboard.KeyboardListener() {
+                    private String buffer = "";
+
+                    @Override
+                    public String keyTyped(String text, Keyboard.Keys key, Keyboard keyboard) {
+                        if(key == Keyboard.Keys.OK || key == Keyboard.Keys.ENTER) {
+                            os.keyboard.closeKeyboard();
+                            try {
+                                File file = new File(os.fs.root()+"/usr/Desktop", buffer);
+                                file.getParentFile().mkdirs();
+                                file.createNewFile();
+                            } catch (IOException e) {
+                                System.err.println("Failed to create new file.");
+                            }
+                            updateDesktop();
+                            return buffer;
+                        }
+                        if(key == Keyboard.Keys.BACKSPACE) {
+                            if(buffer.length() > 0) {
+                                buffer = buffer.substring(0, buffer.length()-1);
+                            }
+                        }
+                        if(key.text != null) {
+                            buffer += text;
+                        }
+                        return buffer;
+                    }
+                }, ""));
+        contextMenu.addEntry("Create folder", false, () ->
+                os.keyboard.invokeKeyboard(new Keyboard.KeyboardListener() {
+                    private String buffer = "";
+
+                    @Override
+                    public String keyTyped(String text, Keyboard.Keys key, Keyboard keyboard) {
+                        if(key == Keyboard.Keys.OK || key == Keyboard.Keys.ENTER) {
+                            if(buffer.endsWith(".app")) return buffer;
+                            new File(os.fs.root()+"/usr/Desktop", buffer).mkdirs();
+                            os.keyboard.closeKeyboard();
+                            updateDesktop();
+                            return buffer;
+                        }
+                        if(key == Keyboard.Keys.BACKSPACE) {
+                            if(buffer.length() > 0) {
+                                buffer = buffer.substring(0, buffer.length()-1);
+                            }
+                        }
+                        if(key.text != null) {
+                            buffer += text;
+                        }
+                        return buffer;
+                    }
+                }, ""));
+        contextMenu.addSeparator();
+        contextMenu.addEntry("Refresh", false, this::updateDesktop);
         updateDesktop();
         ApplicationHandler.init(this);
     }
@@ -148,7 +209,7 @@ public class Desktop extends State {
      */
     @Override
     public void update() {
-        for(WindowApplication application : drawable) application.update();
+        for(WindowApplication application : drawable) application.updateApplication();
     }
 
     /**
@@ -164,6 +225,8 @@ public class Desktop extends State {
             g.fillRoundRect(selected.x, selected.y, selected.width, selected.height, 4, 4);
         }
         g.drawImage(desktop, 0, 0, null);
+        contextMenu.render(g);
+        if(fileMenu != null) fileMenu.render(g);
         for(WindowApplication application : drawable) {
             if(application.isMinimized()) continue;
             g.setColor(Color.WHITE);
@@ -256,19 +319,95 @@ public class Desktop extends State {
                     }
                 }
             }
-        } else selectedIconIndex = -1;
+        } else {
+            selectedIconIndex = -1;
+            return;
+        }
         if(moveToTop != null) {
             drawable.remove(moveToTop);
             drawable.add(moveToTop);
         }
         if(!handled) {
-            for(DesktopIconInfo iconInfo : icons) {
-                if(x >= iconInfo.x && y >= iconInfo.y && x <= iconInfo.x+iconInfo.width && y <= iconInfo.y+iconInfo.height) {
-                    int pressed = icons.indexOf(iconInfo);
-                    if(selectedIconIndex == pressed) {
-                        os.fs.executeFile(iconInfo.file);
+            if(contextMenu.processInput(x, y, type)) {
+                if(fileMenu != null)
+                    fileMenu.close();
+            }
+            if(fileMenu != null) {
+                if(fileMenu.processInput(x, y, type)) return;
+            }
+            for (DesktopIconInfo iconInfo : icons) {
+                if (x >= iconInfo.x && y >= iconInfo.y && x <= iconInfo.x + iconInfo.width && y <= iconInfo.y + iconInfo.height) {
+                    if(type == TotalComputers.InputInfo.InteractType.LEFT_CLICK) {
+                        int pressed = icons.indexOf(iconInfo);
+                        if (selectedIconIndex == pressed) {
+                            os.fs.executeFile(iconInfo.file);
+                            selectedIconIndex = -1;
+                        } else selectedIconIndex = pressed;
+                    } else {
                         selectedIconIndex = -1;
-                    } else selectedIconIndex = pressed;
+                        contextMenu.close();
+                        fileMenu = new ContextMenu(uiFont);
+                        fileMenu.addEntry("Open", false, () -> os.fs.executeFile(iconInfo.file));
+                        fileMenu.addSeparator();
+                        fileMenu.addEntry("Create link", false, () -> {
+                            File target = new File(iconInfo.file.getAbsolutePath()+" (Link).lnk");
+                            try {
+                                target.createNewFile();
+                                String root = new File(os.fs.root()).getAbsolutePath();
+                                String localPath = iconInfo.file.getAbsolutePath()
+                                        .replaceFirst(root.replace("\\", "\\\\"), "")
+                                        .replace('\\', '/');
+                                if(!localPath.startsWith("/")) localPath = "/"+localPath;
+                                Files.writeString(target.toPath(), localPath);
+                            } catch (IOException e) {
+                                System.out.println("Failed to create link.");
+                            }
+                            updateDesktop();
+                        });
+                        fileMenu.addEntry("Rename", false, () ->
+                        os.keyboard.invokeKeyboard(new Keyboard.KeyboardListener() {
+                            private String buffer = iconInfo.file.getName();
+
+                            @Override
+                            public String keyTyped(String text, Keyboard.Keys key, Keyboard keyboard) {
+                                if(key == Keyboard.Keys.OK || key == Keyboard.Keys.ENTER) {
+                                    File dst = new File(iconInfo.file
+                                            .getParentFile()
+                                            .getAbsolutePath()
+                                            +"/"+buffer);
+                                    os.keyboard.closeKeyboard();
+                                    dst.getParentFile().mkdirs();
+                                    iconInfo.file.renameTo(dst);
+                                    updateDesktop();
+                                    return buffer;
+                                }
+                                if(key == Keyboard.Keys.BACKSPACE) {
+                                    if(buffer.length() > 0) {
+                                        buffer = buffer.substring(0, buffer.length()-1);
+                                    }
+                                }
+                                if(key.text != null) {
+                                    buffer += text;
+                                }
+                                return buffer;
+                            }
+                        }, iconInfo.file.getName()));
+                        fileMenu.addEntry("Delete", false, () -> {
+                            iconInfo.file.delete();
+                            updateDesktop();
+                        });
+                        fileMenu.addSeparator();
+                        fileMenu.addEntry("Add to taskbar", false, () -> {
+                            String root = new File(os.fs.root()).getAbsolutePath();
+                            String localPath = iconInfo.file.getAbsolutePath()
+                                    .replaceFirst(root.replace("\\", "\\\\"), "")
+                                    .replace('\\', '/');
+                            if(!localPath.startsWith("/")) localPath = "/"+localPath;
+                            ApplicationHandler.addTaskBarEntry(iconInfo.file.getName(), localPath,
+                                    os.fs.getIconForFile(iconInfo.file));
+                        });
+                        fileMenu.show(x, y);
+                    }
                     break;
                 }
             }

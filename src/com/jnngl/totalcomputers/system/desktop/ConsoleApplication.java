@@ -23,6 +23,8 @@ import com.jnngl.totalcomputers.system.TotalOS;
 import com.jnngl.totalcomputers.system.overlays.Keyboard;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 public abstract class ConsoleApplication extends WindowApplication {
@@ -95,7 +97,17 @@ public abstract class ConsoleApplication extends WindowApplication {
         y += metrics.getMaxAscent();
         int x = 3;
         g.setColor(textColor);
+        List<Character> printed = new ArrayList<>();
+        List<Character> toDel = null;
         for(char c : chars) {
+            if(y >= getHeight()) {
+                y = 3;
+                x = 3;
+                g.setColor(Color.BLACK);
+                g.fillRect(0, 0, getWidth(), getHeight());
+                g.setColor(Color.WHITE);
+                toDel = printed;
+            }
             if(c == '\n') {
                 y += metrics.getMaxAscent();
                 x = 3;
@@ -108,6 +120,8 @@ public abstract class ConsoleApplication extends WindowApplication {
                 x = 3+metrics.charWidth(' ');
             }
         }
+
+        if(toDel != null) chars.removeAll(toDel);
     }
 
     public boolean hasNext() {

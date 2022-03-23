@@ -38,7 +38,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -62,6 +64,8 @@ public class TotalOS {
         private final TotalOS os;
         private final TotalComputers.SelectionArea area;
 
+        private static Map<TotalOS, Boolean> completionMap;
+
         /**
          * Constructor
          * @param name Name of the computer
@@ -71,6 +75,7 @@ public class TotalOS {
          * @param area Physical data of the computer
          */
         public Renderer(String name, int id, TotalComputers plugin, TotalOS os, TotalComputers.SelectionArea area) {
+            if(completionMap == null) completionMap = new HashMap<>();
             this.name = name;
             this.id = id;
             this.plugin = plugin;
@@ -78,33 +83,47 @@ public class TotalOS {
             this.area = area;
         }
 
+        public TotalOS getSystem() { return os; }
+
         /**
          * Custom implementation of {@link org.bukkit.map.MapRenderer#render(MapView, MapCanvas, Player)} function.
          * @param map Destination map
          * @param canvas Map canvas
          * @param player Idk
          */
-        public void render(MapView map, MapCanvas canvas, Player player) {
+        public synchronized void render(MapView map, MapCanvas canvas, Player player) {
             int absY = (int)Math.floor((float)id / area.width());
             int absX = id - absY*area.width();
             absX *= 128; absY *= 128;
 
             List<TotalComputers.InputInfo> handledInputs = new ArrayList<>();
-            for(TotalComputers.InputInfo inputInfo : plugin.unhandledInputs) {
-                if(inputInfo.index().name().equals(name) && inputInfo.index().index() == id) {
-                    os.processTouch(absX+inputInfo.x(), absY+inputInfo.y(), inputInfo.interactType(), inputInfo.player().hasPermission("totalcomputers.admin"));
+            for (TotalComputers.InputInfo inputInfo : plugin.unhandledInputs) {
+                if (inputInfo.index().name().equals(name) && inputInfo.index().index() == id) {
+                    os.processTouch(absX + inputInfo.x(), absY + inputInfo.y(), inputInfo.interactType(), inputInfo.player().hasPermission("totalcomputers.admin"));
                     handledInputs.add(inputInfo);
                 }
             }
             plugin.unhandledInputs.removeAll(handledInputs);
 
-            if(id == 0) os.renderFrame();
+            if(os.renderQueue) return;
 
-            for(int x = 0; x < 128; x++) {
-                for(int y = 0; y < 128; y++) {
-                    canvas.setPixel(x, y, MapColor.matchColor(os.getColorAt(absX+x, absY+y)));
+            int finalAbsX = absX;
+            int finalAbsY = absY;
+            Thread renderThread = new Thread(() -> {
+                for(int x = 0; x < 128;x++) {
+                    for (int y = 0; y < 128; y++) {
+                        if(os.renderQueue) {
+                            continue;
+                        }
+                        canvas.setPixel(x, y, MapColor.matchColor(os.getColorAt(finalAbsX + x, finalAbsY + y)));
+                    }
                 }
-            }
+                if(id == os.screenWidth/128*os.screenHeight/128-1) {
+                    os.renderQueue = true;
+                }
+            });
+            renderThread.setPriority(Thread.MAX_PRIORITY);
+            renderThread.start();
         }
 
     }
@@ -132,6 +151,7 @@ public class TotalOS {
      * Screen
      */
     private final BufferedImage image;
+    private final Graphics2D imageGraphics;
 
     /**
      * Screen width
@@ -192,6 +212,16 @@ public class TotalOS {
      */
     private boolean hasAdminRights;
 
+    private boolean renderQueue = false;
+
+    private ScheduledExecutorService executor;
+
+    private List<Runnable> threads;
+
+    public void runInSystemThread(Runnable action) {
+        threads.add(action);
+    }
+
     /**
      * Constructor
      * @param widthPix Width of monitor in pixels
@@ -200,7 +230,9 @@ public class TotalOS {
      */
     public TotalOS(int widthPix, int heightPix, String name) {
         currentState = ComputerState.OFF;
+        threads = new ArrayList<>();
         image = new BufferedImage(widthPix, heightPix, BufferedImage.TYPE_INT_RGB);
+        imageGraphics = image.createGraphics();
         this.screenWidth = widthPix;
         this.screenHeight = heightPix;
         this.name = name;
@@ -211,20 +243,25 @@ public class TotalOS {
     /**
      * Renders frame into buffered image
      */
-    public void renderFrame() {
+    private void renderFrame() {
+        if(!renderQueue) return;
+        List<Runnable> finished = new ArrayList<>();
+        for(Runnable thread : threads) {
+            thread.run();
+            finished.add(thread);
+        }
+        threads.removeAll(finished);
         stateManager.update();
-        Graphics2D g = image.createGraphics();
-        g.setColor(Color.BLACK);
-        g.clearRect(0, 0, screenWidth, screenHeight);
-        g.clearRect(0, 0, screenWidth, screenHeight);
-        if(currentState == ComputerState.OFF) {
-            g.dispose();
+        imageGraphics.setColor(Color.BLACK);
+        imageGraphics.fillRect(0, 0, screenWidth, screenHeight);
+        if (currentState == ComputerState.OFF) {
+            imageGraphics.dispose();
             return;
         }
-        stateManager.render(g);
-        if(keyboard != null) keyboard.render(g);
-        if(information != null) information.render(g);
-        g.dispose();
+        stateManager.render(imageGraphics);
+        if (keyboard != null) keyboard.render(imageGraphics);
+        if (information != null) information.render(imageGraphics);
+        renderQueue = !renderQueue;
     }
 
     /**
@@ -244,7 +281,7 @@ public class TotalOS {
      * @param type See {@link com.jnngl.totalcomputers.TotalComputers.InputInfo.InteractType}
      * @param adminRights Whether the player have administration rights or not
      */
-    public void processTouch(int x, int y, TotalComputers.InputInfo.InteractType type, boolean adminRights) {
+    private void processTouch(int x, int y, TotalComputers.InputInfo.InteractType type, boolean adminRights) {
         if(x >= screenWidth || y >= screenHeight) return;
         hasAdminRights = adminRights;
         if(currentState == ComputerState.OFF) {
@@ -279,6 +316,8 @@ public class TotalOS {
         firstRun = false;
         keyboard = null;
         information = null;
+        if(executor != null)
+            executor.shutdown();
 
         stateManager.setState(null);
     }
@@ -311,9 +350,11 @@ public class TotalOS {
         if(!firstRun) loadDataFromFileSystem();
         fs.loadResources();
 
-//        stateManager.setState(new SplashScreen(stateManager, this));
-        stateManager.setState(new Desktop(stateManager, this)); // For testing
+        stateManager.setState(new SplashScreen(stateManager, this));
+//        stateManager.setState(new Desktop(stateManager, this)); // For testing
 
+        executor = Executors.newScheduledThreadPool(1);
+        executor.scheduleAtFixedRate(this::renderFrame, 0, 1000/40, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -365,7 +406,7 @@ public class TotalOS {
          */
         public static void main(String[] args) {
             JFrame jf = new JFrame("Test");
-            jf.setSize(8*128, 6*128);
+            jf.setSize(4*128, 3*128);
             jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             jf.setUndecorated(true);
             jf.setLocationRelativeTo(null);
@@ -377,7 +418,9 @@ public class TotalOS {
             jf.setVisible(true);
 
             ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-            executor.scheduleAtFixedRate(jf::repaint, 0, 1000/20, TimeUnit.MILLISECONDS);
+            executor.scheduleAtFixedRate(() -> {
+                if(!test.os.renderQueue) jf.repaint();
+            }, 0, 1000/60, TimeUnit.MILLISECONDS);
         }
 
         /**
@@ -386,11 +429,11 @@ public class TotalOS {
          */
         @Override
         public void paint(Graphics g) {
-            os.renderFrame();
             Graphics2D g2D = (Graphics2D) g;
             g2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
             g2D.drawImage(os.image, 0, 0, null);
             g2D.dispose();
+            os.renderQueue = true;
         }
 
         /**

@@ -118,7 +118,7 @@ public class FileSystem {
                 Files.writeString(this.wallpaper.toPath(), "/res/system/wallpaper.png");
                 Files.writeString(this.associations.toPath(), "png,jpg: /sys/bin/ImageViewer.app");
             } catch (IOException e) {
-                e.printStackTrace();
+                System.err.println("Failed to init file system. (IOException)");
             }
         } else firstRun = false;
     }
@@ -130,7 +130,7 @@ public class FileSystem {
         try {
             new File(rootfs.getPath()+"/init.flag").createNewFile();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Failed to access file system");
         }
     }
 
@@ -143,7 +143,7 @@ public class FileSystem {
             if(locale instanceof Localization.English) Files.writeString(this.locale.toPath(), "en-US$eof");
             else if(locale instanceof Localization.Russian) Files.writeString(this.locale.toPath(), "ru-RU$eof");
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Failed to access file system");
         }
     }
 
@@ -159,7 +159,7 @@ public class FileSystem {
             if(locale.equals("ru-RU")) return new Localization.Russian();
             System.out.print("Failed to load localization. English locale will be used.");
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Failed to read file.");
         }
         return new Localization.English();
     }
@@ -172,7 +172,7 @@ public class FileSystem {
         try {
             Files.writeString(this.account.toPath(), account.name+"#"+account.passwordHash+"#"+account.usePassword+"#eof");
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Failed to write file.");
         }
     }
 
@@ -186,7 +186,7 @@ public class FileSystem {
             String[] parts = contents.split("#");
             return new Account(parts[0], parts[1], Boolean.parseBoolean(parts[2]));
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Failed to read account info.");
         }
         return null;
     }
@@ -195,7 +195,7 @@ public class FileSystem {
         try {
             Files.writeString(this.wallpaper.toPath(), path);
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Failed to change wallpaper.");
         }
     }
 
@@ -233,9 +233,10 @@ public class FileSystem {
 
     public void executeFile(File file) { executeFileI(file, 10); }
     private void executeFileI(File file, int depth) {
+        if(file == null) return;
         if(file.isDirectory()) {
             if(file.getName().endsWith(".app")) {
-                launchFromApplication(file.getPath().replace(new File(".").getAbsolutePath(), "").replace("\\", "/"));
+                launchFromApplication(file);
                 return;
             }
             launchFromApplication("/sys/bin/Files.app", file.getPath());
@@ -335,7 +336,7 @@ public class FileSystem {
         return result;
     }
 
-    public void launchApplication(String Rpath, String className, String... args) {
+    public boolean launchApplication(String Rpath, String className, String... args) {
         URL url;
         String _path;
         if(Rpath.startsWith("/")) _path = Rpath.substring(1);
@@ -352,7 +353,7 @@ public class FileSystem {
 
                 if(!(new File(root()+"/usr/Applications/"+appName+".app/application.jar").exists())) {
                     NativeWindowApplication.main(nArgs);
-                    return;
+                    return true;
                 }
 
                 String clsName = parts[1].trim();
@@ -366,8 +367,9 @@ public class FileSystem {
                 main.invoke(null, (Object) nArgs);
             } catch (IllegalAccessException | InvocationTargetException | ClassNotFoundException | NoSuchMethodException | MalformedURLException e) {
                 System.err.println("Failed to launch application.");
+                return false;
             }
-            return;
+            return true;
         }
         try { // Try to load from jar
             URLClassLoader child = new URLClassLoader(
@@ -380,7 +382,7 @@ public class FileSystem {
             nArgs[0] = path;
             System.arraycopy(args, 0, nArgs, 1, args.length);
             main.invoke(null, (Object) nArgs);
-            return;
+            return true;
         } catch (IOException | NoSuchMethodException | ClassNotFoundException | IllegalAccessException | InvocationTargetException e) {
             try { // Try to load from file system
                 File file = new File(rootfs.getPath()+"/"+_path);
@@ -393,7 +395,7 @@ public class FileSystem {
                     url = file.toURI().toURL();
                 } catch (IOException ex) { // Failed to load =(
                     System.err.println("Failed to launch application.");
-                    return;
+                    return false;
                 }
             }
         }
@@ -405,8 +407,10 @@ public class FileSystem {
             nArgs[0] = path;
             System.arraycopy(args, 0, nArgs, 1, args.length);
             main.invoke(null, (Object) nArgs);
+            return true;
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
+            System.err.println("Failed to access application using Java Reflection.");
+            return false;
         }
     }
 
@@ -422,7 +426,9 @@ public class FileSystem {
                 else name = line;
                 if(name != null && path != null) {
                     BufferedImage maybeIcon = loadImage(path+"/icon.png");
-                    links.add(new TaskBarLink(os, name, path, maybeIcon == null? getResourceImage("default-icon") : maybeIcon));
+                    if(maybeIcon == null) maybeIcon = getIconForFile(toFile(path));
+                    links.add(new TaskBarLink(os, name, path,
+                            maybeIcon == null? getResourceImage("default-icon") : maybeIcon));
                     name = null;
                     path = null;
                 }
@@ -433,8 +439,21 @@ public class FileSystem {
         }
     }
 
-    public void launchFromApplication(String path, String... args) {
-        launchApplication(path, readFile(path + "/application"), args);
+    public boolean launchFromApplication(File app, String... args) {
+        File dataFile = new File(app, "application");
+        if(!dataFile.exists()) return false;
+        return launchApplication(app.getPath(), readFile(dataFile.getPath()), args);
+    }
+
+    public boolean launchFromApplication(String path, String... args) {
+        String data = path + "/application";
+        File dataFile = toFile(data);
+        String contents = null;
+        if(dataFile == null || !dataFile.exists()) {
+            contents = readFile(data);
+        }
+        if(contents == null) return false;
+        return launchApplication(path, contents, args);
     }
 
     public String readFile(String path) {
@@ -452,7 +471,7 @@ public class FileSystem {
                 try {
                     inputStream = new FileInputStream(_path);
                 } catch (FileNotFoundException e) {
-                    e.printStackTrace();
+                    System.err.println("Failed to access file.");
                     return null;
                 }
             }
@@ -460,7 +479,7 @@ public class FileSystem {
         try {
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Failed to read bytes.");
             return null;
         }
     }
@@ -479,7 +498,7 @@ public class FileSystem {
             if(!file.exists()) {
                 file = new File(_path);
                 if(!file.exists()) {
-                    new IOException("Failed to find file.").printStackTrace();
+                    System.err.println("Failed to find file.");
                     return null;
                 }
             }
