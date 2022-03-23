@@ -527,6 +527,19 @@ public class FileSystem {
         }
     }
 
+    public void createAssociation(String programPath, String... extensions) {
+        StringBuilder result = new StringBuilder();
+        for(String ext : extensions) result.append(ext).append(",");
+        result = new StringBuilder(result.substring(0, result.length() - 1));
+        result.append("\n");
+        try {
+            result.append(Files.readString(associations.toPath()));
+            Files.writeString(associations.toPath(), result.toString());
+        } catch (IOException e) {
+            System.err.println("Failed to create new association.");
+        }
+    }
+
     public String root() {
         return rootfs.getPath();
     }

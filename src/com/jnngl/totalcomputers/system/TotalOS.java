@@ -51,6 +51,14 @@ import java.util.concurrent.TimeUnit;
 public class TotalOS {
 
     /**
+     * if application
+     * @return API version
+     */
+    public static int getApiVersion() {
+        return 1;
+    }
+
+    /**
      * Simple map renderer.
      * <p>
      * Draws image to screen and handles input.
