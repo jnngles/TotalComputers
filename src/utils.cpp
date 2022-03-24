@@ -58,7 +58,7 @@ short* FromJShortArray(int* size, jshortArray jarr) {
     return tc::jEnv->GetShortArrayElements(jarr, 0);
 }
 
-long long* FromJLongArray(int* size, jlongArray jarr) {
+jlong* FromJLongArray(int* size, jlongArray jarr) {
     size[0] = tc::jEnv->GetArrayLength(jarr);
     return tc::jEnv->GetLongArrayElements(jarr, 0);
 }
@@ -120,7 +120,7 @@ jshortArray ToJShortArray(short* arr, int arrc) {
     return jarr;
 }
 
-jlongArray ToJLongArray(long long* arr, int arrc) {
+jlongArray ToJLongArray(jlong* arr, int arrc) {
     jlongArray jarr = tc::jEnv->NewLongArray(arrc);
     tc::jEnv->SetLongArrayRegion(jarr, 0, arrc, arr);
     return jarr;

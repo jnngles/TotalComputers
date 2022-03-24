@@ -48,6 +48,7 @@
         <element id="dir-copy" path="$PROJECT_DIR$/sys" />
       </element>
       <element id="file-copy" path="$PROJECT_DIR$/FreeSans.ttf" />
+      <element id="file-copy" path="$PROJECT_DIR$/libtotal_computers.so" />
     </root>
   </artifact>
 </component>

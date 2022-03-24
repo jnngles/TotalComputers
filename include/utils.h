@@ -32,7 +32,7 @@ double* FromJDoubleArray(int* size, jdoubleArray jarr);
 char* FromJCharArray(int* size, jcharArray jarr);
 signed char* FromJByteArray(int* size, jbyteArray jarr);
 short* FromJShortArray(int* size, jshortArray jarr);
-long long* FromJLongArray(int* size, jlongArray jarr);
+jlong* FromJLongArray(int* size, jlongArray jarr);
 bool* FromJBooleanArray(int* size, jbooleanArray jarr);
 char** FromJStringArray(int* size, jobjectArray jarr);
 template<typename T> inline T* FromJObjectArray(int* size, jobjectArray jarr) {
@@ -51,7 +51,7 @@ jdoubleArray ToJDoubleArray(double* arr, int arrc);
 jcharArray ToJCharArray(const char* arr, int arrc);
 jbyteArray ToJByteArray(signed char* arr, int arrc);
 jshortArray ToJShortArray(short* arr, int arrc);
-jlongArray ToJLongArray(long long* arr, int arrc);
+jlongArray ToJLongArray(jlong* arr, int arrc);
 jbooleanArray ToJBooleanArray(bool* arr, int arrc);
 jobjectArray ToJStringArray(const char** arr, int arrc);
 template<typename T> inline jobjectArray ToJObjectArray(T* arr, int arrc) {
