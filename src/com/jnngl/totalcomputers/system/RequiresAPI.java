@@ -16,11 +16,17 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jnngl.tqlang;
+package com.jnngl.totalcomputers.system;
 
-public class Parameter {
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    public Type type;
-    public String name;
-
+@RequiresAPI(apiLevel = 2)
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.FIELD, ElementType.PACKAGE, ElementType.ANNOTATION_TYPE,
+        ElementType.RECORD_COMPONENT, ElementType.CONSTRUCTOR, ElementType.TYPE})
+public @interface RequiresAPI {
+    int apiLevel();
 }

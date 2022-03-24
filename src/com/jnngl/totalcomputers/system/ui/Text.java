@@ -31,6 +31,7 @@ public class Text {
     private Font font;
     private Color color;
     private String text;
+    protected int boundsWidth, boundsHeight;
 
     /**
      * Constructor
@@ -71,7 +72,8 @@ public class Text {
     public void render(Graphics2D g) {
         g.setColor(color);
         g.setFont(font);
-        int height = g.getFontMetrics().getHeight();
+        FontMetrics metrics = g.getFontMetrics();
+        int height = metrics.getHeight();
         int y = this.y-height;
         for (String line : text.split("\n"))
             g.drawString(line, x, y += height);
@@ -113,6 +115,14 @@ public class Text {
                 formatted.append(currentLine);
             }
             this.text = formatted.toString();
+        }
+        FontMetrics metrics = Utils.getFontMetrics(font);
+        boundsHeight = 0;
+        boundsWidth = 0;
+        for (String _line : text.split("\n")) {
+            int strWidth = metrics.stringWidth(_line);
+            boundsWidth = Math.max(boundsWidth, strWidth);
+            boundsHeight += metrics.getHeight();
         }
     }
 

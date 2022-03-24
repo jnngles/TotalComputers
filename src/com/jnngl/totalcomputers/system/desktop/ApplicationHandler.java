@@ -18,10 +18,13 @@
 
 package com.jnngl.totalcomputers.system.desktop;
 
+import com.jnngl.totalcomputers.system.RequiresAPI;
 import com.jnngl.totalcomputers.system.TotalOS;
+import com.jnngl.totalcomputers.system.overlays.Information;
 import com.jnngl.totalcomputers.system.states.Desktop;
 
 import java.awt.image.BufferedImage;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Comparator;
@@ -48,8 +51,21 @@ public class ApplicationHandler {
         if(application instanceof WindowApplication) desktop.drawable.remove((WindowApplication) application);
     }
 
+    private static boolean checkApiLevel(Class<?> cls) {
+        RequiresAPI api;
+        if((api = cls.getAnnotation(RequiresAPI.class)) != null) {
+            if(api.apiLevel() > TotalOS.getApiVersion()) {
+                desktop.getOS().information.displayMessage(Information.Type.ERROR,
+                        "Application requires API "+api.apiLevel()+" version or above. Update plugin.", () -> {});
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static void open(Class<? extends Application> cls, String path) {
         if(desktop == null) return;
+        if(!checkApiLevel(cls)) return;
         desktop.getOS().runInSystemThread(() -> {
             try {
                 Constructor<? extends Application> constructor = cls.getConstructor(TotalOS.class, String.class);
@@ -65,6 +81,7 @@ public class ApplicationHandler {
 
     public static void open(Class<? extends Application> cls, String path, String[] args) {
         if(desktop == null) return;
+        if(!checkApiLevel(cls)) return;
         desktop.getOS().runInSystemThread(() -> {
             try {
                 Constructor<? extends Application> constructor = cls.getConstructor(TotalOS.class, String.class, String[].class);

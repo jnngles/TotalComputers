@@ -117,7 +117,7 @@ public class AppStore extends WindowApplication {
         installing = new ArrayList<>();
         buttons = new ArrayList<>();
         w = (int) (os.screenWidth * 0.1f); h = (int) (os.screenHeight * 0.025f);
-        uiFont  = os.baseFont.deriveFont((float) os.screenHeight/128*3);
+        uiFont = os.baseFont.deriveFont((float) os.screenHeight/128*3);
         search = new Field(0, 0, getWidth()-(int) (os.screenWidth * 0.1f), (int)(h*1.5f), uiFont, "", os.localization.search(), os.keyboard);
         searchBt = new Button(Button.ButtonColor.BLUE, search.getWidth(), 0, (int) (os.screenWidth * 0.1f), search.getHeight(), uiFont, os.localization.search());
         up = new Button(Button.ButtonColor.BLUE, getWidth()-search.getHeight(), search.getHeight(), search.getHeight(), search.getHeight(), uiFont, "^");
