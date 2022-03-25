@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="WebBootstrap">
-    <output-path>$PROJECT_DIR$/rootfs/test/usr/Applications/Web Browser.app</output-path>
-    <root id="archive" name="application.jar">
-      <element id="module-output" name="TotalComputers" />
-    </root>
-  </artifact>
-</component>

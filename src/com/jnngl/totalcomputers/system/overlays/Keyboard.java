@@ -624,7 +624,7 @@ public class Keyboard extends Overlay {
      * Handles input
      * @param x X coordinate of the touch
      * @param y Y coordinate of the touch
-     * @param type See {@link com.jnngl.totalcomputers.TotalComputers.InputInfo.InteractType}
+     * @param type See {@link TotalComputers.InputInfo.InteractType}
      */
     public void processInput(int x, int y, TotalComputers.InputInfo.InteractType type) {
         if(!invoked) return;

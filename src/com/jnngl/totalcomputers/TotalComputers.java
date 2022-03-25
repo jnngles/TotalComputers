@@ -57,6 +57,26 @@ public class TotalComputers extends JavaPlugin implements Listener {
     /* *************** CODE SECTION: RECORDS, ENUMS *************** */
     // Contains useful records and enums.
 
+    public record InputInfo(TotalComputers.MonitorPieceIndex index, int x, int y, InteractType interactType,
+                            Player player) {
+
+        /**
+         * Type of interaction with the computer
+         */
+        public enum InteractType {
+            /**
+             * Left click action
+             */
+            LEFT_CLICK,
+
+            /**
+             * Right click action
+             */
+            RIGHT_CLICK
+        }
+
+    }
+
     /**
      * Describes physical data of computer
      */
@@ -166,28 +186,6 @@ public class TotalComputers extends JavaPlugin implements Listener {
      * Information about part of the computer
      */
     public static record MonitorPieceIndex(String name, int index) {}
-
-    /**
-     * Information about input
-     */
-    public static record InputInfo(MonitorPieceIndex index, int x, int y, InteractType interactType, Player player) {
-
-        /**
-         * Type of interaction with the computer
-         */
-        public enum InteractType {
-            /**
-             * Left click action
-             */
-            LEFT_CLICK,
-
-            /**
-             * Right click action
-             */
-            RIGHT_CLICK
-        }
-
-    }
 
     /* *************** CODE SECTION: FIELDS *************** */
 
@@ -705,7 +703,7 @@ public class TotalComputers extends JavaPlugin implements Listener {
         }
         List<InputInfo> toRemove = new ArrayList<>();
         for(InputInfo inputInfo : unhandledInputs) {
-            if(inputInfo.index.name.equals(name))
+            if(inputInfo.index().name.equals(name))
                 toRemove.add(inputInfo);
         }
         unhandledInputs.removeAll(toRemove);

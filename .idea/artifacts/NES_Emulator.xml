@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="NES Emulator">
-    <output-path>$PROJECT_DIR$/rootfs/test/usr/Applications/NES Emulator.app</output-path>
-    <root id="archive" name="application.jar">
-      <element id="module-output" name="TotalComputers" />
-    </root>
-  </artifact>
-</component>

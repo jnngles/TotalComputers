@@ -20,7 +20,6 @@ package com.jnngl.totalcomputers.system;
 
 import com.jnngl.system.NativeWindowApplication;
 import com.jnngl.totalcomputers.system.desktop.TaskBarLink;
-import org.cef.OS;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -79,8 +78,9 @@ public class FileSystem {
 
         try {
             String libName = null;
-            if(OS.isWindows()) libName = "total_computers.dll";
-            else if(OS.isLinux()) libName = "libtotal_computers.so";
+            String os_name = System.getProperty("os.name").toLowerCase();
+            if(os_name.startsWith("windows")) libName = "total_computers.dll";
+            else if(os_name.startsWith("linux")) libName = "libtotal_computers.so";
             URL url = FileSystem.class.getResource("/" + libName);
             File tmpDir = Files.createTempDirectory("libs").toFile();
             File nativeLibTmpFile = new File(tmpDir, libName);

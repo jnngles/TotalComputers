@@ -71,7 +71,7 @@ public class StateManager {
      * Process input if state is present
      * @param x X coordinate of touch
      * @param y Y coordinate of touch
-     * @param type See {@link com.jnngl.totalcomputers.TotalComputers.InputInfo.InteractType}
+     * @param type See {@link TotalComputers.InputInfo.InteractType}
      */
     public void processInput(int x, int y, TotalComputers.InputInfo.InteractType type) {
         if(currentState != null)

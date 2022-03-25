@@ -51,7 +51,7 @@ public abstract class Overlay {
      * Abstraction for input handling
      * @param x X coordinate of the touch
      * @param y Y coordinate of the touch
-     * @param type See {@link com.jnngl.totalcomputers.TotalComputers.InputInfo.InteractType}
+     * @param type See {@link TotalComputers.InputInfo.InteractType}
      */
     public abstract void processInput(int x, int y, TotalComputers.InputInfo.InteractType type);
 

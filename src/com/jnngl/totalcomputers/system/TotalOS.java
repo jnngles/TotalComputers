@@ -22,7 +22,6 @@ import com.jnngl.totalcomputers.MapColor;
 import com.jnngl.totalcomputers.TotalComputers;
 import com.jnngl.totalcomputers.system.overlays.Information;
 import com.jnngl.totalcomputers.system.overlays.Keyboard;
-import com.jnngl.totalcomputers.system.states.Desktop;
 import com.jnngl.totalcomputers.system.states.SplashScreen;
 import com.jnngl.totalcomputers.system.states.StateManager;
 import org.bukkit.entity.Player;
@@ -219,7 +218,7 @@ public class TotalOS {
      */
     private boolean hasAdminRights;
 
-    private boolean renderQueue = false;
+    public boolean renderQueue = false;
 
     private ScheduledExecutorService executor;
 
@@ -245,6 +244,10 @@ public class TotalOS {
         this.name = name;
         hasAdminRights = false;
         stateManager = new StateManager();
+    }
+
+    public BufferedImage getScreen() {
+        return image;
     }
 
     /**
@@ -285,10 +288,10 @@ public class TotalOS {
      * Handles input.
      * @param x X coordinate of the touch position
      * @param y Y coordinate of the touch position
-     * @param type See {@link com.jnngl.totalcomputers.TotalComputers.InputInfo.InteractType}
+     * @param type See {@link TotalComputers.InputInfo.InteractType}
      * @param adminRights Whether the player have administration rights or not
      */
-    private void processTouch(int x, int y, TotalComputers.InputInfo.InteractType type, boolean adminRights) {
+    public void processTouch(int x, int y, TotalComputers.InputInfo.InteractType type, boolean adminRights) {
         if(x >= screenWidth || y >= screenHeight) return;
         hasAdminRights = adminRights;
         if(currentState == ComputerState.OFF) {

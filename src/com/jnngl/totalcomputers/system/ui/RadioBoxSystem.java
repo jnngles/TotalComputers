@@ -83,7 +83,7 @@ public class RadioBoxSystem implements ComponentUI {
      * Handles input
      * @param x X coordinate
      * @param y Y coordinate
-     * @param type See {@link com.jnngl.totalcomputers.TotalComputers.InputInfo.InteractType}
+     * @param type See {@link TotalComputers.InputInfo.InteractType}
      */
     public void processInput(int x, int y, TotalComputers.InputInfo.InteractType type) {
         if(type != TotalComputers.InputInfo.InteractType.LEFT_CLICK) return;
