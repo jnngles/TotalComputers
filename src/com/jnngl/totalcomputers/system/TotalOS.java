@@ -24,8 +24,10 @@ import com.jnngl.totalcomputers.system.overlays.Information;
 import com.jnngl.totalcomputers.system.overlays.Keyboard;
 import com.jnngl.totalcomputers.system.states.SplashScreen;
 import com.jnngl.totalcomputers.system.states.StateManager;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.map.MapCanvas;
+import org.bukkit.map.MapCursor;
 import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
 
@@ -91,6 +93,14 @@ public class TotalOS {
 
         public TotalOS getSystem() { return os; }
 
+        private static BufferedImage copyImage(BufferedImage source){
+            BufferedImage b = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
+            Graphics g = b.getGraphics();
+            g.drawImage(source, 0, 0, null);
+            g.dispose();
+            return b;
+        }
+
         /**
          * Custom implementation of {@link org.bukkit.map.MapRenderer#render(MapView, MapCanvas, Player)} function.
          * @param map Destination map
@@ -111,19 +121,11 @@ public class TotalOS {
             }
             plugin.unhandledInputs.removeAll(handledInputs);
 
-            if(os.renderQueue) return;
-
             int finalAbsX = absX;
             int finalAbsY = absY;
             Thread renderThread = new Thread(() -> {
-                for(int x = 0; x < 128;x++) {
-                    for (int y = 0; y < 128; y++) {
-                        if(os.renderQueue) {
-                            continue;
-                        }
-                        canvas.setPixel(x, y, MapColor.matchColor(os.getColorAt(finalAbsX + x, finalAbsY + y)));
-                    }
-                }
+                if(os.renderQueue) return;
+                canvas.drawImage(0, 0, copyImage(os.getScreen().getSubimage(finalAbsX, finalAbsY, 128, 128)));
                 if(id == os.screenWidth/128*os.screenHeight/128-1) {
                     os.renderQueue = true;
                 }
@@ -223,6 +225,8 @@ public class TotalOS {
     private ScheduledExecutorService executor;
 
     private List<Runnable> threads;
+    public MapCanvas target;
+    public int x, y;
 
     public void runInSystemThread(Runnable action) {
         threads.add(action);
@@ -253,7 +257,7 @@ public class TotalOS {
     /**
      * Renders frame into buffered image
      */
-    private void renderFrame() {
+    public void renderFrame() {
         if(!renderQueue) return;
         List<Runnable> finished = new ArrayList<>();
         for(Runnable thread : threads) {
@@ -271,7 +275,7 @@ public class TotalOS {
         stateManager.render(imageGraphics);
         if (keyboard != null) keyboard.render(imageGraphics);
         if (information != null) information.render(imageGraphics);
-        renderQueue = !renderQueue;
+        renderQueue = false;
     }
 
     /**
@@ -364,7 +368,7 @@ public class TotalOS {
 //        stateManager.setState(new Desktop(stateManager, this)); // For testing
 
         executor = Executors.newScheduledThreadPool(1);
-        executor.scheduleAtFixedRate(this::renderFrame, 0, 1000/40, TimeUnit.MILLISECONDS);
+        executor.scheduleAtFixedRate(this::renderFrame, 0, 1000/20, TimeUnit.MILLISECONDS);
     }
 
     /**

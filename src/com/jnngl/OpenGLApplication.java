@@ -116,7 +116,7 @@ public class OpenGLApplication extends GLWindow {
     }
 
     @Override
-    protected void render(Graphics2D unused) {}
+    public void render(Graphics2D unused) {}
 
     @Override
     public void processInput(int x, int y, TotalComputers.InputInfo.InteractType type) {

@@ -27,6 +27,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.awt.image.WritableRaster;
 import java.nio.IntBuffer;
+import java.rmi.RemoteException;
 
 import static org.lwjgl.opengl.GL33.*;
 
@@ -47,7 +48,7 @@ public abstract class GLWindow extends WindowApplication {
         renderCanvas();
     }
 
-    public GLWindow(TotalOS os, String title, int x, int y, int width, int height, String path) {
+    public GLWindow(TotalOS os, String title, int x, int y, int width, int height, String path) throws RemoteException {
         super(path, os, title, x, y, width, height);
         init(width, height, title);
         start();

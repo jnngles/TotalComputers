@@ -77,7 +77,7 @@ public class WebBrowserBootstrapV2 extends WindowApplication {
     }
 
     @Override
-    protected void render(Graphics2D g) {
+    public void render(Graphics2D g) {
         int[] pixels = GetPixels(nativeHandle);
         for(int x = 0; x < getWidth(); x++) {
             for(int y = 0; y < getHeight(); y++) {

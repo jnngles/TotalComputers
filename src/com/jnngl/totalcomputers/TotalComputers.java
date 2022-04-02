@@ -34,17 +34,25 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -192,7 +200,7 @@ public class TotalComputers extends JavaPlugin implements Listener {
     private final static String replyPrefix = ChatColor.GOLD + "[TotalComputers] " + ChatColor.RESET;
     private Logger logger;
     private ConfigManager configManager;
-    private FileConfiguration config, computers;
+    private FileConfiguration config, computers, players;
     private Map<String, List<MonitorPiece>> monitors;
     private Map<ItemFrame, MonitorPieceIndex> interactiveTiles;
     /** Unhandled touch inputs */ public List<InputInfo> unhandledInputs;
@@ -200,6 +208,9 @@ public class TotalComputers extends JavaPlugin implements Listener {
     private Map<Player, SelectionArea> areas;
     private List<String> registeredComputers;
     private Map<String, SelectionArea> computersPhysicalData;
+    private NamespacedKey recipe = null;
+    private boolean is1_8 = false;
+    private boolean isLegacy = false;
 
     /* *************** CODE SECTION: INITIALIZATION *************** */
 
@@ -210,6 +221,7 @@ public class TotalComputers extends JavaPlugin implements Listener {
         if(configManager == null) return;
         config = configManager.getFileConfig("config.yml");
         computers = configManager.getFileConfig("computers.yml");
+        players = configManager.getFileConfig("players.yml");
     }
 
     /**
@@ -227,13 +239,37 @@ public class TotalComputers extends JavaPlugin implements Listener {
         Location loc = new Location(area.firstPos.getWorld(), x1, y1, z1).add(displacement);
 
         final MapView map = Bukkit.createMap(loc.getWorld());
+        map.setScale(MapView.Scale.FARTHEST);
 
-        @SuppressWarnings("deprecation")
-        ItemStack is = new ItemStack(Material.MAP, 1, map.getId()); // Information: Use of deprecated API
+        Material material;
+        try {
+            Field filledMap = Material.class.getDeclaredField("FILLED_MAP");
+            filledMap.setAccessible(true);
+            material = (Material) filledMap.get(null);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            material = Material.MAP;
+        }
+        ItemStack is;
+        if(isLegacy) is = new ItemStack(material, 1, (short) map.getId());
+        else is = new ItemStack(material, 1);
 
-        for(MapRenderer renderer : map.getRenderers())
-            map.removeRenderer(renderer);
-        map.addRenderer(new TotalOS.Renderer(name, i[0], this, os, area));
+        final MapRenderer osRenderer = new TotalOS.Renderer(name, i[0], this, os, area);
+
+//        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            map.getRenderers().clear();
+            map.addRenderer(osRenderer);
+//        }, 1, 1);
+
+        if(!isLegacy) {
+            try {
+                MapMeta meta = (MapMeta) is.getItemMeta();
+                Method setMapId = MapMeta.class.getMethod("setMapId", int.class);
+                setMapId.invoke(meta, map.getId());
+                is.setItemMeta(meta);
+            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
+                System.err.println("Failed to assign map id");
+            }
+        }
 
         ItemFrame f = null;
         try {
@@ -347,14 +383,116 @@ public class TotalComputers extends JavaPlugin implements Listener {
     public void onEnable() {
         logger = getLogger();
         configManager = new ConfigManager(this);
-        configManager.loadConfigFiles(new ConfigManager.ConfigPath("config.yml", null, "config.yml"), new ConfigManager.ConfigPath("computers.yml", null, "computers.yml"));
+        configManager.loadConfigFiles(
+                new ConfigManager.ConfigPath("config.yml", null, "config.yml"),
+                new ConfigManager.ConfigPath("computers.yml", null, "computers.yml"),
+                new ConfigManager.ConfigPath("players.yml", null, "players.yml"));
+        String ver = Bukkit.getBukkitVersion();
+        is1_8 = ver.contains("1.8");
+        isLegacy = is1_8 || ver.contains("1.9") || ver.contains("1.10") || ver.contains("1.11") || ver.contains("1.12");
         loadConfigs();
-        if(!config.isSet("firstRun")) {
-            config.set("selection", true);
-            config.set("firstRun", false);
-        }
+        if(!config.isSet("selection")) config.set("selection", true);
+        if(!config.isSet("allowCraft")) config.set("allowCraft", false);
+        if(!config.isSet("craft.row1")) config.set("craft.row1", "   ");
+        if(!config.isSet("craft.row2")) config.set("craft.row2", "   ");
+        if(!config.isSet("craft.row3")) config.set("craft.row3", "   ");
+        if(!config.isSet("craft.ingredients")) config.set("craft.ingredients", new ArrayList<String>());
         configManager.saveAllConfigs(true);
         loadComputers();
+
+        if(config.getBoolean("allowCraft")) {
+            do {
+                String row1 = config.getString("craft.row1");
+                String row2 = config.getString("craft.row2");
+                String row3 = config.getString("craft.row3");
+                if(row1.trim().equals("") && row2.trim().equals("") && row3.trim().equals("")) {
+                    logger.log(Level.WARNING, "Crafting recipe is empty!");
+                    break;
+                }
+                List<String> raw = config.getStringList("craft.ingredients");
+
+                record Ingredient(char key, Material mat) {}
+
+                List<Ingredient> ingredients = new ArrayList<>();
+
+                boolean isOK = true;
+
+                for(String line : raw) {
+                    String[] parts = line.split(" ");
+                    if(parts.length != 2) {
+                        logger.log(Level.WARNING, "Invalid ingredient data");
+                        logger.log(Level.WARNING, "Should be: '<key char> <material>'");
+                        isOK = false;
+                        break;
+                    }
+
+                    if(parts[0].length() != 1) {
+                        logger.log(Level.WARNING, "`"+parts[0]+"' is not a character!");
+                        isOK = false;
+                        break;
+                    }
+
+                    Material material = Material.matchMaterial(parts[1].replace('-', '_'));
+
+                    if(material == null) {
+                        logger.log(Level.WARNING, "Could not find material `"+parts[1]+"'!");
+                        isOK = false;
+                        break;
+                    }
+
+                    ingredients.add(new Ingredient(parts[0].charAt(0), material));
+                }
+
+                if(!isOK) break;
+
+                {
+                    String check = row1+row2+row3;
+                    for(char key : check.toCharArray()) {
+                        boolean found = false;
+                        for(Ingredient i : ingredients) {
+                            if(i.key == key) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if(!found) {
+                            logger.log(Level.WARNING, "Ingredient `"+key+"' not found!");
+                            isOK = false;
+                            break;
+                        }
+                    }
+                    if(!isOK) break;
+                }
+
+                Material expBottle;
+                try {
+                    if (isLegacy) expBottle = (Material) Material.class.getField("EXP_BOTTLE").get(null);
+                    else expBottle = (Material) Material.class.getField("EXPERIENCE_BOTTLE").get(null);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Failed to find exp bottle material");
+                    break;
+                }
+                ItemStack result = new ItemStack(expBottle, 1);
+                ItemMeta meta = result.getItemMeta();
+                meta.setDisplayName("Computer");
+                List<String> lore = new ArrayList<>();
+                lore.add("Now you can create your own computer :D");
+                lore.add("1. /tcmp wand");
+                lore.add("2. Select area");
+                lore.add("3. /tcmp create <name>");
+                meta.setLore(lore);
+                result.setItemMeta(meta);
+
+                ShapedRecipe recipe = new ShapedRecipe(this.recipe = new NamespacedKey(this, "computer_recipe"), result);
+                recipe.shape(row1, row2, row3);
+
+                for(Ingredient i : ingredients) recipe.setIngredient(i.key, i.mat);
+
+                getServer().addRecipe(recipe);
+                logger.log(Level.INFO, "Crafting recipe successfully created!");
+            } while(false);
+        }
+
         getServer().getPluginManager().registerEvents(this, this);
         firstPoses = new HashMap<>();
         secondPoses = new HashMap<>();
@@ -377,49 +515,62 @@ public class TotalComputers extends JavaPlugin implements Listener {
         if(sender instanceof Player) {
             if(command.getName().equalsIgnoreCase("totalcomputers")) {
                 if(!sender.hasPermission("totalcomputers.command.totalcomputers")) { // Check permissions
-                    sender.sendMessage(replyPrefix + ChatColor.RED + "You don't have enough permissions.");
+                    sender.sendMessage(replyPrefix + ChatColor.RED + "You do not have enough permissions.");
                     return true;
                 }
                 if(args.length == 0 || args[0].equalsIgnoreCase("help")) { // Help subcommand
                     sender.sendMessage(replyPrefix + "Help [1/1]");
                     sender.sendMessage(ChatColor.GOLD + "Aliases: " + ChatColor.WHITE  + " /tcomputers, /tcmp");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers help" + ChatColor.WHITE + " - show help menu.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers create <name>" + ChatColor.WHITE + " - creates new computer at area of wall selected with diamond hoe. (See also /totalcomputers selection)");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers create <name>" + ChatColor.WHITE + " - creates new computer at area of wall selected with wand. (See also /totalcomputers selection)");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers remove <name>" + ChatColor.WHITE + " - removes computer.");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers list" + ChatColor.WHITE + " - prints list of created computers.");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers data <name>" + ChatColor.WHITE + " - prints information about computer.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers selection <enable|disable|toggle|state>" + ChatColor.WHITE + " - enables/disables/toggles/prints possibility of wall area selection with diamond hoe.");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers selection <enable|disable|toggle|state>" + ChatColor.WHITE + " - enables/disables/toggles/prints possibility of wall area selection with wand.");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers wand" + ChatColor.WHITE + " - Gives wand");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers reload" + ChatColor.WHITE + " - reloads all configuration files.");
                 }
                 else if(args[0].equalsIgnoreCase("reload")) { // Reload subcommand
+                    if(!sender.hasPermission("totalcomputers.plugin.manage")) {
+                        sender.sendMessage(replyPrefix + ChatColor.RED +
+                                "You do not have enough permissions!");
+                        return true;
+                    }
                     boolean success = configManager.reloadAllConfigs();
                     loadConfigs();
+                    sender.sendMessage(replyPrefix + ChatColor.GREEN + "Configuration files has been" +
+                            "successfully reloaded!");
                     if(success) {
                         loadComputers();
-                        sender.sendMessage(replyPrefix + ChatColor.GREEN + "Configuration files has been successfully reloaded.");
+                        sender.sendMessage(replyPrefix + ChatColor.GREEN + "All computers has been " +
+                                "successfully reloaded.");
                     }
                     else sender.sendMessage(replyPrefix + ChatColor.RED   + "Something went wrong!");
                 }
                 else if(args[0].equalsIgnoreCase("selection")) { // Selection subcommand
                     if(args.length >= 2) {
+                        if(!sender.hasPermission("totalcomputers.plugin.manage")) {
+                            sender.sendMessage(replyPrefix + ChatColor.RED +
+                                    "You do not have enough permissions!");
+                        }
                         if(args[1].equalsIgnoreCase("enable")) {
                             config.set("selection", true);
-                            sender.sendMessage(replyPrefix + "Selection using diamond hoe successfully enabled.");
+                            sender.sendMessage(replyPrefix + "Selection using wand successfully enabled.");
                             configManager.saveConfig("config.yml");
                         }
                         else if(args[1].equalsIgnoreCase("disable")) {
                             config.set("selection", false);
-                            sender.sendMessage(replyPrefix + "Selection using diamond hoe successfully disabled.");
+                            sender.sendMessage(replyPrefix + "Selection using wand successfully disabled.");
                             configManager.saveConfig("config.yml");
                         }
                         else if(args[1].equalsIgnoreCase("toggle")) {
                             boolean currentState;
                             config.set("selection", (currentState = !isSelectionEnabled()));
-                            sender.sendMessage(replyPrefix + "Selection using diamond hoe successfully " + (currentState? "enabled" : "disabled") + '.');
+                            sender.sendMessage(replyPrefix + "Selection using wand successfully " + (currentState? "enabled" : "disabled") + '.');
                             configManager.saveConfig("config.yml");
                         }
                         else if(args[1].equalsIgnoreCase("state")) {
-                            sender.sendMessage(replyPrefix + "Selection using diamond hoe is currently " + (config.getBoolean("selection")? "enabled" : "disabled") + '.');
+                            sender.sendMessage(replyPrefix + "Selection using wand is currently " + (config.getBoolean("selection")? "enabled" : "disabled") + '.');
                         }
                         else invalidUsage(sender);
                     } else invalidUsage(sender);
@@ -427,8 +578,20 @@ public class TotalComputers extends JavaPlugin implements Listener {
                 else if(args[0].equalsIgnoreCase("create")) { // Create subcommand
                     if(args.length == 2) {
                         Player player = (Player)sender;
+                        if(!sender.hasPermission("totalcomputers.manage.all")) {
+                            if(!sender.hasPermission("totalcomputers.manage.crafted")) {
+                                sender.sendMessage(replyPrefix + ChatColor.RED +
+                                        "You do not have enough permissions!");
+                                return true;
+                            }
+                            if(getUnregComputers(player) <= 0) {
+                                sender.sendMessage(replyPrefix + ChatColor.RED +
+                                        "You have placed all your !");
+                                return true;
+                            }
+                        }
                         if(!areas.containsKey(player)) {
-                            sender.sendMessage(replyPrefix + ChatColor.RED + "You have not selected area or it is invalid. Select it with diamond hoe. Make sure area selection is enabled.");
+                            sender.sendMessage(replyPrefix + ChatColor.RED + "You have not selected area or it is invalid. Select it with wand. Make sure area selection is enabled.");
                             return true;
                         }
                         SelectionArea area = areas.get(player);
@@ -479,12 +642,22 @@ public class TotalComputers extends JavaPlugin implements Listener {
                         configManager.saveConfig("computers.yml", true);
                         initComputer(args[1]);
                         sender.sendMessage(replyPrefix + ChatColor.GREEN + "Computer with name '"+args[1]+"' successfully created!");
+                        decreaseUnregComputers(player);
+                        addOwner(player, args[1]);
                     } else if(args.length > 2) {
                         sender.sendMessage(replyPrefix + ChatColor.RED + "Computer name cannot contain spaces!");
                     } else invalidUsage(sender);
                 }
                 else if(args[0].equalsIgnoreCase("remove")) { // Remove subcommand
                     if(args.length == 2) {
+                        if(!sender.hasPermission("totalcomputers.manage.all")) {
+                            if(!sender.hasPermission("totalcomputers.manage.crafted")
+                                    || !playerOwns((Player) sender, args[1])) {
+                                sender.sendMessage(replyPrefix + ChatColor.RED +
+                                        "You do not have enough permissions!");
+                                return true;
+                            }
+                        }
                         if(!registeredComputers.contains(args[1])) {
                             sender.sendMessage(replyPrefix + ChatColor.RED + "There is no such computer with name '"+args[1]+"'.");
                             return true;
@@ -494,22 +667,55 @@ public class TotalComputers extends JavaPlugin implements Listener {
                         computers.set("computers.names", registeredComputers);
                         configManager.saveConfig("computers.yml", true);
                         sender.sendMessage(replyPrefix + ChatColor.GREEN + "Computer with name '"+args[1]+"' successfully removed!");
+                        increaseUnregComputers((Player) sender);
+                        removeOwner((Player) sender, args[1]);
                     } else if(args.length > 2) {
                         sender.sendMessage(replyPrefix + ChatColor.RED + "Computer name cannot contain spaces!");
                     } else invalidUsage(sender);
                 }
                 else if(args[0].equalsIgnoreCase("list")) { // List subcommand
-                    if(registeredComputers.isEmpty()) {
+                    List<String> comps;
+                    if(!sender.hasPermission("totalcomputers.manage.all")) {
+                        if(!sender.hasPermission("totalcomputers.manage.crafted")) {
+                            sender.sendMessage(replyPrefix + ChatColor.RED + "You do not have enough" +
+                                    " permissions!");
+                            return true;
+                        }
+
+                        comps = new ArrayList<>();
+                        for(String comp : registeredComputers) {
+                            if(playerOwns((Player) sender, comp)) comps.add(comp);
+                        }
+                    } else comps = registeredComputers;
+                    if(comps.isEmpty()) {
                         sender.sendMessage(replyPrefix + ChatColor.GREEN + "None.");
                         return true;
                     }
                     StringBuilder list = new StringBuilder();
-                    for(String name : registeredComputers) list.append(name).append(", ");
+                    for(String name : comps) list.append(name).append(", ");
                     list.delete(list.length()-2, list.length()-1);
                     sender.sendMessage(replyPrefix + ChatColor.GREEN + "Available computers: " + ChatColor.RESET + list);
                 }
+                else if(args[0].equalsIgnoreCase("wand")) { // Wand subcommand
+                    ItemStack wand = new ItemStack(Material.STICK, 1);
+                    ItemMeta meta = wand.getItemMeta();
+                    meta.setDisplayName("TotalComputers");
+                    List<String> lore = new ArrayList<>();
+                    lore.add("Select area");
+                    meta.setLore(lore);
+                    wand.setItemMeta(meta);
+                    ((Player) sender).getInventory().addItem(wand);
+                }
                 else if(args[0].equalsIgnoreCase("data")) { // Data subcommand
                     if(args.length == 2) {
+                        if(!sender.hasPermission("totalcomputers.manage.all")) {
+                            if(!sender.hasPermission("totalcomputers.manage.crafted")
+                                    || !playerOwns((Player) sender, args[1])) {
+                                sender.sendMessage(replyPrefix + ChatColor.RED +
+                                        "You do not have enough permissions!");
+                                return true;
+                            }
+                        }
                         if(!registeredComputers.contains(args[1])) {
                             sender.sendMessage(replyPrefix + ChatColor.RED + "There is no such computer with name '"+args[1]+"'.");
                             return true;
@@ -536,7 +742,7 @@ public class TotalComputers extends JavaPlugin implements Listener {
                     } else invalidUsage(sender);
                 }
             }
-        } else sender.sendMessage(replyPrefix + ChatColor.RED + "Only players can be execute this command.");
+        } else sender.sendMessage(replyPrefix + ChatColor.RED + "Only players can execute this command.");
         return true;
     }
 
@@ -551,18 +757,31 @@ public class TotalComputers extends JavaPlugin implements Listener {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> variants = new ArrayList<>();
+        if(!(sender instanceof Player player)) return variants;
         if(!sender.hasPermission("totalcomputers.command.totalcomputers")) return variants;
         String[] all = {};
         if(command.getName().equalsIgnoreCase("totalcomputers")) {
-            if(args.length == 1) all = new String[] { "help", "create", "remove", "selection", "list", "reload", "data" };
+            if(args.length == 1) all = new String[] { "help", "create", "remove", "selection", "list",
+                    "reload", "data", "wand" };
             else if(args[0].equalsIgnoreCase("selection")) {
                 if(args.length == 2) {
                     all = new String[] { "enable", "disable", "toggle", "state" };
                 }
             }
             else if(args[0].equalsIgnoreCase("remove") || args[0].equalsIgnoreCase("data")) {
-                all = new String[registeredComputers.size()];
-                registeredComputers.toArray(all);
+                List<String> comps;
+                if(!sender.hasPermission("totalcomputers.manage.all")) {
+                    comps = new ArrayList<>();
+                    if(sender.hasPermission("totalcomputers.manage.crafted")) {
+                        for(String comp : registeredComputers) {
+                            if(playerOwns(player, comp)) comps.add(comp);
+                        }
+                    }
+                } else {
+                    comps = registeredComputers;
+                }
+                all = new String[comps.size()];
+                comps.toArray(all);
             }
         }
         for(String str : all) {
@@ -574,17 +793,47 @@ public class TotalComputers extends JavaPlugin implements Listener {
 
     /* *************** CODE SECTION: EVENTS *************** */
 
+    @EventHandler(priority = EventPriority.HIGH)
+    public void craftEvent(CraftItemEvent e) {
+        if(!(e.getWhoClicked() instanceof Player player)) return;
+        ItemStack result = e.getRecipe().getResult();
+        ItemMeta meta = result.getItemMeta();
+        if(meta == null) return;
+        String name = meta.getDisplayName();
+        if(!name.equals("Computer")) return;
+        List<String> lore = meta.getLore();
+        if(lore == null || lore.size() != 4) return;
+        if(!lore.get(0).equals("Now you can create your own computer :D")) return;
+        if(!lore.get(1).equals("1. /tcmp wand")) return;
+        if(!lore.get(2).equals("2. Select area")) return;
+        if(!lore.get(3).equals("3. /tcmp create <name>")) return;
+        increaseUnregComputers(player);
+        for(String msg : lore) player.sendMessage(replyPrefix + ChatColor.GREEN + msg);
+    }
+
     /**
-     * Processes selection with diamond hoe. Permission:  <code>totalcomputers.selection</code>
+     * Processes selection with wand. Permission:  <code>totalcomputers.selection</code>
      * @param event Event (PlayerInteractEvent)
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void selectionEvent(PlayerInteractEvent event) {
-        if(event.getHand() != EquipmentSlot.HAND) return;
         if(!isSelectionEnabled()) return;
+        if(!is1_8)
+            if(event.getHand() != EquipmentSlot.HAND) return;
         Player player = event.getPlayer();
-        if(!player.hasPermission("totalcomputers.selection")) return;
-        if(player.getInventory().getItemInMainHand() != null && !player.getInventory().getItemInMainHand().equals(new ItemStack(Material.DIAMOND_HOE))) return;
+        if(!player.hasPermission("totalcomputers.selection")
+                && !player.hasPermission("totalcomputers.place"))
+            return;
+        ItemStack itemInHand;
+        if(is1_8) itemInHand = player.getInventory().getItemInHand();
+        else itemInHand = player.getInventory().getItemInMainHand();
+        if(!itemInHand.getType().equals(Material.STICK)) return;
+        ItemMeta meta = itemInHand.getItemMeta();
+        if(meta == null) return;
+        if(!meta.getDisplayName().equals("TotalComputers")) return;
+        List<String> lore = meta.getLore();
+        if(lore == null || lore.size() != 1) return;
+        if(!lore.get(0).equals("Select area")) return;
         Action action = event.getAction();
         Location loc, oldLoc = null;
         boolean displayArea = false;
@@ -656,7 +905,8 @@ public class TotalComputers extends JavaPlugin implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void mapInteract(PlayerInteractEvent event) {
-        if(event.getHand() != EquipmentSlot.HAND) return;
+        if(!is1_8)
+            if(event.getHand() != EquipmentSlot.HAND) return;
         InputInfo.InteractType interactType;
         if(event.getAction() == Action.LEFT_CLICK_BLOCK || event.getAction() == Action.LEFT_CLICK_AIR) interactType = InputInfo.InteractType.LEFT_CLICK;
         else if(event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_BLOCK) interactType = InputInfo.InteractType.RIGHT_CLICK;
@@ -670,6 +920,8 @@ public class TotalComputers extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         String[] computers = new String[registeredComputers.size()];
+        if(recipe != null)
+            getServer().removeRecipe(recipe);
         registeredComputers.toArray(computers);
         for(String computer : computers)
             removeComputer(computer);
@@ -677,6 +929,81 @@ public class TotalComputers extends JavaPlugin implements Listener {
     }
 
     /* *************** CODE SECTION: HELPERS *************** */
+
+    public void increaseUnregComputers(Player p) {
+        String path = p.getName()+".free";
+        configManager.reloadConfig("players.yml");
+        players = configManager.getFileConfig("players.yml");
+        if(!players.isSet(path)) {
+            players.set(path, 1);
+        } else {
+            players.set(path, players.getInt(path)+1);
+        }
+        configManager.saveConfig("players.yml", true);
+    }
+
+    public void decreaseUnregComputers(Player p) {
+        String path = p.getName()+".free";
+        configManager.reloadConfig("players.yml");
+        players = configManager.getFileConfig("players.yml");
+        if(!players.isSet(path)) {
+            players.set(path, 0);
+        } else {
+            players.set(path, players.getInt(path)-1);
+        }
+        configManager.saveConfig("players.yml", true);
+    }
+
+    public int getUnregComputers(Player p) {
+        String path = p.getName()+".free";
+        configManager.reloadConfig("players.yml");
+        players = configManager.getFileConfig("players.yml");
+        if(!players.isSet(path)) return 0;
+        return players.getInt(path);
+    }
+
+    public boolean playerOwns(Player p, String name) {
+        if(!registeredComputers.contains(name)) return false;
+        String path = p.getName()+".owns";
+        configManager.reloadConfig("players.yml");
+        players = configManager.getFileConfig("players.yml");
+        if(!players.isSet(path)) return false;
+        return players.getStringList(path).contains(name);
+    }
+
+    public void addOwner(Player p, String name) {
+        String path = p.getName()+".owns";
+        List<String> owns;
+        configManager.reloadConfig("players.yml");
+        players = configManager.getFileConfig("players.yml");
+        if(!players.isSet(path)) {
+            owns = new ArrayList<>();
+        } else {
+            owns = players.getStringList(path);
+        }
+        if(!owns.contains(name)) {
+            owns.add(name);
+            players.set(path, owns);
+            configManager.saveConfig("players.yml", true);
+        }
+    }
+
+    public void removeOwner(Player p, String name) {
+        String path = p.getName()+".owns";
+        List<String> owns;
+        configManager.reloadConfig("players.yml");
+        players = configManager.getFileConfig("players.yml");
+        if(!players.isSet(path)) {
+            owns = new ArrayList<>();
+        } else {
+            owns = players.getStringList(path);
+        }
+        if(owns.contains(name)) {
+            owns.remove(name);
+            players.set(path, owns);
+            configManager.saveConfig("players.yml", true);
+        }
+    }
 
     /**
      * Removes the computer
@@ -760,7 +1087,10 @@ public class TotalComputers extends JavaPlugin implements Listener {
                         int subX = (int)(u*128);
                         int subY = (int)(v*128);
                         boolean hasPerm = entity.hasPermission("totalcomputers.use");
-                        boolean nHoldItem = entity.getInventory().getItemInMainHand().getType() == Material.AIR;
+                        ItemStack itemInHand;
+                        if(is1_8) itemInHand = entity.getInventory().getItemInHand();
+                        else itemInHand = entity.getInventory().getItemInMainHand();
+                        boolean nHoldItem = itemInHand.getType() == Material.AIR;
                         if(hasPerm && nHoldItem) {
                             unhandledInputs.add(new InputInfo(interactiveTiles.get(tile), subX, subY, interactType, entity));
                         } else if(!hasPerm) {

@@ -259,11 +259,23 @@ public class Button implements ComponentUI {
      * @param type See {@link TotalComputers.InputInfo.InteractType}
      */
     public void processInput(int x, int y, TotalComputers.InputInfo.InteractType type) {
+        processInputN(x, y, type);
+    }
+
+    /**
+     * Handles input
+     * @param x X coordinate of the touch
+     * @param y Y coordinate of the touch
+     * @param type See {@link TotalComputers.InputInfo.InteractType}
+     */
+    public boolean processInputN(int x, int y, TotalComputers.InputInfo.InteractType type) {
         if(type == TotalComputers.InputInfo.InteractType.LEFT_CLICK && !isLocked) {
             if(x >= this.x && y >= this.y && x <= this.x+width && y <= this.y+height) {
                 for(Event event : events) event.action();
                 pressed = true;
+                return true;
             }
         }
+        return false;
     }
 }

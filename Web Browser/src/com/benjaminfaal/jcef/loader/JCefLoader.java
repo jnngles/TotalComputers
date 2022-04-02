@@ -134,7 +134,11 @@ public class JCefLoader {
         if (OS.isWindows()) {
             Toolkit.getDefaultToolkit();
         } else {
-            System.loadLibrary("jawt");
+            try {
+                System.loadLibrary("jawt");
+            } catch (Throwable e) {
+                System.err.println("Failed to load JAWT. Ignoring.");
+            }
         }
         SystemBootstrap.setLoader(libname -> {
             Path jcefLibrary = libPath.resolve(System.mapLibraryName(libname));

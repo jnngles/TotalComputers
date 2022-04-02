@@ -143,7 +143,7 @@ public class FilesApplication extends WindowApplication {
     }
 
     @Override
-    protected void render(Graphics2D g) {
+    public void render(Graphics2D g) {
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, getWidth(), getHeight());
         list.render(g);

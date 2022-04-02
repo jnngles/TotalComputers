@@ -88,7 +88,7 @@ public abstract class ConsoleApplication extends WindowApplication {
     }
 
     @Override
-    protected void render(Graphics2D g) {
+    public void render(Graphics2D g) {
         g.setColor(background);
         g.fillRect(0, 0, getWidth(), getHeight());
         g.setFont(font);

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\JNNGL\IdeaProjects\TotalComputers\VirtualBox Support\native_ms\build\CMakeFiles\d46ccbe7b4808093e2c98f781f0d00b2\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{46AD5D0B-7D3B-380C-ABC5-0758808ABC18}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

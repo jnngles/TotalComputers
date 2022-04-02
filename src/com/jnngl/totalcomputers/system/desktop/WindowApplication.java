@@ -23,6 +23,7 @@ import com.jnngl.totalcomputers.system.TotalOS;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -97,7 +98,7 @@ public abstract class WindowApplication extends Application {
     }
 
     @Override
-    protected void start() {
+    public void start() {
         ApplicationHandler.registerApplication(this);
         onStart();
         initialized = true;

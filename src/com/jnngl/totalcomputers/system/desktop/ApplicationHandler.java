@@ -27,6 +27,7 @@ import java.awt.image.BufferedImage;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.rmi.RemoteException;
 import java.util.Comparator;
 
 public class ApplicationHandler {
@@ -95,7 +96,11 @@ public class ApplicationHandler {
     }
 
     public static void addTaskBarEntry(String name, String link, BufferedImage icon) {
-        desktop.taskbar.addApplication(new TaskBarLink(desktop.getOS(), name, link, icon));
+        try {
+            desktop.taskbar.addApplication(new TaskBarLink(desktop.getOS(), name, link, icon));
+        } catch(RemoteException e) {
+            System.err.println("Failed to create RMI application");
+        }
         desktop.getOS().fs.addTaskBarEntry(name, link);
     }
 

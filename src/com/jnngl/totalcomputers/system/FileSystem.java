@@ -429,7 +429,8 @@ public class FileSystem {
                 else name = line;
                 if(name != null && path != null) {
                     BufferedImage maybeIcon = loadImage(path+"/icon.png");
-                    if(maybeIcon == null) maybeIcon = getIconForFile(toFile(path));
+                    File file = toFile(path);
+                    if(file != null && maybeIcon == null) maybeIcon = getIconForFile(file);
                     links.add(new TaskBarLink(os, name, path,
                             maybeIcon == null? getResourceImage("default-icon") : maybeIcon));
                     name = null;

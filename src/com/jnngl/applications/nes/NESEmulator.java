@@ -249,7 +249,7 @@ public class NESEmulator extends WindowApplication {
     }
 
     @Override
-    protected void render(Graphics2D g) {
+    public void render(Graphics2D g) {
         g.setFont(font);
         g.setColor(Color.BLUE.darker());
         g.fillRect(0, 0, getWidth(), getHeight());

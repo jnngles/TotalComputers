@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -209,7 +210,8 @@ public class AppStore extends WindowApplication {
     }
 
     @Override
-    protected void render(Graphics2D g) {
+    public void render(Graphics2D g) {
+        if(buttons == null) return;
         Font font = os.baseFont.deriveFont((float)getHeight()/25);
         g.setFont(font);
         FontMetrics fontMetrics = g.getFontMetrics();
@@ -315,12 +317,13 @@ public class AppStore extends WindowApplication {
 
     @Override
     public void processInput(int x, int y, TotalComputers.InputInfo.InteractType type) {
+        if(buttons == null) return;
         down.processInput(x, y, type);
         up.processInput(x, y, type);
         searchBt.processInput(x, y, type);
         search.processInput(x, y, type);
-        for(Button bt : buttons) {
-            bt.processInput(x, y, type);
+        for (Button bt : buttons) {
+            if(bt.processInputN(x, y, type)) return;
         }
     }
 

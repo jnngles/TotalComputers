@@ -23,7 +23,6 @@ import com.jnngl.totalcomputers.system.desktop.ApplicationHandler;
 import com.jnngl.totalcomputers.system.desktop.ConsoleApplication;
 
 import java.io.File;
-import java.io.FilenameFilter;
 
 public class Terminal extends ConsoleApplication {
 

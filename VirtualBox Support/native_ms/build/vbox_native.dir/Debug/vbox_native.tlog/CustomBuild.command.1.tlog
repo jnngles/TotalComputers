@@ -1,0 +1,10 @@
+^C:\USERS\JNNGL\IDEAPROJECTS\TOTALCOMPUTERS\VIRTUALBOX SUPPORT\NATIVE_MS\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SC:/Users/JNNGL/IdeaProjects/TotalComputers/VirtualBox Support/native_ms" "-BC:/Users/JNNGL/IdeaProjects/TotalComputers/VirtualBox Support/native_ms/build" --check-stamp-file "C:/Users/JNNGL/IdeaProjects/TotalComputers/VirtualBox Support/native_ms/build/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

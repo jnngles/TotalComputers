@@ -385,7 +385,7 @@ class CefBrowserOsr extends CefBrowser_N implements CefRenderHandler {
                 int a = (buffer.get(idx++) & 0xff);
                 int argb = (a << 24) | (r << 16) | (g << 8) | b;
 
-                this.buffer.setRGB(x, y, new Color(argb).getRGB());
+                this.buffer.setRGB(x, y, argb);
             }
         }
     }

@@ -1,0 +1,6 @@
+﻿cl : командная строка warning D9002: пропуск неизвестного параметра "-std=c++17"
+  impl.cpp
+C:\Users\JNNGL\IdeaProjects\TotalComputers\VirtualBox Support\native_ms\impl.cpp(69,92): warning C4267: аргумент: преобразование из "size_t" в "jsize"; возможна потеря данных
+C:\Users\JNNGL\IdeaProjects\TotalComputers\VirtualBox Support\native_ms\impl.cpp(64,3): warning C4996: 'wcstombs': This function or variable may be unsafe. Consider using wcstombs_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\JNNGL\IdeaProjects\TotalComputers\VirtualBox Support\native_ms\impl.cpp(111,2): warning C4996: 'mbstowcs': This function or variable may be unsafe. Consider using mbstowcs_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  vbox_native.vcxproj -> C:\Users\JNNGL\IdeaProjects\TotalComputers\VirtualBox Support\native_ms\build\Debug\vbox_native.dll

@@ -21,6 +21,8 @@ package com.jnngl.totalcomputers.system.desktop;
 import com.jnngl.totalcomputers.system.TotalOS;
 
 import java.awt.image.BufferedImage;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 
 abstract class Application {
 
@@ -42,11 +44,11 @@ abstract class Application {
         this.icon = icon;
     }
 
-    protected boolean close() {
+    public boolean close() {
         return onClose();
     }
 
-    protected void start() {
+    public void start() {
         onStart();
     }
 

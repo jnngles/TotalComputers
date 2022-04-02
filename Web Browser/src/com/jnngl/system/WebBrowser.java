@@ -18,51 +18,35 @@
 
 package com.jnngl.system;
 
-import com.benjaminfaal.jcef.loader.JCefLoader;
 import com.jnngl.totalcomputers.TotalComputers;
 import com.jnngl.totalcomputers.system.TotalOS;
 import com.jnngl.totalcomputers.system.Utils;
 import com.jnngl.totalcomputers.system.desktop.ApplicationHandler;
 import com.jnngl.totalcomputers.system.desktop.WindowApplication;
 import com.jnngl.totalcomputers.system.overlays.Keyboard;
-import com.jnngl.totalcomputers.system.ui.Field;
 import com.jnngl.totalcomputers.system.ui.Button;
-import org.cef.*;
-import org.cef.browser.CefBrowser;
-import org.cef.browser.CefFrame;
-import org.cef.handler.CefDisplayHandlerAdapter;
+import com.jnngl.totalcomputers.system.ui.Field;
+import org.cef.OS;
 
-import javax.swing.*;
+import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
 
 public class WebBrowser extends WindowApplication {
 
-    private static final Map<CefBrowser, WebBrowser> map;
-    private static CefApp cefApp;
-    private static CefClient client;
-
-    static {
-        map = new HashMap<>();
-    }
-
-    private CefBrowser browser;
-    private JFrame frame;
+    private IRemoteBrowser server;
+    private boolean init = false;
 
     private Font font;
-
     private Field urlField;
-    private Button go;
-
-    private Button goBackward, goForward;
+    private com.jnngl.totalcomputers.system.ui.Button go;
+    private com.jnngl.totalcomputers.system.ui.Button goBackward, goForward;
 
     public static void main(String[] args) {
         ApplicationHandler.open(WebBrowser.class, args[0]);
@@ -78,182 +62,206 @@ public class WebBrowser extends WindowApplication {
         Font uiFont = os.baseFont.deriveFont((float)os.screenHeight/128*4);
         FontMetrics metrics = Utils.getFontMetrics(uiFont);
 
-        goBackward = new Button(Button.ButtonColor.BLUE, 0, 0, metrics.stringWidth("<")*5,
+        goBackward = new com.jnngl.totalcomputers.system.ui.Button(com.jnngl.totalcomputers.system.ui.Button.ButtonColor.BLUE, 0, 0, metrics.stringWidth("<")*5,
                 metrics.getHeight(), uiFont, "<");
-        goForward = new Button(Button.ButtonColor.BLUE, goBackward.getWidth(), 0, goBackward.getWidth(),
+        goForward = new com.jnngl.totalcomputers.system.ui.Button(com.jnngl.totalcomputers.system.ui.Button.ButtonColor.BLUE, goBackward.getWidth(), 0, goBackward.getWidth(),
                 goBackward.getHeight(), uiFont, ">");
 
-        goBackward.registerClickEvent(() -> browser.goBack());
-        goForward.registerClickEvent(() -> browser.goForward());
+        goBackward.registerClickEvent(() -> {
+            try {
+                server.goBack();
+            } catch (RemoteException e) {
+                System.err.println("Failed to call remote method. ("+e.getClass().getSimpleName()+")");
+            }
+        });
+        goForward.registerClickEvent(() -> {
+            try {
+                server.goForward();
+            } catch (RemoteException e) {
+                System.err.println("Failed to call remote method. ("+e.getClass().getSimpleName()+")");
+            }
+        });
 
         urlField = new Field(goForward.getWidth()*2, 0, getWidth()/5*4, goBackward.getHeight(), uiFont, "",
                 "Enter URL here", os.keyboard);
-        go = new Button(Button.ButtonColor.BLUE, urlField.getWidth(), 0, getWidth()-urlField.getWidth(),
+        go = new com.jnngl.totalcomputers.system.ui.Button(Button.ButtonColor.BLUE, urlField.getWidth(), 0, getWidth()-urlField.getWidth(),
                 urlField.getHeight(), uiFont, "Go");
 
-        go.registerClickEvent(() -> browser.loadURL(urlField.getText()));
+        go.registerClickEvent(() -> {
+            try {
+                server.loadURL(urlField.getText());
+            } catch (RemoteException e) {
+                System.err.println("Failed to call remote method. ("+e.getClass().getSimpleName()+")");
+            }
+        });
 
         new Thread(() -> {
-            Path jcefPath = Paths.get(System.getProperty("user.home")).resolve(".jcef");
-
-            CefSettings settings = new CefSettings();
-            settings.windowless_rendering_enabled = false;
-            settings.cache_path = jcefPath.resolve("cache").toString();
-
-            try {
-                cefApp = JCefLoader.installAndLoad(jcefPath, settings);
-                if(cefApp == null) cefApp = CefApp.getInstance(settings);
-            } catch (Throwable e) {
-                System.err.println("Failed to install JCEF.");
-                return;
+            String cmd;
+            final String vmArgs = "--add-exports java.base/java.lang=ALL-UNNAMED " +
+                    "--add-exports java.desktop/sun.awt=ALL-UNNAMED --add-exports java.desktop/sun.java2d=ALL-UNNAMED";
+            if(OS.isWindows()) {
+                cmd = "\""+System.getProperty("java.home")+File.separator+"bin"+
+                        File.separator+"java.exe\" -jar "+vmArgs+" \""+applicationPath+File.separator+
+                        "application.jar\"";
+            } else {
+                cmd = System.getProperty("java.home")+File.separator+"bin"+File.separator+"java";
+                cmd = cmd.replace(" ", "\\\\ ");
+                cmd += " -jar "+vmArgs+" "+applicationPath.replace(" ", "\\\\ ")+File.separator
+                        +"application.jar";
             }
-            client = cefApp.createClient();
+            String target = "browser_session_"+Thread.currentThread().getId();
+            cmd += " "+target;
+            try {
+                Runtime.getRuntime().exec(cmd);
+            } catch (IOException e) {
+                System.err.println("Failed to spawn subprocess. Command line: '"+cmd+"'");
+            }
+            long startTime = System.currentTimeMillis();
+            while(true) {
+                try {
+                    long current = System.currentTimeMillis();
+                    if(current-startTime > 5000) {
+                        System.err.println("["+target+"] Remote session not found. Timed out.");
+                        break;
+                    }
+                    server = (IRemoteBrowser) LocateRegistry.getRegistry(null, 2099).lookup(target);
+                    server.onStart(getWidth(), getHeight() - urlField.getHeight());
+                    init = true;
+                    System.out.println("Bound new session to '" + target + "' [localhost:2099]");
 
-            client.addDisplayHandler(new CefDisplayHandlerAdapter() {
+                    addResizeEvent(new ResizeEvent() {
+                        private void resizeEvent(int width, int height) {
+                            try {
+                                server.setSize(width, height - urlField.getHeight());
+                            } catch (RemoteException e) {
+                                System.err.println("Failed to call remote method. (" + e.getClass().getSimpleName() + ")");
+                            }
+                            urlField.setWidth(width / 5 * 4);
+                            go.setX(urlField.getWidth());
+                            go.setWidth(getWidth() - urlField.getWidth());
+                        }
 
-                @Override
-                public void onAddressChange(CefBrowser browser, CefFrame frame, String url) {
-                    super.onAddressChange(browser, frame, url);
-                    WebBrowser application = map.getOrDefault(browser, null);
-                    if(application == null) return;
-                    application.urlField.setText(url);
+                        @Override
+                        public void onResize(int width, int height) {
+                            resizeEvent(width, height);
+                        }
+
+                        @Override
+                        public void onMaximize(int width, int height) {
+                            resizeEvent(width, height);
+                        }
+
+                        @Override
+                        public void onUnmaximize(int width, int height) {
+                            resizeEvent(width, height);
+                        }
+                    });
+
+                    break;
+                } catch (RemoteException | NotBoundException e) {
+                    if(e instanceof NotBoundException) continue;
+                    System.err.println("(WebBrowser::onStart) -> Failed to create/access remote object. (" +
+                            e.getClass().getSimpleName() + ")");
+                    System.err.println(" -> " + e.getMessage());
+                    break;
                 }
-
-                @Override
-                public void onTitleChange(CefBrowser browser, String title) {
-                    super.onTitleChange(browser, title);
-                    WebBrowser application = map.getOrDefault(browser, null);
-                    if(application == null) return;
-                    application.setName("Browser: "+title);
-                }
-            });
-
-            browser = client.createBrowser("https://www.google.com/", true, false);
-            map.put(browser, this);
-
-            frame = new JFrame("TotalComputers: Web Browser");
-            frame.setUndecorated(true);
-            frame.getContentPane().add(browser.getUIComponent());
-            frame.pack();
-            frame.setSize(getWidth(), getHeight()-urlField.getHeight());
-            frame.setVisible(true);
-
-            addResizeEvent(new ResizeEvent() {
-                private void resizeEvent(int width, int height) {
-                    frame.setSize(width, height-urlField.getHeight());
-                    urlField.setWidth(width/5*4);
-                    go.setX(urlField.getWidth());
-                    go.setWidth(getWidth()-urlField.getWidth());
-                }
-
-                @Override
-                public void onResize(int width, int height) {
-                    resizeEvent(width, height);
-                }
-
-                @Override
-                public void onMaximize(int width, int height) {
-                    resizeEvent(width, height);
-                }
-
-                @Override
-                public void onUnmaximize(int width, int height) {
-                    resizeEvent(width, height);
-                }
-            });
+            }
         }).start();
     }
 
     @Override
     protected boolean onClose() {
-        if (browser != null) browser.close(true);
-        if (frame != null) frame.dispose();
+        init = false;
+        try {
+            server.close();
+        } catch (RemoteException e) {
+            System.err.println("Failed to call remote method. ("+e.getClass().getSimpleName()+")");
+        }
+        server = null;
         return true;
     }
 
     @Override
     protected void update() {
+        if(!init) return;
         renderCanvas();
     }
 
     @Override
     protected void render(Graphics2D g) {
-        BufferedImage buffer = null;
-        g.setColor(Color.BLACK);
-        g.fillRect(0, 0, getWidth(), getHeight());
-        if(browser != null && frame != null && client != null && cefApp != null)
-            buffer = browser.getLastRenderOutput();
-        if(buffer == null) {
-            g.setColor(Color.WHITE);
-            g.setFont(font);
-            g.drawString("Initializing CEF...", 10, 30);
-            return;
+        if(!init) return;
+        try {
+//            System.out.println("start ["+Thread.currentThread().getId()+"]");
+            String url = server.getURL();
+            if(url != null) urlField.setText(url);
+            setName(server.getTitle());
+
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, getWidth(), getHeight());
+            byte[] bytes = server.render();
+            if (bytes == null) return;
+            ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+            BufferedImage screen = ImageIO.read(bais);
+            g.drawImage(screen, 0, urlField.getHeight(), getWidth(), getHeight() - urlField.getHeight(),
+                    null);
+            urlField.render(g);
+            go.render(g);
+            goBackward.setLocked(!server.canGoBack());
+            goForward.setLocked(!server.canGoForward());
+            goBackward.render(g);
+            goForward.render(g);
+//            System.out.println("end ["+Thread.currentThread().getId()+"]");
+        } catch(RemoteException e) {
+            System.err.println("Failed to call remote method. ("+e.getClass().getSimpleName()+")");
+        } catch (IOException e) {
+            System.err.println("Failed to read buffered image.");
         }
-        g.drawImage(buffer, 0, urlField.getHeight(), getWidth(), getHeight()-urlField.getHeight(), null);
-        urlField.render(g);
-        go.render(g);
-        goBackward.setLocked(!browser.canGoBack());
-        goForward.setLocked(!browser.canGoForward());
-        goBackward.render(g);
-        goForward.render(g);
     }
 
     @Override
     public void processInput(int x, int y, TotalComputers.InputInfo.InteractType type) {
-        if(browser == null) return;
+        if(!init) return;
         urlField.processInput(x, y, type);
         go.processInput(x, y, type);
         goBackward.processInput(x, y, type);
         goForward.processInput(x, y, type);
-        if(y > urlField.getHeight()) {
-            if(type == TotalComputers.InputInfo.InteractType.LEFT_CLICK) {
-                for (MouseListener listener : browser.getUIComponent().getMouseListeners()) {
-                    listener.mousePressed(new MouseEvent(browser.getUIComponent(), MouseEvent.MOUSE_PRESSED,
-                            System.currentTimeMillis(), InputEvent.BUTTON1_DOWN_MASK, x, y - urlField.getHeight(),
-                            1, false, MouseEvent.BUTTON1));
-                    listener.mouseReleased(new MouseEvent(browser.getUIComponent(), MouseEvent.MOUSE_RELEASED,
-                            System.currentTimeMillis(), InputEvent.BUTTON1_DOWN_MASK, x, y - urlField.getHeight(),
-                            1, false, MouseEvent.BUTTON1));
-                }
-            } else {
-                os.keyboard.invokeKeyboard(new Keyboard.KeyboardListener() {
-                    private String buffer = "";
+        try {
+            if (y > urlField.getHeight()) {
+                if (type == TotalComputers.InputInfo.InteractType.LEFT_CLICK) {
+                    server.processInput(x, y - urlField.getHeight(), true);
+                } else {
+                    os.keyboard.invokeKeyboard(new Keyboard.KeyboardListener() {
+                        private String buffer = "";
 
-                    private char getCharFor(Keyboard.Keys key, String text) {
-                        return switch (key) {
-                            case BACKSPACE -> '\b';
-                            case ENTER -> '\n';
-                            case TAB -> '\t';
-                            case OK, SHIFT, ALT, LANG, FUNCTION, CONTROL, HOME -> Character.MIN_VALUE;
-                            default -> text.charAt(0);
-                        };
-                    }
+                        @Override
+                        public String keyTyped(String text, Keyboard.Keys key, Keyboard keyboard) {
+                            if (key == Keyboard.Keys.OK || key == Keyboard.Keys.ENTER) {
+                                os.keyboard.closeKeyboard();
+                                return buffer;
+                            }
+                            if (key == Keyboard.Keys.BACKSPACE) {
+                                if (buffer.length() > 0) {
+                                    buffer = buffer.substring(0, buffer.length() - 1);
+                                }
+                            }
+                            if (key.text != null) {
+                                buffer += text;
+                            }
 
-                    @Override
-                    public String keyTyped(String text, Keyboard.Keys key, Keyboard keyboard) {
-                        if(key == Keyboard.Keys.OK || key == Keyboard.Keys.ENTER) {
-                            os.keyboard.closeKeyboard();
+                            try {
+                                server.keyTyped(key.name(), text);
+                            } catch (RemoteException e) {
+                                System.err.println("Failed to call remote method. ("+e.getClass().getSimpleName()+")");
+                            }
+
                             return buffer;
                         }
-                        if(key == Keyboard.Keys.BACKSPACE) {
-                            if(buffer.length() > 0) {
-                                buffer = buffer.substring(0, buffer.length()-1);
-                            }
-                        }
-                        if(key.text != null) {
-                            buffer += text;
-                        }
-
-                        for(KeyListener listener : browser.getUIComponent().getKeyListeners()) {
-                            char keyChar = getCharFor(key, text);
-                            listener.keyTyped(new KeyEvent(browser.getUIComponent(), KeyEvent.KEY_TYPED,
-                                    System.currentTimeMillis(), 0, 0, keyChar));
-                        }
-
-                        return buffer;
-                    }
-                }, "");
+                    }, "");
+                }
             }
+        } catch (RemoteException e) {
+            System.err.println("Failed to call remote method. ("+e.getClass().getSimpleName()+")");
         }
     }
+
 }

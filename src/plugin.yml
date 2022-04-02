@@ -2,28 +2,33 @@ name: TotalComputers
 version: 0.5b
 author: JNNGL
 main: com.jnngl.totalcomputers.TotalComputers
-api-version: 1.12.2
 
 commands:
   totalcomputers:
     description: Command for TotalComputers plugin.
     usage: /totalcomputers [...]
-    permission: totalcomputers.command.totalcomputers
-    permission-message: You don't have enough permissions to use this command.
     aliases:
       - tcomputers
       - tcmp
-
 permissions:
+  totalcomputers.plugin.manage:
+    description: Players with this permission can change/reload plugin configuration.
+    default: op
   totalcomputers.command.totalcomputers:
-    description: Allows to use command
+    description: Allow access to the /totalcomputers command.
+    default: true
+  totalcomputers.manage.all:
+    description: Players with this permission can create/remove computers without any restrictions.
     default: op
+  totalcomputers.manage.crafted:
+    description: Players with this permission can manage their computers. Overrides `totalcomputers.selection` permission.
+    default: true
   totalcomputers.selection:
-    description: Allows to select area using diamonf hoe
-    default: op
+    description: Players with this permission can select area.
+    default: true
   totalcomputers.use:
-    description: Allows to use computers
+    description: Players with this permission can use computers.
     default: true
   totalcomputers.admin:
-    description: Allows to use computers as administrator.
+    description: Players with this permission can use computers as administrator.
     default: op

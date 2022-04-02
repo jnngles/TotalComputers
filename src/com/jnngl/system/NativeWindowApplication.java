@@ -81,7 +81,7 @@ public class NativeWindowApplication extends WindowApplication {
     }
 
     @Override
-    protected void render(Graphics2D g) {
+    public void render(Graphics2D g) {
         ExtRender(g);
     }
 

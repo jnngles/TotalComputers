@@ -32,12 +32,12 @@ public class TotalOSWrapper extends WindowApplication {
     }
 
     @Override
-    protected void update() {
+    public void update() {
         renderCanvas();
     }
 
     @Override
-    protected void render(Graphics2D g) {
+    public void render(Graphics2D g) {
         g.drawImage(childOS.getScreen(), 0, 0, null);
         childOS.renderQueue = true;
     }
