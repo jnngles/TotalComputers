@@ -23,16 +23,36 @@ import com.jnngl.totalcomputers.system.TotalOS;
 import com.jnngl.totalcomputers.system.overlays.Keyboard;
 
 import java.awt.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
 public abstract class ConsoleApplication extends WindowApplication {
 
-    private Vector<Character> chars;
+    public class ConsoleOutput extends OutputStream {
+        @Override
+        public void write(int b) {
+            if(b == 10) {
+                putString("\n");
+                return;
+            }
+            putString(""+((char) b));
+        }
+
+        public void write(String str) {
+            putString(str);
+        }
+    }
+
+    private final Vector<Character> chars;
     private Color background, textColor;
     private Font font;
     private boolean hasNext;
+    public ConsoleOutput stdout, stderr;
+    public InputStream stdin;
 
     public ConsoleApplication(TotalOS os, String title, int width, int height, String path) {
         this(os, title, os.screenWidth/2-width/2, os.screenHeight/2-height/2, width, height, path);
@@ -44,6 +64,29 @@ public abstract class ConsoleApplication extends WindowApplication {
         background = Color.BLACK;
         textColor = Color.WHITE;
         font = os.baseFont.deriveFont((float)os.screenHeight/128*3);
+        stdout = new ConsoleOutput();
+        stderr = new ConsoleOutput();
+        stdin = new InputStream() {
+            private int i;
+            private byte[] bytes;
+
+            @Override
+            public int read() throws IOException {
+                if(bytes == null) {
+                    i = 0;
+                    while(!hasNext);
+                    bytes = line.getBytes();
+                }
+                try {
+                    return bytes[i];
+                } finally {
+                    i++;
+                    if(i >= bytes.length) {
+                        bytes = null;
+                    }
+                }
+            }
+        };
         start();
         renderCanvas();
     }
@@ -131,6 +174,30 @@ public abstract class ConsoleApplication extends WindowApplication {
     public String next() {
         hasNext = false;
         return line;
+    }
+
+    public void setFont(Font font) {
+        this.font = font;
+    }
+
+    public Font getFont() {
+        return font;
+    }
+
+    public void setBackground(Color background) {
+        this.background = background;
+    }
+
+    public Color getBackground() {
+        return background;
+    }
+
+    public void setTextColor(Color textColor) {
+        this.textColor = textColor;
+    }
+
+    public Color getTextColor() {
+        return textColor;
     }
 
 }

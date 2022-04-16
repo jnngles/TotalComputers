@@ -20,6 +20,7 @@ package com.jnngl.totalcomputers.system;
 
 import com.jnngl.totalcomputers.MapColor;
 import com.jnngl.totalcomputers.TotalComputers;
+import com.jnngl.totalcomputers.motion.MotionCapture;
 import com.jnngl.totalcomputers.system.overlays.Information;
 import com.jnngl.totalcomputers.system.overlays.Keyboard;
 import com.jnngl.totalcomputers.system.states.SplashScreen;
@@ -55,85 +56,7 @@ public class TotalOS {
      * @return API version
      */
     public static int getApiVersion() {
-        return 2;
-    }
-
-    /**
-     * Simple map renderer.
-     * <p>
-     * Draws image to screen and handles input.
-     * </p>
-     */
-    public static class Renderer extends MapRenderer {
-
-        private final String name;
-        private final int id;
-        private final TotalComputers plugin;
-        private final TotalOS os;
-        private final TotalComputers.SelectionArea area;
-
-        private static Map<TotalOS, Boolean> completionMap;
-
-        /**
-         * Constructor
-         * @param name Name of the computer
-         * @param id Index of monitor piece
-         * @param plugin Plugin instance
-         * @param os Operating System instance
-         * @param area Physical data of the computer
-         */
-        public Renderer(String name, int id, TotalComputers plugin, TotalOS os, TotalComputers.SelectionArea area) {
-            if(completionMap == null) completionMap = new HashMap<>();
-            this.name = name;
-            this.id = id;
-            this.plugin = plugin;
-            this.os = os;
-            this.area = area;
-        }
-
-        public TotalOS getSystem() { return os; }
-
-        private static BufferedImage copyImage(BufferedImage source){
-            BufferedImage b = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
-            Graphics g = b.getGraphics();
-            g.drawImage(source, 0, 0, null);
-            g.dispose();
-            return b;
-        }
-
-        /**
-         * Custom implementation of {@link org.bukkit.map.MapRenderer#render(MapView, MapCanvas, Player)} function.
-         * @param map Destination map
-         * @param canvas Map canvas
-         * @param player Idk
-         */
-        public synchronized void render(MapView map, MapCanvas canvas, Player player) {
-            int absY = (int)Math.floor((float)id / area.width());
-            int absX = id - absY*area.width();
-            absX *= 128; absY *= 128;
-
-            List<TotalComputers.InputInfo> handledInputs = new ArrayList<>();
-            for (TotalComputers.InputInfo inputInfo : plugin.unhandledInputs) {
-                if (inputInfo.index().name().equals(name) && inputInfo.index().index() == id) {
-                    os.processTouch(absX + inputInfo.x(), absY + inputInfo.y(), inputInfo.interactType(), inputInfo.player().hasPermission("totalcomputers.admin"));
-                    handledInputs.add(inputInfo);
-                }
-            }
-            plugin.unhandledInputs.removeAll(handledInputs);
-
-            int finalAbsX = absX;
-            int finalAbsY = absY;
-            Thread renderThread = new Thread(() -> {
-                if(os.renderQueue) return;
-                canvas.drawImage(0, 0, copyImage(os.getScreen().getSubimage(finalAbsX, finalAbsY, 128, 128)));
-                if(id == os.screenWidth/128*os.screenHeight/128-1) {
-                    os.renderQueue = true;
-                }
-            });
-            renderThread.setPriority(Thread.MAX_PRIORITY);
-            renderThread.start();
-        }
-
+        return 3;
     }
 
     /**
@@ -159,6 +82,7 @@ public class TotalOS {
      * Screen
      */
     private final BufferedImage image;
+    private BufferedImage lastFrame;
     private final Graphics2D imageGraphics;
 
     /**
@@ -220,12 +144,10 @@ public class TotalOS {
      */
     private boolean hasAdminRights;
 
-    public boolean renderQueue = false;
+    @RequiresAPI(apiLevel = 3)
+    public MotionCapture motionCapture;
 
-    private ScheduledExecutorService executor;
-
-    private List<Runnable> threads;
-    public MapCanvas target;
+    private final List<Runnable> threads;
     public int x, y;
 
     public void runInSystemThread(Runnable action) {
@@ -250,15 +172,29 @@ public class TotalOS {
         stateManager = new StateManager();
     }
 
+    @RequiresAPI(apiLevel = 3)
+    public boolean supportsMotionCapture() {
+        return motionCapture != null;
+    }
+
     public BufferedImage getScreen() {
-        return image;
+        return lastFrame;
+    }
+
+    private static BufferedImage copyImage(BufferedImage source){
+        BufferedImage b = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
+        Graphics g = b.getGraphics();
+        g.drawImage(source, 0, 0, null);
+        g.dispose();
+        return b;
     }
 
     /**
      * Renders frame into buffered image
      */
-    public void renderFrame() {
-        if(!renderQueue) return;
+    public BufferedImage renderFrame() {
+        BufferedImage b = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
+        Graphics2D imageGraphics = b.createGraphics();
         List<Runnable> finished = new ArrayList<>();
         for(Runnable thread : threads) {
             thread.run();
@@ -268,14 +204,10 @@ public class TotalOS {
         stateManager.update();
         imageGraphics.setColor(Color.BLACK);
         imageGraphics.fillRect(0, 0, screenWidth, screenHeight);
-        if (currentState == ComputerState.OFF) {
-            imageGraphics.dispose();
-            return;
-        }
         stateManager.render(imageGraphics);
         if (keyboard != null) keyboard.render(imageGraphics);
         if (information != null) information.render(imageGraphics);
-        renderQueue = false;
+        return b;
     }
 
     /**
@@ -330,8 +262,6 @@ public class TotalOS {
         firstRun = false;
         keyboard = null;
         information = null;
-        if(executor != null)
-            executor.shutdown();
 
         stateManager.setState(null);
     }
@@ -366,9 +296,6 @@ public class TotalOS {
 
         stateManager.setState(new SplashScreen(stateManager, this));
 //        stateManager.setState(new Desktop(stateManager, this)); // For testing
-
-        executor = Executors.newScheduledThreadPool(1);
-        executor.scheduleAtFixedRate(this::renderFrame, 0, 1000/20, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -432,9 +359,7 @@ public class TotalOS {
             jf.setVisible(true);
 
             ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-            executor.scheduleAtFixedRate(() -> {
-                if(!test.os.renderQueue) jf.repaint();
-            }, 0, 1000/60, TimeUnit.MILLISECONDS);
+            executor.scheduleAtFixedRate(jf::repaint, 0, 1000/60, TimeUnit.MILLISECONDS);
         }
 
         /**
@@ -443,11 +368,10 @@ public class TotalOS {
          */
         @Override
         public void paint(Graphics g) {
+            os.renderFrame();
             Graphics2D g2D = (Graphics2D) g;
-            g2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
             g2D.drawImage(os.image, 0, 0, null);
             g2D.dispose();
-            os.renderQueue = true;
         }
 
         /**

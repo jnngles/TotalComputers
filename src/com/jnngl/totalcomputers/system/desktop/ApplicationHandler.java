@@ -57,7 +57,7 @@ public class ApplicationHandler {
         if((api = cls.getAnnotation(RequiresAPI.class)) != null) {
             if(api.apiLevel() > TotalOS.getApiVersion()) {
                 desktop.getOS().information.displayMessage(Information.Type.ERROR,
-                        "Application requires API "+api.apiLevel()+" version or above. Update plugin.", () -> {});
+                        "Application requires API "+api.apiLevel()+" version or above. Update the plugin to use this application.", () -> {});
                 return false;
             }
         }

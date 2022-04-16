@@ -7,45 +7,61 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/*
- * Class:     com_jnngl_system_VBoxMS
- * Method:    getMachineNames
- * Signature: (Ljava/nio/ByteBuffer;)[Ljava/lang/String;
- */
-JNIEXPORT jobjectArray JNICALL Java_com_jnngl_system_VBoxMS_getMachineNames
-  (JNIEnv *, jobject, jobject);
+	/*
+	 * Class:     com_jnngl_system_VBoxMS
+	 * Method:    getMachineNames
+	 * Signature: (Ljava/nio/ByteBuffer;)[Ljava/lang/String;
+	 */
+	JNIEXPORT jobjectArray JNICALL Java_com_jnngl_system_VBoxMS_getMachineNames
+	(JNIEnv*, jobject, jobject);
 
-/*
- * Class:     com_jnngl_system_VBoxMS
- * Method:    launchVM
- * Signature: (Ljava/nio/ByteBuffer;Ljava/lang/String;)Ljava/nio/ByteBuffer;
- */
-JNIEXPORT jobject JNICALL Java_com_jnngl_system_VBoxMS_launchVM
-  (JNIEnv *, jobject, jobject, jstring);
+	/*
+	 * Class:     com_jnngl_system_VBoxMS
+	 * Method:    launchVM
+	 * Signature: (Ljava/nio/ByteBuffer;Ljava/lang/String;)Ljava/nio/ByteBuffer;
+	 */
+	JNIEXPORT jobject JNICALL Java_com_jnngl_system_VBoxMS_launchVM
+	(JNIEnv*, jobject, jobject, jstring);
 
-/*
- * Class:     com_jnngl_system_VBoxMS
- * Method:    closeVM
- * Signature: (Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;)V
- */
-JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_closeVM
-  (JNIEnv *, jobject, jobject, jobject);
+	/*
+	 * Class:     com_jnngl_system_VBoxMS
+	 * Method:    closeVM
+	 * Signature: (Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;)V
+	 */
+	JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_closeVM
+	(JNIEnv*, jobject, jobject, jobject);
+	
+	/*
+	 * Class:     com_jnngl_system_VBoxMS
+	 * Method:    getScreen
+	 * Signature: (Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;[B[I[I)
+	 */
+	JNIEXPORT jobject JNICALL Java_com_jnngl_system_VBoxMS_getScreen
+	(JNIEnv*, jobject, jobject, jobject, jintArray, jintArray);
 
-/*
- * Class:     com_jnngl_system_VBoxMS
- * Method:    getScreen
- * Signature: (Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;[I[I)[B;
- */
-JNIEXPORT jbyteArray JNICALL Java_com_jnngl_system_VBoxMS_getScreen
-  (JNIEnv *, jobject, jobject, jobject, jintArray, jintArray);
+	/*
+	 * Class:     com_jnngl_system_VBoxMS
+	 * Method:    init
+	 * Signature: ()Ljava/nio/ByteBuffer;
+	 */
+	JNIEXPORT jobject JNICALL Java_com_jnngl_system_VBoxMS_init
+	(JNIEnv*, jobject);
 
-/*
- * Class:     com_jnngl_system_VBoxMS
- * Method:    init
- * Signature: ()Ljava/nio/ByteBuffer;
- */
-JNIEXPORT jobject JNICALL Java_com_jnngl_system_VBoxMS_init
-  (JNIEnv *, jobject);
+	/*
+	 * Class:     com_jnngl_system_VBoxMS
+	 * Method:    click
+	 * Signature: (Ljava/nio/ByteBuffer;IIZ)V
+	 */
+	JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_click
+	(JNIEnv*, jobject, jobject, jint, jint, jboolean);
+
+	/*
+	 * Class:     com_jnngl_system_VBoxMS
+	 * Method:    key
+	 * Signature: (Ljava/nio/ByteBuffer;[I)V
+	 */
+	JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_key
+	(JNIEnv*, jobject, jobject, jintArray);
 
 #ifdef __cplusplus
 }

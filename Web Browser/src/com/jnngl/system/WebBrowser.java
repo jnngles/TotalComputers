@@ -37,6 +37,9 @@ import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class WebBrowser extends WindowApplication {
 
@@ -96,38 +99,44 @@ public class WebBrowser extends WindowApplication {
         });
 
         new Thread(() -> {
-            String cmd;
+            List<String> cmd = new ArrayList<>();
             final String vmArgs = "--add-exports java.base/java.lang=ALL-UNNAMED " +
                     "--add-exports java.desktop/sun.awt=ALL-UNNAMED --add-exports java.desktop/sun.java2d=ALL-UNNAMED";
             if(OS.isWindows()) {
-                cmd = "\""+System.getProperty("java.home")+File.separator+"bin"+
-                        File.separator+"java.exe\" -jar "+vmArgs+" \""+applicationPath+File.separator+
-                        "application.jar\"";
+                cmd.add(System.getProperty("java.home")+File.separator+"bin"+
+                        File.separator+"java.exe");
             } else {
-                cmd = System.getProperty("java.home")+File.separator+"bin"+File.separator+"java";
-                cmd = cmd.replace(" ", "\\\\ ");
-                cmd += " -jar "+vmArgs+" "+applicationPath.replace(" ", "\\\\ ")+File.separator
-                        +"application.jar";
+                String java = System.getProperty("java.home")+File.separator+"bin"+File.separator+"java";
+                cmd.add(java);
             }
+            cmd.add("-jar");
+            cmd.addAll(Arrays.asList(vmArgs.split(" ")));
+            cmd.add(applicationPath+File.separator+
+                    "application.jar");
             String target = "browser_session_"+Thread.currentThread().getId();
-            cmd += " "+target;
+            cmd.add(target);
+            Process process = null;
             try {
-                Runtime.getRuntime().exec(cmd);
+                ProcessBuilder pb = new ProcessBuilder(cmd.toArray(new String[0]));
+                pb.inheritIO();
+                process = pb.start();
             } catch (IOException e) {
-                System.err.println("Failed to spawn subprocess. Command line: '"+cmd+"'");
+                System.err.println("Failed to spawn subprocess. ");
+                System.err.println(" -> "+e.getMessage());
             }
             long startTime = System.currentTimeMillis();
             while(true) {
                 try {
                     long current = System.currentTimeMillis();
-                    if(current-startTime > 5000) {
+                    if(current-startTime > 15000) {
                         System.err.println("["+target+"] Remote session not found. Timed out.");
                         break;
                     }
                     server = (IRemoteBrowser) LocateRegistry.getRegistry(null, 2099).lookup(target);
+                    System.out.println("Successfully found browser process -> PID: "+process.pid()+"");
                     server.onStart(getWidth(), getHeight() - urlField.getHeight());
                     init = true;
-                    System.out.println("Bound new session to '" + target + "' [localhost:2099]");
+                    System.out.println("Successfully bound new session to '" + target + "' [localhost:2099]");
 
                     addResizeEvent(new ResizeEvent() {
                         private void resizeEvent(int width, int height) {
@@ -163,7 +172,7 @@ public class WebBrowser extends WindowApplication {
                     System.err.println("(WebBrowser::onStart) -> Failed to create/access remote object. (" +
                             e.getClass().getSimpleName() + ")");
                     System.err.println(" -> " + e.getMessage());
-                    break;
+//                    break;
                 }
             }
         }).start();
@@ -172,6 +181,7 @@ public class WebBrowser extends WindowApplication {
     @Override
     protected boolean onClose() {
         init = false;
+        if(server == null) return true;
         try {
             server.close();
         } catch (RemoteException e) {
@@ -191,7 +201,6 @@ public class WebBrowser extends WindowApplication {
     protected void render(Graphics2D g) {
         if(!init) return;
         try {
-//            System.out.println("start ["+Thread.currentThread().getId()+"]");
             String url = server.getURL();
             if(url != null) urlField.setText(url);
             setName(server.getTitle());
@@ -199,7 +208,11 @@ public class WebBrowser extends WindowApplication {
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, getWidth(), getHeight());
             byte[] bytes = server.render();
-            if (bytes == null) return;
+            if(bytes == null) {
+                g.setFont(font);
+                g.setColor(Color.WHITE);
+                g.drawString("Initializing CEF (It might take some time)", 10, 10);
+            }
             ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
             BufferedImage screen = ImageIO.read(bais);
             g.drawImage(screen, 0, urlField.getHeight(), getWidth(), getHeight() - urlField.getHeight(),
@@ -210,7 +223,6 @@ public class WebBrowser extends WindowApplication {
             goForward.setLocked(!server.canGoForward());
             goBackward.render(g);
             goForward.render(g);
-//            System.out.println("end ["+Thread.currentThread().getId()+"]");
         } catch(RemoteException e) {
             System.err.println("Failed to call remote method. ("+e.getClass().getSimpleName()+")");
         } catch (IOException e) {

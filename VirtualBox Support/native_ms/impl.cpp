@@ -3,6 +3,7 @@
 #include "com_jnngl_system_VBoxMS.h"
 #include <vector>
 #include <string>
+#include <atlsafe.h>
 
 #define SAFE_RELEASE(x) \
     if (x) { \
@@ -23,6 +24,8 @@ public:
 	IProgress* progress;
 	IMachine* machine;
 	IDisplay* display;
+	IMouse* mouse;
+	IKeyboard* keyboard;
 	BSTR sessionType;
 	BSTR guid;
 	BSTR machineName;
@@ -54,7 +57,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_jnngl_system_VBoxMS_getMachineNames
 
 		rc = machines[i]->get_Name(&str);
 		if (FAILED(rc)) {
-			printf("Failed to get machine(%u) name [rc=0x%x]\n", i, rc);
+			printf("[impl.cpp](VBoxMS::getMachineNames) -> Failed to get machine(%u) name [rc=0x%x]\n", i, rc);
 			return nullptr;
 		}
 
@@ -104,8 +107,7 @@ JNIEXPORT jobject JNICALL Java_com_jnngl_system_VBoxMS_init
 	return env->NewDirectByteBuffer(data, sizeof(vb_data*));
 }
 
-const wchar_t* GetWC(const char* c)
-{
+const wchar_t* GetWC(const char* c) {
 	const size_t cSize = strlen(c) + 1;
 	wchar_t* wc = new wchar_t[cSize];
 	mbstowcs(wc, c, cSize);
@@ -137,7 +139,9 @@ JNIEXPORT jobject JNICALL Java_com_jnngl_system_VBoxMS_launchVM
 	IConsole* console = NULL;
 	IProgress* progress = NULL;
 	IDisplay* display = NULL;
-	BSTR sessionType = SysAllocString(L"gui");
+	IMouse* mouse = NULL;
+	IKeyboard* keyboard = NULL;
+	BSTR sessionType = SysAllocString(L"headless");
 	BSTR guid;
 
 	rc = machine->get_Id(&guid);
@@ -169,6 +173,8 @@ JNIEXPORT jobject JNICALL Java_com_jnngl_system_VBoxMS_launchVM
 
 	session->get_Console(&console);
 	console->get_Display(&display);
+	console->get_Mouse(&mouse);
+	console->get_Keyboard(&keyboard);
 
 	vm_session* s_data = new vm_session();
 	s_data->console = console;
@@ -179,6 +185,8 @@ JNIEXPORT jobject JNICALL Java_com_jnngl_system_VBoxMS_launchVM
 	s_data->session = session;
 	s_data->sessionType = sessionType;
 	s_data->machine = machine;
+	s_data->mouse = mouse;
+	s_data->keyboard = keyboard;
 
 	return env->NewDirectByteBuffer(s_data, sizeof(vm_session*));
 }
@@ -196,6 +204,8 @@ JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_closeVM
 	SAFE_RELEASE(vm->console);
 	SAFE_RELEASE(vm->progress);
 	SAFE_RELEASE(vm->session);
+	SAFE_RELEASE(vm->keyboard);
+	SAFE_RELEASE(vm->mouse);
 	SysFreeString(vm->guid);
 	SysFreeString(vm->sessionType);
 	SAFE_RELEASE(vm->machine);
@@ -207,37 +217,78 @@ JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_closeVM
 	CoUninitialize();
 }
 
-JNIEXPORT jbyteArray JNICALL Java_com_jnngl_system_VBoxMS_getScreen
+JNIEXPORT jobject JNICALL Java_com_jnngl_system_VBoxMS_getScreen
 (JNIEnv* env, jobject, jobject vbBuffer, jobject vmBuffer, jintArray oWidth, jintArray oHeight) {
-	do {
-		vm_session* vm = reinterpret_cast<vm_session*>(env->GetDirectBufferAddress(vmBuffer));
-		if (!vm || !vm->display || !vm->console) break;
-		MachineState state;
-		vm->console->get_State(&state);
-		if (state != MachineState_Running) break;
+	if (!env || !vbBuffer || !vmBuffer || !oWidth || !oHeight) return nullptr;
+	void* raw = env->GetDirectBufferAddress(vmBuffer);
+	if (!raw) return nullptr;
+	vm_session* vm = reinterpret_cast<vm_session*>(raw);
+	if (!vm || !vm->display || !vm->console) return nullptr;
+	MachineState state;
+	vm->console->get_State(&state);
+	if (state != MachineState_Running) return nullptr;
 
-		ULONG width, height, bpp;
-		LONG x, y;
-		GuestMonitorStatus status;
-		vm->display->GetScreenResolution(0, &width, &height, &bpp, &x, &y, &status);
+	ULONG width, height, bpp;
+	LONG x, y;
+	GuestMonitorStatus status;
+	vm->display->GetScreenResolution(0, &width, &height, &bpp, &x, &y, &status);
 
-		if (width == 0 || height == 0 || bpp == 0) break;
+	if (width == 0 || height == 0 || bpp == 0) return nullptr;
 
-		jbyte* pixels = NULL;
-		SAFEARRAY* pixArr;
-		vm->display->TakeScreenShotToArray(0, width, height, BitmapFormat_RGBA, &pixArr);
-		SafeArrayAccessData(pixArr, (void**)&pixels);
-
+	if(oWidth)
 		env->SetIntArrayRegion(oWidth, 0, 1, new jint[]{ (jint)width });
+	if(oHeight)
 		env->SetIntArrayRegion(oHeight, 0, 1, new jint[]{ (jint)height });
 
-		jsize size = width * height * 4;
-		jbyteArray jpixels = env->NewByteArray(size);
-		env->SetByteArrayRegion(jpixels, 0, size, pixels);
+	SAFEARRAY* pixArr;
+	vm->display->TakeScreenShotToArray(0, width, height, BitmapFormat_RGBA, &pixArr);
+	jsize length = (jsize)width * (jsize)height * (jsize)4;
+	if (length <= 0) return nullptr;;
+	void* data = NULL;
+	SafeArrayAccessData(pixArr, &data);
+	jobject buffer = env->NewDirectByteBuffer(data, length);
 
-		return jpixels;
-	} while (0);
+	return buffer;
 
-	return NULL;
+}
 
+JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_click
+(JNIEnv* env, jobject, jobject vmBuffer, jint x, jint y, jboolean isLeft) {
+	vm_session* vm = reinterpret_cast<vm_session*>(env->GetDirectBufferAddress(vmBuffer));
+
+	vm->mouse->PutMouseEventAbsolute(x + 1, y + 1, 0, 0, isLeft ? 0b001 : 0b010);
+	vm->mouse->PutMouseEventAbsolute(x + 1, y + 1, 0, 0, 0b000);
+}
+
+JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_key
+(JNIEnv* env, jobject, jobject vmBuffer, jintArray scancodes) {
+	vm_session* vm = reinterpret_cast<vm_session*>(env->GetDirectBufferAddress(vmBuffer));
+
+	int length = env->GetArrayLength(scancodes);
+
+	ULONG stored;
+	jint* arr = env->GetIntArrayElements(scancodes, 0);
+
+	{
+		CComSafeArray<long> sarr(length);
+
+		for (int i = 0; i < length; i++) {
+			sarr[i] = arr[i];
+		}
+
+
+		vm->keyboard->PutScancodes((LPSAFEARRAY)sarr, &stored);
+	}
+	{
+		CComSafeArray<long> sarr(length);
+
+		for (int i = 0; i < length; i++) {
+			sarr[i] = arr[i]+128;
+		}
+
+
+		vm->keyboard->PutScancodes((LPSAFEARRAY)sarr, &stored);
+	}
+
+	env->ReleaseIntArrayElements(scancodes, arr, 0);
 }

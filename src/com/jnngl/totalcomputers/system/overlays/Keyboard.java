@@ -19,6 +19,7 @@
 package com.jnngl.totalcomputers.system.overlays;
 
 import com.jnngl.totalcomputers.TotalComputers;
+import com.jnngl.totalcomputers.system.RequiresAPI;
 import com.jnngl.totalcomputers.system.TotalOS;
 
 import java.awt.*;
@@ -637,6 +638,43 @@ public class Keyboard extends Overlay {
                 if(button.key == Keys.SHIFT) shiftPressed();
             }
         }
+    }
+
+    private Keys getKeyForChar(char c) {
+        String str = ""+c;
+        for(Keys k : Keys.values()) {
+            if(k.text == null) continue;
+            if(k.text.equalsIgnoreCase(str))
+                return k;
+        }
+        return null;
+    }
+
+    @RequiresAPI(apiLevel = 3)
+    public void typeString(String str) {
+        for(char c : str.toCharArray())
+            typeChar(c);
+    }
+
+    @RequiresAPI(apiLevel = 3)
+    public void typeChar(char c) {
+        String str = ""+c;
+        Keys key = getKeyForChar(c);
+        if(key == null) return;
+        displayableText = listener.keyTyped(str, key, this);
+    }
+
+    @RequiresAPI(apiLevel = 3)
+    public void erase(int count) {
+        for(int i = 0; i < count; i++) {
+            displayableText = listener.keyTyped("", Keys.BACKSPACE, this);
+            if(displayableText.isEmpty()) return;
+        }
+    }
+
+    @RequiresAPI(apiLevel = 3)
+    public void eraseAll() {
+        erase(displayableText.length());
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.jnngl.system;
 
+import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 
 public interface IVBox {
@@ -7,7 +8,11 @@ public interface IVBox {
     public String[] getMachineNames(ByteBuffer vb);
     public ByteBuffer launchVM(ByteBuffer vb, String name);
     public void closeVM(ByteBuffer vb, ByteBuffer vm);
-    public byte[] getScreen(ByteBuffer vb, ByteBuffer vm, int[] width, int[] height);
+    public void getScreenPixels(ByteBuffer vb, ByteBuffer vm, BufferedImage dst);
+    public int getWidth();
+    public int getHeight();
     public ByteBuffer init();
+    public void touch(ByteBuffer vm, int x, int y, boolean isLeft);
+    public void keyType(ByteBuffer vm, int[] scancodes);
 
 }

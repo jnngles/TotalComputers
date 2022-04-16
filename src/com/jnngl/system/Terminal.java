@@ -22,7 +22,8 @@ import com.jnngl.totalcomputers.system.TotalOS;
 import com.jnngl.totalcomputers.system.desktop.ApplicationHandler;
 import com.jnngl.totalcomputers.system.desktop.ConsoleApplication;
 
-import java.io.File;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 public class Terminal extends ConsoleApplication {
 
@@ -64,50 +65,50 @@ public class Terminal extends ConsoleApplication {
                 break;
             }
 
-            case "ls": {
-                boolean A = false;
-                boolean a = false;
-
-                String directory = path.getPath();
-
-                for(String arg : args) {
-                    if(arg.equals("")) continue;
-                    if(arg.startsWith("-") && !arg.startsWith("--")) {
-                        if(arg.contains("a")) {
-                            a = true;
-                        }
-                        if(arg.contains("A")) {
-                            a = true;
-                            A = true;
-                        }
-                    } else if(arg.startsWith("--")) {
-
-                    } else {
-                        if(arg.startsWith("/")) directory = os.fs.root()+arg;
-                        else directory = path.getPath()+"/"+arg;
-                    }
-                }
-
-                boolean finalA = a;
-                File[] files = new File(directory).listFiles((dir, name1) -> {
-                    if(name1.startsWith(".")) {
-                        if(!finalA) return false;
-                    }
-
-                    return true;
-                });
-
-                if(files == null) {
-                    putString("Failed to access directory '").putString(directory).putString("'.\n");
-                    break;
-                }
-                if(a && !A) putString(".\n..");
-                for(File file : files) {
-                    putString(file.getName()).putString("\n");
-                }
-
-                break;
-            }
+//            case "ls": {
+//                boolean A = false;
+//                boolean a = false;
+//
+//                String directory = path.getPath();
+//
+//                for(String arg : args) {
+//                    if(arg.equals("")) continue;
+//                    if(arg.startsWith("-") && !arg.startsWith("--")) {
+//                        if(arg.contains("a")) {
+//                            a = true;
+//                        }
+//                        if(arg.contains("A")) {
+//                            a = true;
+//                            A = true;
+//                        }
+//                    } else if(arg.startsWith("--")) {
+//
+//                    } else {
+//                        if(arg.startsWith("/")) directory = os.fs.root()+arg;
+//                        else directory = path.getPath()+"/"+arg;
+//                    }
+//                }
+//
+//                boolean finalA = a;
+//                File[] files = new File(directory).listFiles((dir, name1) -> {
+//                    if(name1.startsWith(".")) {
+//                        if(!finalA) return false;
+//                    }
+//
+//                    return true;
+//                });
+//
+//                if(files == null) {
+//                    putString("Failed to access directory '").putString(directory).putString("'.\n");
+//                    break;
+//                }
+//                if(a && !A) putString(".\n..");
+//                for(File file : files) {
+//                    putString(file.getName()).putString("\n");
+//                }
+//
+//                break;
+//            }
 
             case "open": {
                 if(args.length > 0) {
@@ -129,7 +130,60 @@ public class Terminal extends ConsoleApplication {
                         && !os.fs.launchFromApplication("/sys/bin/"+name+".app")) {
                         if(!os.fs.launchFromApplication(path.getPath()+"/"+name)
                             && !os.fs.launchFromApplication("/sys/bin/"+name+".app")) {
-                            putString(name).putString(": command not found\n");
+                            String[] cmd;
+                            if(System.getProperty("os.name").toLowerCase().startsWith("windows")) {
+                                cmd = new String[args.length+3];
+                                cmd[0] = "cmd.exe";
+                                cmd[1] = "/c";
+                                cmd[2] = name;
+                                System.arraycopy(args, 0, cmd, 3, args.length);
+                            } else {
+                                cmd = new String[args.length+1];
+                                cmd[0] = name;
+                                System.arraycopy(args, 0, cmd, 1, args.length);
+                            }
+                            ProcessBuilder pb = new ProcessBuilder(cmd);
+                            pb.directory(path);
+                            try {
+                                Process p = pb.start();
+
+                                class OutputRedirect extends Thread {
+                                    InputStream is;
+                                    ConsoleOutput out;
+
+                                    OutputRedirect(InputStream is, ConsoleOutput out) {
+                                        this.is = is;
+                                        this.out = out;
+                                    }
+
+                                    public void run() {
+                                        try {
+                                            InputStreamReader isr = new InputStreamReader(is);
+                                            BufferedReader br = new BufferedReader(isr);
+                                            String line;
+                                            while((line = br.readLine()) != null) {
+                                                out.write(line+"\n");
+                                                renderCanvas();
+                                            }
+                                        } catch (IOException ioe) {
+                                            ioe.printStackTrace();
+                                        }
+                                    }
+                                }
+                                OutputRedirect out = new OutputRedirect(p.getInputStream(), stdout);
+                                OutputRedirect err = new OutputRedirect(p.getErrorStream(), stderr);
+                                out.start();
+                                err.start();
+                                try {
+                                    err.join();
+                                    out.join();
+                                } catch (InterruptedException e) {
+                                    putString(e.getLocalizedMessage()+"\n");
+                                }
+                                putString("\n");
+                            } catch (IOException e) {
+                                putString(e.getLocalizedMessage()+"\n");
+                            }
                         }
                     }
                 }

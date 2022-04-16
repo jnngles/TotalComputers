@@ -137,7 +137,8 @@ public class JCefLoader {
             try {
                 System.loadLibrary("jawt");
             } catch (Throwable e) {
-                System.err.println("Failed to load JAWT. Ignoring.");
+                System.err.println("Failed to load JAWT.");
+                System.err.println(" -> " + e.getMessage());
             }
         }
         SystemBootstrap.setLoader(libname -> {

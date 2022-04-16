@@ -18,6 +18,12 @@
 
 package com.jnngl.totalcomputers;
 
+import com.jnngl.packet.MapPacketSender;
+import com.jnngl.packet.MapPacketSenderFactory;
+import com.jnngl.packet.PacketListener;
+import com.jnngl.totalcomputers.motion.MotionCapabilities;
+import com.jnngl.totalcomputers.motion.MotionCapture;
+import com.jnngl.totalcomputers.motion.MotionCaptureDesc;
 import com.jnngl.totalcomputers.system.TotalOS;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -25,29 +31,26 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.ItemFrame;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.MapMeta;
-import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
+import org.spigotmc.event.entity.EntityDismountEvent;
 
+import java.awt.image.BufferedImage;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -60,7 +63,168 @@ import java.util.logging.Logger;
  * @author JNNGL
  */
 @SuppressWarnings("unused")
-public class TotalComputers extends JavaPlugin implements Listener {
+public class TotalComputers extends JavaPlugin implements Listener, MotionCapture {
+
+    /* *************** CODE SECTION: FIELDS *************** */
+
+    private final static String replyPrefix = ChatColor.GOLD + "[TotalComputers] " + ChatColor.RESET;
+    private int delay = 1;
+    private Logger logger;
+    private ConfigManager configManager;
+    private FileConfiguration config, computers, players;
+    private Map<String, List<MonitorPiece>> monitors;
+    private Map<ItemFrame, MonitorPieceIndex> interactiveTiles;
+    /** Unhandled touch inputs */ public List<InputInfo> unhandledInputs;
+    private Map<Player, Location> firstPoses, secondPoses;
+    private Map<Player, SelectionArea> areas;
+    private Map<String, TotalOS> systems;
+    private Map<TotalOS, Object[]> mapPackets;
+    private Map<String, BukkitTask> tasks;
+    private List<String> registeredComputers;
+    private Map<String, SelectionArea> computersPhysicalData;
+    private NamespacedKey recipe = null;
+    private boolean is1_8 = false;
+    private boolean isLegacy = false;
+    private MapPacketSender sender;
+    private Map<TotalOS, Player> executors;
+
+    /* *************** CODE SECTION: MOTION CAPTURE *************** */
+
+    private record CaptureTarget(MotionCaptureDesc desc, Player target) {}
+
+    private Map<Player, TotalOS> locked;
+    private Map<TotalOS, CaptureTarget> targets;
+
+    @Override
+    public MotionCapabilities getCapabilities() {
+        return new MotionCapabilities(true, false, true, false);
+    }
+
+    @Override
+    public boolean startCapture(MotionCaptureDesc desc, TotalOS os) {
+        if(!executors.containsKey(os)) {
+            logger.warning("Motion Capture: Target not found.");
+            return false;
+        }
+        if(targets.containsKey(os)) {
+            logger.warning("Motion capture is busy.");
+            executors.get(os).sendMessage(replyPrefix + ChatColor.RED + targets.get(os).target.getName() + " is already using this feature on this computer.");
+            return false;
+        }
+        if(desc.requiresGazeDirectionCapture() && !getCapabilities().supportsGaveDirectionCapture()) {
+            logger.warning("This motion capture implementation does not support gave direction capture.");
+            return false;
+        }
+        if(desc.requiresMovementCapture() && !getCapabilities().supportsMovementCapture()) {
+            logger.warning("This motion capture implementation does not support movement capture.");
+            return false;
+        }
+        if(desc.requiresJumpCapture() && !getCapabilities().supportsJumpCapture()) {
+            logger.warning("This motion capture implementation does not support jump capture.");
+            return false;
+        }
+        if(desc.requiresSneakCapture() && !getCapabilities().supportsShiftCapture()) {
+            logger.warning("This motion capture implementation does not support shift capture.");
+            return false;
+        }
+
+        Player target = executors.get(os);
+        targets.put(os, new CaptureTarget(desc, target));
+        locked.put(target, os);
+
+        target.sendMessage(replyPrefix + ChatColor.BLUE + "You are now using motion capture!");
+        target.sendMessage(replyPrefix + ChatColor.BLUE + "Configuration: ");
+        target.sendMessage(replyPrefix + ChatColor.BLUE + "  Movement: " + (desc.requiresMovementCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
+        target.sendMessage(replyPrefix + ChatColor.BLUE + "  Gaze: " + (desc.requiresGazeDirectionCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
+        target.sendMessage(replyPrefix + ChatColor.BLUE + "  Jump: " + (desc.requiresJumpCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
+        target.sendMessage(replyPrefix + ChatColor.BLUE + "  Sneak: " + (desc.requiresSneakCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
+        target.sendMessage(replyPrefix + ChatColor.BLUE + "Type "+ChatColor.GREEN+"/tcmp release"+ChatColor.BLUE+" to stop it");
+
+        Arrow arrow = target.getWorld().spawn(target.getLocation(), Arrow.class);
+        arrow.setGravity(false);
+        arrow.setInvulnerable(true);
+        arrow.setPassenger(target);
+
+        PacketListener.addPlayer(target, new PacketListener(new PacketListener.PacketHandler() {
+            @Override
+            public boolean read(Object packet) {
+                if(!packet.getClass().getSimpleName().equals("PacketPlayInSteerVehicle")) return true;
+                try {
+                    Class<?> cls = packet.getClass();
+                    boolean sneak = (boolean)cls.getMethod("a").invoke(packet);
+                    boolean jump = (boolean)cls.getMethod("d").invoke(packet);
+                    float forward = (float)cls.getMethod("c").invoke(packet);
+                    float side = -(float)cls.getMethod("b").invoke(packet);
+
+                    if(jump && desc.requiresJumpCapture())
+                        desc.jumpEvent().onJump();
+
+                    if((forward != 0 || side != 0) && desc.requiresMovementCapture())
+                        desc.movementEvent().onMove(side, forward);
+
+                    if(desc.requiresSneakCapture()) {
+                        if(sneak)
+                            desc.sneakEvent();
+                    }
+
+                    return false;
+                } catch (Throwable e) {
+                    logger.warning("Failed to access packet data");
+                    return true;
+                }
+            }
+
+            @Override
+            public boolean write(Object packet) {
+                return true;
+            }
+        }));
+
+        return true;
+    }
+
+    @Override
+    public boolean stopCapture(TotalOS os) {
+        if(!executors.containsKey(os)) return false;
+        if(executors.get(os).getName().equals(targets.get(os).target.getName())) {
+            forceStopCapture(os);
+            return true;
+        }
+        logger.warning("Motion capture is busy.");
+        executors.get(os).sendMessage(replyPrefix + ChatColor.RED + targets.get(os).target.getName() + " is already using this feature on this computer.");
+        return false;
+    }
+
+    @Override
+    public void forceStopCapture(TotalOS os) {
+        if(!targets.containsKey(os)) return;
+        PacketListener.removePlayer(targets.get(os).target);
+        Entity vehicle = targets.get(os).target.getVehicle();
+        if(vehicle != null) {
+            vehicle.getPassengers().remove(targets.get(os).target);
+            vehicle.remove();
+        }
+        targets.get(os).target.sendMessage(replyPrefix + ChatColor.BLUE +
+                "You are no longer using the capture feature.");
+        locked.remove(targets.get(os).target);
+        targets.remove(os);
+    }
+
+    @Override
+    public boolean isCapturing(TotalOS os) {
+        return targets.containsKey(os);
+    }
+
+    @EventHandler
+    public void dismount(EntityDismountEvent e) {
+        if(!(e.getEntity() instanceof Player player)) return;
+        if(!(e.getDismounted() instanceof Arrow vehicle)) return;
+
+        if(locked.containsKey(player)) {
+            forceStopCapture(locked.get(player));
+            vehicle.remove();
+        }
+    }
 
     /* *************** CODE SECTION: RECORDS, ENUMS *************** */
     // Contains useful records and enums.
@@ -195,23 +359,6 @@ public class TotalComputers extends JavaPlugin implements Listener {
      */
     public static record MonitorPieceIndex(String name, int index) {}
 
-    /* *************** CODE SECTION: FIELDS *************** */
-
-    private final static String replyPrefix = ChatColor.GOLD + "[TotalComputers] " + ChatColor.RESET;
-    private Logger logger;
-    private ConfigManager configManager;
-    private FileConfiguration config, computers, players;
-    private Map<String, List<MonitorPiece>> monitors;
-    private Map<ItemFrame, MonitorPieceIndex> interactiveTiles;
-    /** Unhandled touch inputs */ public List<InputInfo> unhandledInputs;
-    private Map<Player, Location> firstPoses, secondPoses;
-    private Map<Player, SelectionArea> areas;
-    private List<String> registeredComputers;
-    private Map<String, SelectionArea> computersPhysicalData;
-    private NamespacedKey recipe = null;
-    private boolean is1_8 = false;
-    private boolean isLegacy = false;
-
     /* *************** CODE SECTION: INITIALIZATION *************** */
 
     /**
@@ -222,6 +369,7 @@ public class TotalComputers extends JavaPlugin implements Listener {
         config = configManager.getFileConfig("config.yml");
         computers = configManager.getFileConfig("computers.yml");
         players = configManager.getFileConfig("players.yml");
+        delay = config.getInt("delay-ticks");
     }
 
     /**
@@ -235,7 +383,7 @@ public class TotalComputers extends JavaPlugin implements Listener {
      * @param monitorPieces Monitor
      * @param i Index of the piece
      */
-    private void proceedMonitorPiece(TotalOS os, String name, SelectionArea area, int x1, int y1, int z1, Vector displacement, List<MonitorPiece> monitorPieces, int[] i) {
+    private int proceedMonitorPiece(TotalOS os, String name, SelectionArea area, int x1, int y1, int z1, Vector displacement, List<MonitorPiece> monitorPieces, int[] i) {
         Location loc = new Location(area.firstPos.getWorld(), x1, y1, z1).add(displacement);
 
         final MapView map = Bukkit.createMap(loc.getWorld());
@@ -249,22 +397,23 @@ public class TotalComputers extends JavaPlugin implements Listener {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             material = Material.MAP;
         }
-        ItemStack is;
-        if(isLegacy) is = new ItemStack(material, 1, (short) map.getId());
-        else is = new ItemStack(material, 1);
+        ItemStack is = null;
+        Object mapId = 0;
+        try {
+            mapId = map.getClass().getMethod("getId").invoke(map);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        if(isLegacy) {
+            is = new ItemStack(material, 1, (Short) mapId );
+        }
+        else {
+            is = new ItemStack(material, 1);
 
-        final MapRenderer osRenderer = new TotalOS.Renderer(name, i[0], this, os, area);
-
-//        Bukkit.getScheduler().runTaskTimer(this, () -> {
-            map.getRenderers().clear();
-            map.addRenderer(osRenderer);
-//        }, 1, 1);
-
-        if(!isLegacy) {
             try {
                 MapMeta meta = (MapMeta) is.getItemMeta();
                 Method setMapId = MapMeta.class.getMethod("setMapId", int.class);
-                setMapId.invoke(meta, map.getId());
+                setMapId.invoke(meta, mapId);
                 is.setItemMeta(meta);
             } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
                 System.err.println("Failed to assign map id");
@@ -290,6 +439,7 @@ public class TotalComputers extends JavaPlugin implements Listener {
         } else logger.info("Failed to init computer: Unable to create or load item frame.");
 
         i[0]++;
+        return (mapId instanceof Short)? (short)mapId : (int)mapId;
     }
 
     /**
@@ -321,23 +471,85 @@ public class TotalComputers extends JavaPlugin implements Listener {
         boolean invert = area.direction == SelectionArea.Direction.BACKWARD || area.direction == SelectionArea.Direction.RIGHT;
 
         TotalOS os = new TotalOS(area.width*128, area.height*128, name);
+        os.motionCapture = this;
+
+        int[] maps = new int[area.area];
 
         for(int y1 = topRightY; y1 >= downLeftY; y1--) {
             if(invert) {
                 for (int x1 = topRightX; x1 >= downLeftX; x1--) {
                     for (int z1 = topRightZ; z1 >= downLeftZ; z1--) {
-                        proceedMonitorPiece(os, name, area, x1, y1, z1, displacement, monitorPieces, i);
+                        maps[i[0]] = proceedMonitorPiece(os, name, area, x1, y1, z1, displacement, monitorPieces, i);
                     }
                 }
             } else {
                 for (int x1 = downLeftX; x1 <= topRightX; x1++) {
                     for (int z1 = downLeftZ; z1 <= topRightZ; z1++) {
-                        proceedMonitorPiece(os, name, area, x1, y1, z1, displacement, monitorPieces, i);
+                        maps[i[0]] = proceedMonitorPiece(os, name, area, x1, y1, z1, displacement, monitorPieces, i);
                     }
                 }
             }
         }
 
+        if(sender != null) {
+
+            tasks.put(os.name, Bukkit.getScheduler().runTaskTimer(this, () -> {
+                List<TotalComputers.InputInfo> handledInputs = new ArrayList<>();
+
+                for (int x = 0; x < area.width; x++) {
+                    for (int y = 0; y < area.height; y++) {
+                        int id = y * area.width + x;
+                        int absX = x * 128;
+                        int absY = y * 128;
+                        for (TotalComputers.InputInfo inputInfo : unhandledInputs.toArray(new InputInfo[0])) {
+                            if (inputInfo.index().name().equals(name) && inputInfo.index().index() == id) {
+                                executors.put(os, inputInfo.player);
+                                os.processTouch(absX + inputInfo.x(), absY + inputInfo.y(), inputInfo.interactType(), inputInfo.player().hasPermission("totalcomputers.admin"));
+                                executors.remove(os);
+                                handledInputs.add(inputInfo);
+                            }
+                        }
+                    }
+                }
+                unhandledInputs.removeAll(handledInputs);
+
+                Bukkit.getScheduler().runTaskAsynchronously(this, () ->{
+
+                    BufferedImage screen = os.renderFrame();
+
+                    Object[] packets = new Object[area.area];
+
+                    for (int x = 0; x < area.width; x++) {
+                        for (int y = 0; y < area.height; y++) {
+                            int id = y * area.width + x;
+                            int absX = x * 128;
+                            int absY = y * 128;
+                            try {
+                                packets[id] = sender.createPacket(maps[id], screen.getSubimage(absX, absY, 128, 128));
+                            } catch (ReflectiveOperationException e) {
+                                logger.warning("Failed to create packet");
+                                logger.warning(" -> " + e.getMessage());
+                            }
+                        }
+                    }
+
+
+                    for (Player player : Bukkit.getOnlinePlayers()) {
+                        for (int id = 0; id < area.area; id++) {
+                            try {
+                                sender.sendPacket(player, packets[id]);
+                            } catch (ReflectiveOperationException e) {
+                                logger.warning("Failed to create packet");
+                                logger.warning(" -> " + e.getMessage());
+                            }
+                        }
+                    }
+                });
+            }, 0, delay));
+
+        }
+
+        systems.put(name, os);
         monitors.remove(name);
         monitors.put(name, monitorPieces);
     }
@@ -346,11 +558,19 @@ public class TotalComputers extends JavaPlugin implements Listener {
      * Loads all computers from config
      */
     private void loadComputers() {
+        for(BukkitTask task : tasks.values())
+            task.cancel();
+        tasks.clear();
         unhandledInputs = new ArrayList<>();
         monitors = new HashMap<>();
+        targets = new HashMap<>();
+        locked = new HashMap<>();
+        executors = new HashMap<>();
+        mapPackets = new HashMap<>();
         if(computers.isSet("computers.names")) registeredComputers = computers.getStringList("computers.names");
         else registeredComputers = new ArrayList<>();
         computersPhysicalData = new HashMap<>();
+        systems = new HashMap<>();
         interactiveTiles = new HashMap<>();
         for(String name : registeredComputers) {
             World world = getServer().getWorld(computers.getString("computers."+name+".world"));
@@ -390,7 +610,15 @@ public class TotalComputers extends JavaPlugin implements Listener {
         String ver = Bukkit.getBukkitVersion();
         is1_8 = ver.contains("1.8");
         isLegacy = is1_8 || ver.contains("1.9") || ver.contains("1.10") || ver.contains("1.11") || ver.contains("1.12");
+        try {
+            sender = MapPacketSenderFactory.createMapPacketSender(ver);
+        } catch (ReflectiveOperationException e) {
+            logger.warning("Failed to create map packet sender");
+            logger.warning(" -> "+e.getMessage());
+        }
         loadConfigs();
+        if(!config.isSet("delay-ticks")) config.set("delay-ticks", 1);
+        delay = config.getInt("delay-ticks");
         if(!config.isSet("selection")) config.set("selection", true);
         if(!config.isSet("allowCraft")) config.set("allowCraft", false);
         if(!config.isSet("craft.row1")) config.set("craft.row1", "   ");
@@ -398,6 +626,7 @@ public class TotalComputers extends JavaPlugin implements Listener {
         if(!config.isSet("craft.row3")) config.set("craft.row3", "   ");
         if(!config.isSet("craft.ingredients")) config.set("craft.ingredients", new ArrayList<String>());
         configManager.saveAllConfigs(true);
+        tasks = new HashMap<>();
         loadComputers();
 
         if(config.getBoolean("allowCraft")) {
@@ -527,7 +756,9 @@ public class TotalComputers extends JavaPlugin implements Listener {
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers list" + ChatColor.WHITE + " - prints list of created computers.");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers data <name>" + ChatColor.WHITE + " - prints information about computer.");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers selection <enable|disable|toggle|state>" + ChatColor.WHITE + " - enables/disables/toggles/prints possibility of wall area selection with wand.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers wand" + ChatColor.WHITE + " - Gives wand");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers wand" + ChatColor.WHITE + " - gives wand");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers paste <text>" + ChatColor.WHITE + " - pastes text. (Keyboard alternative)");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers erase <all|numChars>" + ChatColor.WHITE + " - erases text. (Keyboard alternative)");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers reload" + ChatColor.WHITE + " - reloads all configuration files.");
                 }
                 else if(args[0].equalsIgnoreCase("reload")) { // Reload subcommand
@@ -539,13 +770,58 @@ public class TotalComputers extends JavaPlugin implements Listener {
                     boolean success = configManager.reloadAllConfigs();
                     loadConfigs();
                     sender.sendMessage(replyPrefix + ChatColor.GREEN + "Configuration files has been" +
-                            "successfully reloaded!");
+                            " successfully reloaded!");
                     if(success) {
                         loadComputers();
                         sender.sendMessage(replyPrefix + ChatColor.GREEN + "All computers has been " +
                                 "successfully reloaded.");
                     }
                     else sender.sendMessage(replyPrefix + ChatColor.RED   + "Something went wrong!");
+                }
+                else if(args[0].equalsIgnoreCase("paste")) { // Paste subcommand
+                    if(!sender.hasPermission("totalcomputers.use")) {
+                        sender.sendMessage(replyPrefix + ChatColor.GRAY + "You don't have enough permissions!");
+                        return true;
+                    }
+
+                    if(args.length == 1) {
+                        sender.sendMessage(replyPrefix + ChatColor.RED + "Nothing to paste.");
+                        return true;
+                    }
+                    StringBuilder toPaste = new StringBuilder();
+                    for(int i = 1; i < args.length; i++) {
+                        toPaste.append(args[i]);
+                        if (i != args.length - 1) toPaste.append(" ");
+                    }
+
+                    TotalOS os = getKeyboardHandle((Player) sender);
+                    if(os == null) return true;
+                    os.keyboard.typeString(toPaste.toString());
+
+                }
+                else if(args[0].equalsIgnoreCase("erase")) { // Erase subcommand
+                    if(!sender.hasPermission("totalcomputers.use")) {
+                        sender.sendMessage(replyPrefix + ChatColor.GRAY + "You don't have enough permissions!");
+                        return true;
+                    }
+
+                    if(args.length > 2) {
+                        invalidUsage(sender);
+                        return true;
+                    }
+
+                    TotalOS os = getKeyboardHandle((Player) sender);
+                    if(os == null) return true;
+                    if(args.length == 1) os.keyboard.erase(1);
+                    else if(args[1].equalsIgnoreCase("all")) os.keyboard.eraseAll();
+                    else {
+                        try {
+                            os.keyboard.erase(Integer.parseInt(args[1]));
+                        } catch (Throwable e) {
+                            sender.sendMessage(replyPrefix + ChatColor.RED + "`"+args[1]+"' is not a number.");
+                        }
+                    }
+                    return true;
                 }
                 else if(args[0].equalsIgnoreCase("selection")) { // Selection subcommand
                     if(args.length >= 2) {
@@ -706,6 +982,13 @@ public class TotalComputers extends JavaPlugin implements Listener {
                     wand.setItemMeta(meta);
                     ((Player) sender).getInventory().addItem(wand);
                 }
+                else if(args[0].equalsIgnoreCase("release")) { // Release subcommand
+                    if(!locked.containsKey((Player)sender)) {
+                        invalidUsage(sender);
+                        return true;
+                    }
+                    forceStopCapture(locked.get((Player)sender));
+                }
                 else if(args[0].equalsIgnoreCase("data")) { // Data subcommand
                     if(args.length == 2) {
                         if(!sender.hasPermission("totalcomputers.manage.all")) {
@@ -740,6 +1023,8 @@ public class TotalComputers extends JavaPlugin implements Listener {
                     } else if(args.length > 2) {
                         sender.sendMessage(replyPrefix + ChatColor.RED + "Computer name cannot contain spaces!");
                     } else invalidUsage(sender);
+                } else {
+                    invalidUsage(sender);
                 }
             }
         } else sender.sendMessage(replyPrefix + ChatColor.RED + "Only players can execute this command.");
@@ -761,8 +1046,12 @@ public class TotalComputers extends JavaPlugin implements Listener {
         if(!sender.hasPermission("totalcomputers.command.totalcomputers")) return variants;
         String[] all = {};
         if(command.getName().equalsIgnoreCase("totalcomputers")) {
-            if(args.length == 1) all = new String[] { "help", "create", "remove", "selection", "list",
-                    "reload", "data", "wand" };
+            if(args.length == 1) {
+                if(locked.containsKey(player)) all = new String[]{"help", "create", "remove", "selection", "list",
+                        "reload", "data", "wand", "paste", "erase", "release"};
+                else all = new String[]{"help", "create", "remove", "selection", "list",
+                        "reload", "data", "wand", "paste", "erase"};
+            }
             else if(args[0].equalsIgnoreCase("selection")) {
                 if(args.length == 2) {
                     all = new String[] { "enable", "disable", "toggle", "state" };
@@ -865,6 +1154,11 @@ public class TotalComputers extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void playerLeave(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+        if(locked.containsKey(player)) {
+            TotalOS target = locked.get(player);
+            stopCapture(target);
+            logger.info("Player "+player.getName()+" left the game. Capture stopped for "+target.name+" computer.");
+        }
         firstPoses.remove(player);
         secondPoses.remove(player);
         areas.remove(player);
@@ -919,16 +1213,46 @@ public class TotalComputers extends JavaPlugin implements Listener {
      */
     @Override
     public void onDisable() {
+        for(TotalOS os : systems.values())
+            forceStopCapture(os);
         String[] computers = new String[registeredComputers.size()];
-        if(recipe != null)
-            getServer().removeRecipe(recipe);
         registeredComputers.toArray(computers);
+        if(recipe != null) {
+            getServer().removeRecipe(recipe);
+        }
         for(String computer : computers)
             removeComputer(computer);
         logger.info("Total Computers disabled.");
     }
 
     /* *************** CODE SECTION: HELPERS *************** */
+
+    private TotalOS getKeyboardHandle(Player sender) {
+        String nearest = null;
+        double nearestD = Integer.MAX_VALUE;
+        for(String name : computersPhysicalData.keySet()) {
+            SelectionArea area = computersPhysicalData.get(name);
+            Vector center = area.firstPos.add(area.secondPos).multiply(0.5).toVector();
+            double d = center.distanceSquared(sender.getLocation().toVector());
+            if(d < nearestD) {
+                nearestD = d;
+                nearest = name;
+            }
+        }
+
+        if(nearestD > 100) {
+            sender.sendMessage(replyPrefix + ChatColor.RED + "You are too far from the computer");
+            return null;
+        }
+
+        TotalOS os = systems.get(nearest);
+        if(os.keyboard == null || !os.keyboard.isControlTaken()) {
+            sender.sendMessage(replyPrefix + ChatColor.RED + "Open keyboard first");
+            return null;
+        }
+
+        return os;
+    }
 
     public void increaseUnregComputers(Player p) {
         String path = p.getName()+".free";
@@ -1010,20 +1334,13 @@ public class TotalComputers extends JavaPlugin implements Listener {
      * @param name Name of computer to remove
      */
     private void removeComputer(String name) {
-        boolean renderThreadFinished = false;
+        stopCapture(systems.get(name));
+        tasks.get(name).cancel();
+        tasks.remove(name);
         List<MonitorPiece> monitor = monitors.get(name);
         for(MonitorPiece piece : monitor) {
             final MapView map = piece.mapView;
             final ItemFrame frame = piece.frame;
-            for(MapRenderer renderer : map.getRenderers()) {
-                map.removeRenderer(renderer);
-                if(renderer instanceof TotalOS.Renderer r) {
-                    if(!renderThreadFinished) {
-                        r.getSystem().turnOff();
-                        renderThreadFinished = true;
-                    }
-                }
-            }
 
             interactiveTiles.remove(frame);
             frame.remove();
@@ -1037,7 +1354,6 @@ public class TotalComputers extends JavaPlugin implements Listener {
         registeredComputers.remove(name);
         computersPhysicalData.remove(name);
         monitors.remove(name);
-        if(!renderThreadFinished) System.err.println("Failed to finish render loop.");
     }
 
     /**
