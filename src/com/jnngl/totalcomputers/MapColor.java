@@ -7,13 +7,14 @@ import java.awt.image.BufferedImage;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Convert {@link Color} to map color
  */
 public class MapColor {
 
-    private static final Map<Color, Byte> cache = new HashMap<>();
+    private static final Map<Color, Byte> cache = new ConcurrentHashMap<>();
 
     private static byte BLACK = -1;
 
@@ -100,9 +101,13 @@ public class MapColor {
     }
 
     public static byte matchColorFast(Color color, int roundDistance) {
-        Color nAlpha = new Color(color.getRGB(), false);
-        if(cache.containsKey(nAlpha))
-            return cache.get(nAlpha);
+        int r = ((color.getRGB() & 0xFF0000) >>> 16) & ~15;
+        int g = ((color.getRGB() & 0x00FF00) >>>  8) & ~15;
+        int b = ((color.getRGB() & 0x0000FF)       ) & ~15;
+        Color optimized = new Color(r,g,b);
+        if(cache.containsKey(optimized)) {
+            return cache.get(optimized);
+        }
         if(BLACK == -1)
             BLACK = matchColor(Color.BLACK);
         if(Color.BLACK.equals(color))
@@ -123,7 +128,8 @@ public class MapColor {
         byte index = (byte)(idx < 128 ? idx : -129 + (idx - 127));
         if(Color.BLACK.equals(colors[idx]))
             index = BLACK;
-        cache.put(nAlpha, index);
+        if(cache.containsKey(optimized))
+            cache.put(optimized, index);
         return index;
     }
 
@@ -135,7 +141,7 @@ public class MapColor {
                 Color color;
                 if(x >= data.getWidth() || y >= data.getHeight()) color = Color.BLACK;
                 else color = new Color(data.getRGB(x, y));
-                bytes[index] = matchColorFast(color, 25);
+                bytes[index] = matchColorFast(color, 40);
             }
         }
         return bytes;

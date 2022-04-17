@@ -32,7 +32,6 @@ public class GBEmulator extends WindowApplication {
     private HeadlessController controller;
     private HeadlessDisplay display;
     private int bX, bY, bH, bW;
-    private boolean frameDrawn = false;
 
     public static void main(String[] args) {
         ApplicationHandler.open(GBEmulator.class, args[0]);
@@ -195,7 +194,6 @@ public class GBEmulator extends WindowApplication {
             resizeImage();
         g.drawImage(display.render(), bX, bY, bW, bH, null);
         startBt.render(g);
-        frameDrawn = true;
     }
 
     @Override

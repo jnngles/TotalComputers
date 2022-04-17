@@ -208,20 +208,32 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         access = new AccessMethod();
                         try {
                             access.sneak = cls.getMethod("a");
+                            if(!access.sneak.getReturnType().equals(boolean.class)) throw new ReflectiveOperationException();
                             access.jump = cls.getMethod("d");
+                            if(!access.jump.getReturnType().equals(boolean.class)) throw new ReflectiveOperationException();
                             access.forward = cls.getMethod("c");
+                            if(!access.forward.getReturnType().equals(float.class)) throw new ReflectiveOperationException();
                             access.side = cls.getMethod("b");
+                            if(!access.side.getReturnType().equals(float.class)) throw new ReflectiveOperationException();
                         } catch (Throwable e) {
                             try {
                                 access.sneak = cls.getMethod("d");
+                                if(!access.sneak.getReturnType().equals(boolean.class)) throw new ReflectiveOperationException();
                                 access.jump = cls.getMethod("c");
+                                if(!access.jump.getReturnType().equals(boolean.class)) throw new ReflectiveOperationException();
                                 access.forward = cls.getMethod("b");
+                                if(!access.forward.getReturnType().equals(float.class)) throw new ReflectiveOperationException();
                                 access.side = cls.getMethod("a");
+                                if(!access.side.getReturnType().equals(float.class)) throw new ReflectiveOperationException();
                             } catch (Throwable ex) {
                                 access.sneak = cls.getMethod("f");
+                                if(!access.sneak.getReturnType().equals(boolean.class)) throw new ReflectiveOperationException();
                                 access.jump = cls.getMethod("e");
+                                if(!access.jump.getReturnType().equals(boolean.class)) throw new ReflectiveOperationException();
                                 access.forward = cls.getMethod("d");
+                                if(!access.forward.getReturnType().equals(float.class)) throw new ReflectiveOperationException();
                                 access.side = cls.getMethod("c");
+                                if(!access.side.getReturnType().equals(float.class)) throw new ReflectiveOperationException();
                             }
                         }
                     }

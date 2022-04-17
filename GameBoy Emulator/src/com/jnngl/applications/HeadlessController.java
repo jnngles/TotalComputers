@@ -13,12 +13,10 @@ public class HeadlessController implements Controller {
     }
 
     public void keyDown(ButtonListener.Button button) {
-        System.out.println("KeyDown "+button.toString());
         listener.onButtonPress(button);
     }
 
     public void keyUp(ButtonListener.Button button) {
-        System.out.println("KeyUp "+button.toString());
         listener.onButtonRelease(button);
     }
 
