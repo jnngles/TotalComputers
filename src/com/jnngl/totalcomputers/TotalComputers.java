@@ -83,6 +83,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     private Map<Player, SelectionArea> areas;
     private Map<String, TotalOS> systems;
     private Map<String, BukkitTask> tasks;
+    private Map<TotalOS, DoubleBuffer> packets;
     private List<String> registeredComputers;
     private Map<String, SelectionArea> computersPhysicalData;
     private NamespacedKey recipe = null;
@@ -465,6 +466,28 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      */
     public static record MonitorPiece(MapView mapView, ItemFrame frame) {}
 
+    private static class DoubleBuffer {
+        private final Object[] frame1;
+        private final Object[] frame2;
+        private byte current = 0;
+
+        public DoubleBuffer(Object[] frame1, Object[] frame2) {
+            this.frame1 = frame1;
+            this.frame2 = frame2;
+        }
+
+        public Object[] get() {
+            if(current == 0) {
+                current = 1;
+                return frame1;
+            } else {
+                current = 0;
+                return frame2;
+            }
+        }
+
+    }
+
     /**
      * Information about part of the computer
      */
@@ -604,6 +627,18 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
 
         if(sender != null) {
 
+            Object[] frame1 = new Object[area.area], frame2 = new Object[area.area];
+            BufferedImage empty = new BufferedImage(128, 128, BufferedImage.TYPE_INT_RGB);
+            for(int j = 0; j < area.area; j++) {
+                try {
+                    frame1[j] = sender.createPacket(maps[j], empty);
+                    frame2[j] = sender.createPacket(maps[j], empty);
+                } catch (ReflectiveOperationException e) {
+                    logger.warning("Failed to create packet");
+                }
+            }
+            packets.put(os, new DoubleBuffer(frame1, frame2));
+
             tasks.put(os.name, Bukkit.getScheduler().runTaskTimer(this, () -> {
                 List<TotalComputers.InputInfo> handledInputs = new ArrayList<>();
 
@@ -628,7 +663,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
 
                     BufferedImage screen = os.renderFrame();
 
-                    Object[] packets = new Object[area.area];
+                    Object[] framePacket = packets.get(os).get();
 
                     for (int x = 0; x < area.width; x++) {
                         for (int y = 0; y < area.height; y++) {
@@ -636,7 +671,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                             int absX = x * 128;
                             int absY = y * 128;
                             try {
-                                packets[id] = sender.createPacket(maps[id], screen.getSubimage(absX, absY, 128, 128));
+                                sender.modifyPacket(framePacket[id], screen.getSubimage(absX, absY, 128, 128));
                             } catch (ReflectiveOperationException e) {
                                 logger.warning("Failed to create packet");
                                 logger.warning(" -> " + e.getMessage());
@@ -648,7 +683,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                     for (Player player : Bukkit.getOnlinePlayers()) {
                         for (int id = 0; id < area.area; id++) {
                             try {
-                                sender.sendPacket(player, packets[id]);
+                                sender.sendPacket(player, framePacket[id]);
                             } catch (ReflectiveOperationException e) {
                                 logger.warning("Failed to create packet");
                                 logger.warning(" -> " + e.getMessage());
@@ -741,6 +776,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         if(!config.isSet("craft.ingredients")) config.set("craft.ingredients", new ArrayList<String>());
         configManager.saveAllConfigs(true);
         tasks = new HashMap<>();
+        packets = new HashMap<>();
         loadComputers();
 
         if(config.getBoolean("allowCraft")) {
