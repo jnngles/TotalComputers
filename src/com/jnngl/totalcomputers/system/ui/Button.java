@@ -21,6 +21,7 @@ package com.jnngl.totalcomputers.system.ui;
 import com.jnngl.totalcomputers.TotalComputers;
 import com.jnngl.totalcomputers.system.Event;
 
+import java.awt.image.BufferedImage;
 import java.util.List;
 
 import java.awt.*;

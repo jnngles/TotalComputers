@@ -1,7 +1,9 @@
 package com.jnngl.system;
 
 import com.jnngl.totalcomputers.TotalComputers;
+import com.jnngl.totalcomputers.motion.ItemDropEvent;
 import com.jnngl.totalcomputers.motion.MotionCaptureDesc;
+import com.jnngl.totalcomputers.motion.SlotCaptureEvent;
 import com.jnngl.totalcomputers.system.TotalOS;
 import com.jnngl.totalcomputers.system.desktop.ApplicationHandler;
 import com.jnngl.totalcomputers.system.desktop.WindowApplication;
@@ -63,6 +65,28 @@ public class MotionTest extends WindowApplication {
 //                    }
 //                })
 //                .requiresGazeDirectionCapture((dx, dy) -> {this.x+=dx*20; this.y-=dy*20;})
+                .requiresSlotCapture(new SlotCaptureEvent() {
+                    @Override
+                    public void slotLeft() {
+                        System.out.println("Slot left");
+                    }
+
+                    @Override
+                    public void slotRight() {
+                        System.out.println("Slot right");
+                    }
+                })
+                .requiresItemDropCapture(new ItemDropEvent() {
+                    @Override
+                    public void itemDrop() {
+
+                    }
+
+                    @Override
+                    public void stackDrop() {
+
+                    }
+                })
                 , os);
     }
 }

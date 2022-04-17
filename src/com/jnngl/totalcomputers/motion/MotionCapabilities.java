@@ -9,12 +9,16 @@ public class MotionCapabilities {
     private final boolean supportsGazeDirectionCapture;
     private final boolean supportsJumpCapture;
     private final boolean supportsShiftCapture;
+    private final boolean supportsSlotCapture;
+    private final boolean supportsItemDropCapture;
 
-    public MotionCapabilities(boolean movement, boolean gaze, boolean jump, boolean shift) {
+    public MotionCapabilities(boolean movement, boolean gaze, boolean jump, boolean shift, boolean slot, boolean item) {
         this.supportsMovementCapture = movement;
         this.supportsGazeDirectionCapture = gaze;
         this.supportsJumpCapture = jump;
         this.supportsShiftCapture = shift;
+        this.supportsSlotCapture = slot;
+        this.supportsItemDropCapture = item;
     }
 
     public boolean supportsMovementCapture() {
@@ -31,6 +35,14 @@ public class MotionCapabilities {
 
     public boolean supportsShiftCapture() {
         return supportsShiftCapture;
+    }
+
+    public boolean supportsSlotCapture() {
+        return supportsSlotCapture;
+    }
+
+    public boolean supportsItemDropCapture() {
+        return supportsItemDropCapture;
     }
 
 }

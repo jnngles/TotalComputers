@@ -9,6 +9,8 @@ public class MotionCaptureDesc {
     private GazeDirectionCaptureEvent requiresGazeDirectionCapture = null;
     private JumpCaptureEvent requiresJumpCapture = null;
     private SneakCaptureEvent requiresSneakCapture = null;
+    private SlotCaptureEvent requiresSlotCapture = null;
+    private ItemDropEvent requiresItemDropCapture = null;
 
     private MotionCaptureDesc() {}
 
@@ -36,6 +38,16 @@ public class MotionCaptureDesc {
         return this;
     }
 
+    public MotionCaptureDesc requiresSlotCapture(SlotCaptureEvent event) {
+        requiresSlotCapture = event;
+        return this;
+    }
+
+    public MotionCaptureDesc requiresItemDropCapture(ItemDropEvent event) {
+        requiresItemDropCapture = event;
+        return this;
+    }
+
     public boolean requiresMovementCapture() {
         return requiresMovementCapture != null;
     }
@@ -52,6 +64,14 @@ public class MotionCaptureDesc {
         return requiresSneakCapture != null;
     }
 
+    public boolean requiresSlotCapture() {
+        return requiresSlotCapture != null;
+    }
+
+    public boolean requiresItemDropCapture() {
+        return requiresItemDropCapture != null;
+    }
+
     public MovementCaptureEvent movementEvent() {
         return requiresMovementCapture;
     }
@@ -66,6 +86,14 @@ public class MotionCaptureDesc {
 
     public SneakCaptureEvent sneakEvent() {
         return requiresSneakCapture;
+    }
+
+    public SlotCaptureEvent slotCapture() {
+        return requiresSlotCapture;
+    }
+
+    public ItemDropEvent itemDropCapture() {
+        return requiresItemDropCapture;
     }
 
 }

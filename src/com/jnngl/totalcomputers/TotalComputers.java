@@ -24,6 +24,7 @@ import com.jnngl.packet.PacketListener;
 import com.jnngl.totalcomputers.motion.MotionCapabilities;
 import com.jnngl.totalcomputers.motion.MotionCapture;
 import com.jnngl.totalcomputers.motion.MotionCaptureDesc;
+import com.jnngl.totalcomputers.motion.SlotCaptureEvent;
 import com.jnngl.totalcomputers.system.TotalOS;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -40,6 +41,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -76,9 +78,10 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     private Map<ItemFrame, MonitorPieceIndex> interactiveTiles;
     /** Unhandled touch inputs */ public List<InputInfo> unhandledInputs;
     private Map<Player, Location> firstPoses, secondPoses;
+    private Map<String, SlotControl> slotsToRestore;
+    private List<String> playersThatQuitWhileControl;
     private Map<Player, SelectionArea> areas;
     private Map<String, TotalOS> systems;
-    private Map<TotalOS, Object[]> mapPackets;
     private Map<String, BukkitTask> tasks;
     private List<String> registeredComputers;
     private Map<String, SelectionArea> computersPhysicalData;
@@ -91,13 +94,16 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     /* *************** CODE SECTION: MOTION CAPTURE *************** */
 
     private record CaptureTarget(MotionCaptureDesc desc, Player target) {}
+    private record SlotControl(BukkitTask task, ItemStack first, ItemStack second, ItemStack third, int s1, int s2, int s3) {}
 
     private Map<Player, TotalOS> locked;
     private Map<TotalOS, CaptureTarget> targets;
+    private Map<Player, SlotControl> slots;
+    private List<Player> drop;
 
     @Override
     public MotionCapabilities getCapabilities() {
-        return new MotionCapabilities(true, false, true, false);
+        return new MotionCapabilities(true, false, true, true, true, true);
     }
 
     @Override
@@ -127,6 +133,18 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             logger.warning("This motion capture implementation does not support shift capture.");
             return false;
         }
+        if(desc.requiresSlotCapture() && !getCapabilities().supportsSlotCapture()) {
+            logger.warning("This motion capture implementation does not support slot capture.");
+            return false;
+        }
+        if(desc.requiresItemDropCapture() && !getCapabilities().supportsItemDropCapture()) {
+            logger.warning("This motion capture implementation does not support item drop capture.");
+            return false;
+        }
+        if(desc.requiresItemDropCapture() && !desc.requiresSlotCapture()) {
+            logger.warning("Item drop caption requires slot capture.");
+            return false;
+        }
 
         Player target = executors.get(os);
         targets.put(os, new CaptureTarget(desc, target));
@@ -138,6 +156,8 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         target.sendMessage(replyPrefix + ChatColor.BLUE + "  Gaze: " + (desc.requiresGazeDirectionCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
         target.sendMessage(replyPrefix + ChatColor.BLUE + "  Jump: " + (desc.requiresJumpCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
         target.sendMessage(replyPrefix + ChatColor.BLUE + "  Sneak: " + (desc.requiresSneakCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
+        target.sendMessage(replyPrefix + ChatColor.BLUE + "  Slot: " + (desc.requiresSlotCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
+        target.sendMessage(replyPrefix + ChatColor.BLUE + "  Item Drop: " + (desc.requiresItemDropCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
         target.sendMessage(replyPrefix + ChatColor.BLUE + "Type "+ChatColor.GREEN+"/tcmp release"+ChatColor.BLUE+" to stop it");
 
         Arrow arrow = target.getWorld().spawn(target.getLocation(), Arrow.class);
@@ -145,16 +165,70 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         arrow.setInvulnerable(true);
         arrow.setPassenger(target);
 
+        if(desc.requiresSlotCapture()) {
+            int slot1, slot2, slot3;
+            target.getInventory().setHeldItemSlot(4);
+            slot2 = target.getInventory().getHeldItemSlot();
+            slot1 = slot2 - 1;
+            slot3 = slot2 + 1;
+
+            SlotControl slotControl = new SlotControl(Bukkit.getScheduler().runTaskTimer(this, () -> {
+                if (target.getInventory().getHeldItemSlot() != slot2) {
+                    int dif = target.getInventory().getHeldItemSlot() - slot2;
+                    if (dif < 0) desc.slotCapture().slotLeft();
+                    else if (dif > 0) desc.slotCapture().slotRight();
+                    target.getInventory().setHeldItemSlot(slot2);
+                }
+            }, 0, 0), target.getInventory().getItem(slot1), target.getInventory().getItem(slot2),
+                    target.getInventory().getItem(slot3), slot1, slot2, slot3);
+
+            slots.put(target, slotControl);
+
+            target.getInventory().setItem(slot1, new ItemStack(Material.AIR, 0));
+            target.getInventory().setItem(slot2, new ItemStack(Material.BARRIER, 2));
+            target.getInventory().setItem(slot3, new ItemStack(Material.AIR, 0));
+
+            drop.add(target);
+        }
+
         PacketListener.addPlayer(target, new PacketListener(new PacketListener.PacketHandler() {
+            class AccessMethod {
+                Method sneak, jump, forward, side;
+            }
+
+            private AccessMethod access;
+
             @Override
             public boolean read(Object packet) {
                 if(!packet.getClass().getSimpleName().equals("PacketPlayInSteerVehicle")) return true;
                 try {
+
                     Class<?> cls = packet.getClass();
-                    boolean sneak = (boolean)cls.getMethod("a").invoke(packet);
-                    boolean jump = (boolean)cls.getMethod("d").invoke(packet);
-                    float forward = (float)cls.getMethod("c").invoke(packet);
-                    float side = -(float)cls.getMethod("b").invoke(packet);
+                    if(access == null) {
+                        access = new AccessMethod();
+                        try {
+                            access.sneak = cls.getMethod("a");
+                            access.jump = cls.getMethod("d");
+                            access.forward = cls.getMethod("c");
+                            access.side = cls.getMethod("b");
+                        } catch (Throwable e) {
+                            try {
+                                access.sneak = cls.getMethod("d");
+                                access.jump = cls.getMethod("c");
+                                access.forward = cls.getMethod("b");
+                                access.side = cls.getMethod("a");
+                            } catch (Throwable ex) {
+                                access.sneak = cls.getMethod("f");
+                                access.jump = cls.getMethod("e");
+                                access.forward = cls.getMethod("d");
+                                access.side = cls.getMethod("c");
+                            }
+                        }
+                    }
+                    boolean sneak = (boolean)access.sneak.invoke(packet);
+                    boolean jump = (boolean)access.jump.invoke(packet);
+                    float forward = (float)access.forward.invoke(packet);
+                    float side = -(float)access.side.invoke(packet);
 
                     if(jump && desc.requiresJumpCapture())
                         desc.jumpEvent().onJump();
@@ -198,6 +272,16 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     @Override
     public void forceStopCapture(TotalOS os) {
         if(!targets.containsKey(os)) return;
+        if(slots.containsKey(targets.get(os).target)) {
+            Inventory inv = targets.get(os).target.getInventory();
+            SlotControl event = slots.get(targets.get(os).target);
+            event.task.cancel();
+            inv.setItem(event.s1, event.first);
+            inv.setItem(event.s2, event.second);
+            inv.setItem(event.s3, event.third);
+            slots.remove(targets.get(os).target);
+        }
+        drop.remove(targets.get(os).target);
         PacketListener.removePlayer(targets.get(os).target);
         Entity vehicle = targets.get(os).target.getVehicle();
         if(vehicle != null) {
@@ -213,6 +297,21 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     @Override
     public boolean isCapturing(TotalOS os) {
         return targets.containsKey(os);
+    }
+
+    @EventHandler
+    public void drop(PlayerDropItemEvent e) {
+        if(drop.contains(e.getPlayer())) {
+            TotalOS os = locked.get(e.getPlayer());
+            if(targets.get(os).desc.requiresItemDropCapture()) {
+                if (e.getItemDrop().getItemStack().getAmount() == 1) {
+                    targets.get(os).desc.itemDropCapture().itemDrop();
+                } else if (e.getItemDrop().getItemStack().getAmount() == 2) {
+                    targets.get(os).desc.itemDropCapture().stackDrop();
+                }
+            }
+            e.setCancelled(true);
+        }
     }
 
     @EventHandler
@@ -565,8 +664,11 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         monitors = new HashMap<>();
         targets = new HashMap<>();
         locked = new HashMap<>();
+        slots = new HashMap<>();
+        slotsToRestore = new HashMap<>();
+        playersThatQuitWhileControl = new ArrayList<>();
+        drop = new ArrayList<>();
         executors = new HashMap<>();
-        mapPackets = new HashMap<>();
         if(computers.isSet("computers.names")) registeredComputers = computers.getStringList("computers.names");
         else registeredComputers = new ArrayList<>();
         computersPhysicalData = new HashMap<>();
@@ -1147,6 +1249,23 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         }
     }
 
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void playerJoin(PlayerJoinEvent event) {
+        String player = event.getPlayer().getName();
+        if (slotsToRestore.containsKey(player)) {
+            SlotControl slot = slotsToRestore.get(player);
+            event.getPlayer().getInventory().setItem(slot.s1, slot.first);
+            event.getPlayer().getInventory().setItem(slot.s2, slot.second);
+            event.getPlayer().getInventory().setItem(slot.s3, slot.third);
+            slotsToRestore.remove(player);
+        }
+        if (playersThatQuitWhileControl.contains(player)) {
+            Bukkit.getScheduler().runTaskLaterAsynchronously(this,
+                    () -> Bukkit.getPlayer(player).getVehicle().remove(), 10);
+            playersThatQuitWhileControl.remove(player);
+        }
+    }
+
     /**
      * Clean up when player quits the server
      * @param event Event (PlayerQuitEvent)
@@ -1154,6 +1273,12 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     @EventHandler(priority = EventPriority.HIGH)
     public void playerLeave(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+        if(locked.containsKey(player)) {
+            playersThatQuitWhileControl.add(player.getName());
+        }
+        if(slots.containsKey(player)) {
+            slotsToRestore.put(player.getName(), slots.get(player));
+        }
         if(locked.containsKey(player)) {
             TotalOS target = locked.get(player);
             stopCapture(target);
@@ -1406,7 +1531,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         ItemStack itemInHand;
                         if(is1_8) itemInHand = entity.getInventory().getItemInHand();
                         else itemInHand = entity.getInventory().getItemInMainHand();
-                        boolean nHoldItem = itemInHand.getType() == Material.AIR;
+                        boolean nHoldItem = itemInHand.getType() == Material.AIR || itemInHand.getType() == Material.BARRIER;
                         if(hasPerm && nHoldItem) {
                             unhandledInputs.add(new InputInfo(interactiveTiles.get(tile), subX, subY, interactType, entity));
                         } else if(!hasPerm) {
