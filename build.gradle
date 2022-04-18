@@ -1,0 +1,68 @@
+import org.gradle.internal.os.OperatingSystem
+
+plugins {
+    id 'java'
+}
+
+group "com.jnngl"
+version '0.9b'
+
+targetCompatibility = 16.0
+sourceCompatibility = 16.0
+
+repositories {
+    mavenCentral()
+    maven {
+        url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
+
+        content {
+            includeGroup 'org.bukkit'
+            includeGroup 'org.spigotmc'
+        }
+    }
+
+    maven { url = 'https://oss.sonatype.org/content/repositories/snapshots' }
+    maven { url = 'https://oss.sonatype.org/content/repositories/central' }
+}
+
+project.ext.lwjglVersion = "3.3.1"
+project.ext.jomlVersion = "1.10.4"
+
+dependencies {
+    compileOnly 'org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT'
+    compileOnly 'io.netty:netty-all:4.1.75.Final'
+
+    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+
+    implementation "org.lwjgl:lwjgl"
+    implementation "org.lwjgl:lwjgl-glfw"
+    implementation "org.lwjgl:lwjgl-opengl"
+    implementation "org.lwjgl:lwjgl-stb"
+    runtimeOnly "org.lwjgl:lwjgl::natives-windows"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::natives-windows"
+    runtimeOnly "org.lwjgl:lwjgl-opengl::natives-windows"
+    runtimeOnly "org.lwjgl:lwjgl-stb::natives-windows"
+    runtimeOnly "org.lwjgl:lwjgl::natives-windows-x86"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::natives-windows-x86"
+    runtimeOnly "org.lwjgl:lwjgl-opengl::natives-windows-x86"
+    runtimeOnly "org.lwjgl:lwjgl-stb::natives-windows-x86"
+    runtimeOnly "org.lwjgl:lwjgl::natives-linux"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::natives-linux"
+    runtimeOnly "org.lwjgl:lwjgl-opengl::natives-linux"
+    runtimeOnly "org.lwjgl:lwjgl-stb::natives-linux"
+    implementation "org.joml:joml:${jomlVersion}"
+
+    implementation "commons-io:commons-io:2.11.0"
+    implementation "org.slf4j:slf4j-api:1.7.25"
+    compileOnly "com.google.guava:guava:r05"
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from sourceSets.main.output
+
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+    }
+}

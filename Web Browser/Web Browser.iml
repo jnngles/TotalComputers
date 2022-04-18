@@ -7,8 +7,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="TotalComputers" />
     <orderEntry type="library" exported="" name="jcef" level="project" />
-    <orderEntry type="library" name="server" level="project" />
+    <orderEntry type="module" module-name="TotalComputers.main" />
+    <orderEntry type="library" scope="PROVIDED" name="Gradle: org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT" level="project" />
   </component>
 </module>
