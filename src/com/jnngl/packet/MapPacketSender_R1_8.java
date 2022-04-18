@@ -5,18 +5,28 @@ import org.bukkit.entity.Player;
 
 import java.awt.image.BufferedImage;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 
 public class MapPacketSender_R1_8 extends PacketSender implements MapPacketSender {
 
     private final Constructor<?> packet;
+    private Field data;
 
     public MapPacketSender_R1_8() throws ReflectiveOperationException {
         super();
 
         Class<?> packetClass = Class.forName(pkg+".PacketPlayOutMap");
         packet = packetClass.getConstructor(int.class, byte.class, Collection.class, byte[].class, int.class, int.class, int.class, int.class);
+        for(Field f : packetClass.getDeclaredFields()) {
+            if(f.getType().equals(byte[].class)) {
+                data = f;
+                data.setAccessible(true);
+                return;
+            }
+        }
+        System.err.println("Failed to access data field");
     }
 
     @Override
@@ -38,7 +48,7 @@ public class MapPacketSender_R1_8 extends PacketSender implements MapPacketSende
 
     @Override
     public void modifyPacket(Object packet, BufferedImage tile) throws ReflectiveOperationException {
-
+        data.set(packet, MapColor.toByteArray(tile));
     }
 
 }

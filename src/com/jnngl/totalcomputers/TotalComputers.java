@@ -1523,6 +1523,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             if(inputInfo.index().name.equals(name))
                 toRemove.add(inputInfo);
         }
+        packets.remove(systems.get(name));
         unhandledInputs.removeAll(toRemove);
         registeredComputers.remove(name);
         computersPhysicalData.remove(name);

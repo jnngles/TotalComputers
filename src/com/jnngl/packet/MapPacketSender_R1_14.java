@@ -20,12 +20,14 @@ public class MapPacketSender_R1_14 extends PacketSender implements MapPacketSend
 
         Class<?> packetClass = Class.forName(pkg+".PacketPlayOutMap");
         packet = packetClass.getConstructor(int.class, byte.class, boolean.class, boolean.class, Collection.class, byte[].class, int.class, int.class, int.class, int.class);
-        try {
-            data = packetClass.getDeclaredField("data");
-        } catch (Throwable e) {
-            data = packetClass.getDeclaredField("j");
+        for(Field f : packetClass.getDeclaredFields()) {
+            if(f.getType().equals(byte[].class)) {
+                data = f;
+                data.setAccessible(true);
+                return;
+            }
         }
-        data.setAccessible(true);
+        System.err.println("Failed to access data field");
     }
 
     @Override

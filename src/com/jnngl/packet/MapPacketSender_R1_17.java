@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 
 import java.awt.image.BufferedImage;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -12,18 +13,32 @@ public class MapPacketSender_R1_17 extends PacketSender implements MapPacketSend
 
     private final Constructor<?> imageData;
     private final Constructor<?> packet;
+    private Field mapData, data;
 
     public MapPacketSender_R1_17() throws ReflectiveOperationException {
         super();
 
         final Class<?> imageDataClass = resolveClass("WorldMap$b", "world.level.saveddata.maps");
+        final Class<?> packetClass = resolveClass("PacketPlayOutMap", "network.protocol.game");
         imageData = imageDataClass
                 .getConstructor(int.class, int.class, int.class, int.class, byte[].class);
-        packet = resolveClass("PacketPlayOutMap", "network.protocol.game")
+        packet = packetClass
                 .getConstructor(int.class, byte.class, boolean.class, Collection.class, imageDataClass);
-        System.out.println(imageDataClass);
-        System.out.println(packet);
-        System.out.println(resolveClass("PacketPlayOutMap", "network.protocol.game"));
+        try {
+            data = imageDataClass.getDeclaredField("e");
+        } catch (Throwable e) {
+            data = imageDataClass.getDeclaredField("data");
+        }
+        data.setAccessible(true);
+
+        for(Field f : packetClass.getDeclaredFields()) {
+            if(f.getType().equals(imageDataClass)) {
+                mapData = f;
+                mapData.setAccessible(true);
+                return;
+            }
+        }
+        System.err.println("Failed to find image data field");
     }
 
     @Override
@@ -47,7 +62,7 @@ public class MapPacketSender_R1_17 extends PacketSender implements MapPacketSend
 
     @Override
     public void modifyPacket(Object packet, BufferedImage tile) throws ReflectiveOperationException {
-
+        data.set(mapData.get(packet), MapColor.toByteArray(tile));
     }
 
 }
