@@ -117,12 +117,15 @@ public class MapColor {
         }
     }
 
+    private static void precacheColors() {
+        cache = new byte[0x1000];
+        for(int i = 0x000; i <= 0xFFF; i++)
+            cache[i] = matchColor(new Color((i & 0xF00) >> 4, i & 0xF0, (i & 0xF) << 4));
+    }
+
     public static byte matchColorFast(Color color) {
-        if(cache == null) {
-            cache = new byte[0x1000];
-            for(int i = 0x000; i <= 0xFFF; i++)
-                cache[i] = matchColor(new Color((i & 0xF00) >> 4, i & 0xF0, (i & 0xF) << 4));
-        }
+        if(cache == null)
+            precacheColors();
         int rgb = color.getRGB();
         return cache[(rgb & 0xF00000) >> 12 | (rgb & 0xF000) >> 8 | (rgb & 0xF0) >> 4];
     }
