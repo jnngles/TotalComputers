@@ -15,15 +15,5 @@ pipeline() {
                 }
             }
         }
-        stage('Build Native') {
-            steps {
-                dir('tcmpb') {
-                    dir('build') {
-                        bat "cmake .. -G \"NMake Makefiles\""
-                        bat "nmake"
-                    }
-                }
-            }
-        }
     }
 }

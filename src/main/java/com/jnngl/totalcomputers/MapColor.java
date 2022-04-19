@@ -171,17 +171,14 @@ public class MapColor {
         }
     }
 
+    /**
+     * Converts image to byte color index array
+     */
     public static byte[] toByteArray(BufferedImage data) {
         byte[] bytes = new byte[128*128];
-        for(int x = 0; x < 128; x++) {
-            for(int y = 0; y < 128; y++) {
-                int index = y*128+x;
-                Color color;
-                if(x >= data.getWidth() || y >= data.getHeight()) color = Color.BLACK;
-                else color = new Color(data.getRGB(x, y));
-                bytes[index] = matchColorFast(color);
-            }
-        }
+        int[] pixels = data.getRGB(0, 0, 128, 128, null, 0, 128);
+        for(int i = 0; i < pixels.length; i++)
+            bytes[i] = matchColorFast(new Color(pixels[i]));
         return bytes;
 
     }
