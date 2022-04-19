@@ -11,8 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MapColor {
 
-    private static final Map<Color, Byte> cache = new ConcurrentHashMap<>();
-
     private static byte BLACK = -1;
 
     /**
@@ -34,19 +32,24 @@ public class MapColor {
      */
     private static Color[] colors;
 
+    /**
+     * Cached values
+     */
+    private static byte[] cache;
     static {
-        try {
+        // Achieve map colors
+        try { // from MapPalette
             Class<?> cls = Class.forName("org.bukkit.map.MapPalette");
             Field colorsF = cls.getDeclaredField("colors");
             colorsF.setAccessible(true);
             colors = (Color[])(colorsF.get(null));
         } catch (ReflectiveOperationException ignored) {
-            try {
+            try { // from MapColor
                 Class<?> cls = Class.forName("org.bukkit.map.MapColor");
                 Field colorsF = cls.getDeclaredField("colors");
                 colorsF.setAccessible(true);
                 colors = (Color[])(colorsF.get(null));
-            } catch (ReflectiveOperationException i) {
+            } catch (ReflectiveOperationException i) { // Use hardcoded values
                 System.err.println("Failed to access colors. Using 1.12.2 colors");
                 colors = new Color[]{c(0, 0, 0), c(0, 0, 0), c(0, 0, 0), c(0, 0, 0),
                         c(89, 125, 39), c(109, 153, 48), c(127, 178, 56),
@@ -114,6 +117,16 @@ public class MapColor {
         }
     }
 
+    public static byte matchColorFast(Color color) {
+        if(cache == null) {
+            cache = new byte[0x1000];
+            for(int i = 0x000; i <= 0xFFF; i++)
+                cache[i] = matchColor(new Color((i & 0xF00) >> 4, i & 0xF0, (i & 0xF) << 4));
+        }
+        int rgb = color.getRGB();
+        return cache[(rgb & 0xF00000) >> 12 | (rgb & 0xF000) >> 8 | (rgb & 0xF0) >> 4];
+    }
+
     /**
      * Deprecated function from bukkit.
      * <p>
@@ -158,36 +171,6 @@ public class MapColor {
         }
     }
 
-    public static byte matchColorFast(Color color, int roundDistance) {
-        Color optimized = new Color(color.getRGB() & 0xF0F0F0);
-        if(cache.containsKey(optimized)) {
-            return cache.get(optimized);
-        }
-        if(BLACK == -1)
-            BLACK = matchColor(Color.BLACK);
-        if(Color.BLACK.equals(color))
-            return BLACK;
-        int d = Integer.MAX_VALUE;
-        int idx = 0;
-        for(int i = 0; i < colors.length; i++) {
-            Color c = colors[i];
-            int distance = Math.abs(color.getRed()-c.getRed())
-                    + Math.abs(color.getGreen()-c.getGreen())
-                    + Math.abs(color.getBlue()-c.getBlue());
-            if(distance<d) {
-                d = distance;
-                idx = i;
-                if(distance <= roundDistance) break;
-            }
-        }
-        byte index = (byte)(idx < 128 ? idx : -129 + (idx - 127));
-        if(Color.BLACK.equals(colors[idx]))
-            index = BLACK;
-        if(cache.containsKey(optimized))
-            cache.put(optimized, index);
-        return index;
-    }
-
     public static byte[] toByteArray(BufferedImage data) {
         byte[] bytes = new byte[128*128];
         for(int x = 0; x < 128; x++) {
@@ -196,7 +179,7 @@ public class MapColor {
                 Color color;
                 if(x >= data.getWidth() || y >= data.getHeight()) color = Color.BLACK;
                 else color = new Color(data.getRGB(x, y));
-                bytes[index] = matchColorFast(color, 40);
+                bytes[index] = matchColorFast(color);
             }
         }
         return bytes;
