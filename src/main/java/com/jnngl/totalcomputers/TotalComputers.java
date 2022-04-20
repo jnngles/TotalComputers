@@ -749,6 +749,9 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      */
     @Override
     public void onEnable() {
+        int pluginId = 14992;
+        Metrics metrics = new Metrics(this, pluginId);
+
         logger = getLogger();
         configManager = new ConfigManager(this);
         configManager.loadConfigFiles(
