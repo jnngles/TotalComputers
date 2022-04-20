@@ -11,7 +11,7 @@ import java.rmi.server.UnicastRemoteObject;
 
 public class RemoteBrowser extends UnicastRemoteObject implements IRemoteBrowser {
 
-    private final IBrowser browser;
+    private IBrowser browser;
 
     public static void main(String[] args) {
         if(args.length < 1) {
@@ -42,12 +42,12 @@ public class RemoteBrowser extends UnicastRemoteObject implements IRemoteBrowser
     public RemoteBrowser() throws RemoteException {
         super();
         try {
-//            browser = new BrowserImpl_JCEF();
-            throw new UnsupportedOperationException();
+            browser = new BrowserImpl_JCEF();
+//            throw new UnsupportedOperationException();
         } catch (Throwable e) {
             browser = new BrowserImpl_Native();
             System.out.println("Using BrowserImpl_Native");
-//            return;
+            return;
         }
         System.out.println("Using BrowserImpl_JCEF");
     }

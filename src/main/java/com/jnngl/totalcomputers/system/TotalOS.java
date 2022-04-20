@@ -52,6 +52,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class TotalOS {
 
+    private static final List<TotalOS> active = new ArrayList<>();
+    private static TotalOS current;
+    public static TotalOS current() { return current; }
+
     /**
      * @return API version
      */
@@ -193,6 +197,7 @@ public class TotalOS {
      * Renders frame into buffered image
      */
     public BufferedImage renderFrame() {
+        current = this;
         BufferedImage b = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
         Graphics2D imageGraphics = b.createGraphics();
         List<Runnable> finished = new ArrayList<>();
@@ -202,6 +207,7 @@ public class TotalOS {
         }
         threads.removeAll(finished);
         stateManager.update();
+        current = null;
         imageGraphics.setColor(Color.BLACK);
         imageGraphics.fillRect(0, 0, screenWidth, screenHeight);
         stateManager.render(imageGraphics);
@@ -229,6 +235,7 @@ public class TotalOS {
      */
     public void processTouch(int x, int y, TotalComputers.InputInfo.InteractType type, boolean adminRights) {
         if(x >= screenWidth || y >= screenHeight) return;
+        current = this;
         hasAdminRights = adminRights;
         if(currentState == ComputerState.OFF) {
             turnOn();
@@ -243,6 +250,7 @@ public class TotalOS {
             return;
         }
         stateManager.processInput(x, y, type);
+        current = null;
     }
 
     /**
@@ -264,6 +272,7 @@ public class TotalOS {
         information = null;
 
         stateManager.setState(null);
+        active.remove(this);
     }
 
     /**
@@ -296,6 +305,8 @@ public class TotalOS {
 
         stateManager.setState(new SplashScreen(stateManager, this));
 //        stateManager.setState(new Desktop(stateManager, this)); // For testing
+
+        active.add(this);
     }
 
     /**
@@ -312,6 +323,21 @@ public class TotalOS {
      */
     public boolean requestAdminRights() {
         return hasAdminRights;
+    }
+
+    @RequiresAPI(apiLevel = 5)
+    public static TotalOS forName(String name) throws RuntimeException {
+        for(TotalOS os : active) {
+            if(os.name.equals(name)) {
+                return os;
+            }
+        }
+        throw new RuntimeException("Failed to find active OS for name `"+name+"'");
+    }
+
+    @RequiresAPI(apiLevel = 5)
+    public static TotalOS[] getActiveComputers() {
+        return active.toArray(new TotalOS[0]);
     }
 
 

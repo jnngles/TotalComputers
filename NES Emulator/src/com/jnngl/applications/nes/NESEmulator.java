@@ -30,6 +30,8 @@ public class NESEmulator extends WindowApplication {
     private ElementList roms;
     private int bX, bY, bH, bW;
 
+    private static final int FPS_CAP = 60;
+
     public static void main(String[] args) {
         ApplicationHandler.open(NESEmulator.class, args[0]);
     }
@@ -104,6 +106,8 @@ public class NESEmulator extends WindowApplication {
                 startElapsed = 0;
             });
             new Thread(() -> {
+                long lastTime = System.currentTimeMillis();
+
                 while (running) {
                     if (aElapsed < 30)
                         aElapsed++;
@@ -140,6 +144,9 @@ public class NESEmulator extends WindowApplication {
                         nes.getController1().releaseButton(PuppetController.Button.LEFT);
                     if (rightElapsed == 3)
                         nes.getController1().releaseButton(PuppetController.Button.RIGHT);
+
+                    while(System.currentTimeMillis()-lastTime < 1000/FPS_CAP);
+                    lastTime = System.currentTimeMillis();
                 }
 
                 nes.getNes().reset();

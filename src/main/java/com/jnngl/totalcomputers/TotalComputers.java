@@ -24,7 +24,6 @@ import com.jnngl.packet.PacketListener;
 import com.jnngl.totalcomputers.motion.MotionCapabilities;
 import com.jnngl.totalcomputers.motion.MotionCapture;
 import com.jnngl.totalcomputers.motion.MotionCaptureDesc;
-import com.jnngl.totalcomputers.motion.SlotCaptureEvent;
 import com.jnngl.totalcomputers.system.TotalOS;
 import org.bukkit.*;
 import org.bukkit.block.Block;

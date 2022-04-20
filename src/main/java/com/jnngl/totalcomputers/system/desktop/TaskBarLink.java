@@ -21,13 +21,12 @@ package com.jnngl.totalcomputers.system.desktop;
 import com.jnngl.totalcomputers.system.TotalOS;
 
 import java.awt.image.BufferedImage;
-import java.rmi.RemoteException;
 
 public class TaskBarLink extends Application {
 
     private final String path;
 
-    public TaskBarLink(TotalOS os, String name, String path, BufferedImage icon) throws RemoteException {
+    public TaskBarLink(TotalOS os, String name, String path, BufferedImage icon) {
         super(os, name);
         this.path = path;
         setIcon(icon);

@@ -9,6 +9,10 @@ version '0.9b'
 targetCompatibility = 16.0
 sourceCompatibility = 16.0
 
+compileJava {
+    options.encoding = "UTF-8"
+}
+
 repositories {
     mavenCentral()
     maven {

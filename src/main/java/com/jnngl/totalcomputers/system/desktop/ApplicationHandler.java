@@ -18,45 +18,51 @@
 
 package com.jnngl.totalcomputers.system.desktop;
 
+import com.jnngl.totalcomputers.TotalComputers;
 import com.jnngl.totalcomputers.system.RequiresAPI;
 import com.jnngl.totalcomputers.system.TotalOS;
 import com.jnngl.totalcomputers.system.overlays.Information;
 import com.jnngl.totalcomputers.system.states.Desktop;
 
 import java.awt.image.BufferedImage;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
-import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ApplicationHandler {
 
-    private static Desktop desktop;
+    private static Map<TotalOS, Desktop> desktop = new ConcurrentHashMap<>();
 
     public static void init(Desktop desktop) {
-        ApplicationHandler.desktop = desktop;
+        ApplicationHandler.desktop.put(desktop.getOS(), desktop);
     }
 
     public static void registerApplication(Application application) {
-        if(desktop == null) return;
-        desktop.taskbar.addApplication(application);
+        if(!desktop.containsKey(application.os)) return;
+        Desktop d = desktop.get(application.os);
+        d.taskbar.addApplication(application);
         if(application instanceof WindowApplication) {
-            desktop.drawable.add((WindowApplication) application);
+            d.drawable.add((WindowApplication) application);
         }
     }
 
     public static void unregisterApplication(Application application) {
         if(desktop == null) return;
-        desktop.taskbar.removeApplication(application);
-        if(application instanceof WindowApplication) desktop.drawable.remove((WindowApplication) application);
+        Desktop d = desktop.get(application.os);
+        d.taskbar.removeApplication(application);
+        if(application instanceof WindowApplication) d.drawable.remove((WindowApplication) application);
     }
 
     private static boolean checkApiLevel(Class<?> cls) {
         RequiresAPI api;
+        TotalOS os = TotalOS.current();
         if((api = cls.getAnnotation(RequiresAPI.class)) != null) {
             if(api.apiLevel() > TotalOS.getApiVersion()) {
-                desktop.getOS().information.displayMessage(Information.Type.ERROR,
+                os.information.displayMessage(Information.Type.ERROR,
                         "Application requires API "+api.apiLevel()+" version or above. Update the plugin to use this application.", () -> {});
                 return false;
             }
@@ -65,12 +71,13 @@ public class ApplicationHandler {
     }
 
     public static void open(Class<? extends Application> cls, String path) {
-        if(desktop == null) return;
+        if(TotalOS.current() == null) return;
         if(!checkApiLevel(cls)) return;
-        desktop.getOS().runInSystemThread(() -> {
+        TotalOS dst = TotalOS.current();
+        dst.runInSystemThread(() -> {
             try {
                 Constructor<? extends Application> constructor = cls.getConstructor(TotalOS.class, String.class);
-                constructor.newInstance(desktop.getOS(), path);
+                constructor.newInstance(dst, path);
             } catch (NoSuchMethodException e) {
                 System.err.println("Constructor '"+cls.getSimpleName()+"(TotalOS, String)' not found.");
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
@@ -81,12 +88,13 @@ public class ApplicationHandler {
     }
 
     public static void open(Class<? extends Application> cls, String path, String[] args) {
-        if(desktop == null) return;
+        if(TotalOS.current() == null) return;
         if(!checkApiLevel(cls)) return;
-        desktop.getOS().runInSystemThread(() -> {
+        TotalOS dst = TotalOS.current();
+        dst.runInSystemThread(() -> {
             try {
                 Constructor<? extends Application> constructor = cls.getConstructor(TotalOS.class, String.class, String[].class);
-                constructor.newInstance(desktop.getOS(), path, args);
+                constructor.newInstance(dst, path, args);
             } catch (NoSuchMethodException e) {
                 System.err.println("Constructor '"+cls.getSimpleName()+"(TotalOS, String)' not found.");
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
@@ -96,29 +104,36 @@ public class ApplicationHandler {
     }
 
     public static void addTaskBarEntry(String name, String link, BufferedImage icon) {
-        try {
-            desktop.taskbar.addApplication(new TaskBarLink(desktop.getOS(), name, link, icon));
-        } catch(RemoteException e) {
-            System.err.println("Failed to create RMI application");
-        }
-        desktop.getOS().fs.addTaskBarEntry(name, link);
+        desktop.get(TotalOS.current()).taskbar.addApplication(new TaskBarLink(TotalOS.current(), name, link, icon));
+        desktop.get(TotalOS.current()).getOS().fs.addTaskBarEntry(name, link);
     }
 
     public static void removeTaskBarEntry(String name) {
         TaskBarLink toRemove = null;
-        for(Application application : desktop.taskbar.applications()) {
+        for(Application application : desktop.get(TotalOS.current()).taskbar.applications()) {
             if(application.name.equals(name) && application instanceof TaskBarLink) {
                 toRemove = (TaskBarLink) application;
                 break;
             }
         }
         if(toRemove == null) return;
-        desktop.taskbar.removeApplication(toRemove);
-        desktop.getOS().fs.removeTaskBarEntry(name);
+        desktop.get(TotalOS.current()).taskbar.removeApplication(toRemove);
+        desktop.get(TotalOS.current()).getOS().fs.removeTaskBarEntry(name);
     }
 
     public static void refreshDesktop() {
-        desktop.updateDesktop();
+        desktop.get(TotalOS.current()).updateDesktop();
+    }
+
+    @RequiresAPI(apiLevel = 5)
+    public static WindowApplication[] getApplicationsForClass(TotalOS os, Class<? extends WindowApplication> cls) {
+        List<WindowApplication> applications = new ArrayList<>();
+        for(WindowApplication app : desktop.get(os).drawable) {
+            if(app.getClass().isInstance(cls)) {
+                applications.add(app);
+            }
+        }
+        return applications.toArray(new WindowApplication[0]);
     }
 
 }
