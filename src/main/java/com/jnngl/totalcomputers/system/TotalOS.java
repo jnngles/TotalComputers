@@ -297,6 +297,10 @@ public class TotalOS {
                 ex.printStackTrace();
             }
         }
+        if(baseFont == null) {
+            baseFont = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts()[0];
+            System.out.println(baseFont.getName());
+        }
         information = new Information(this);
         keyboard = new Keyboard(this);
 

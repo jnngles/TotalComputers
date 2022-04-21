@@ -222,8 +222,7 @@ public class FileSystem {
         String ext = parts[parts.length-1];
         if(ext.equalsIgnoreCase("lnk")) {
             try {
-                String path = Files.readString(file.toPath()).trim();
-                if(path.startsWith("/")) path = root()+path;
+                String path = toFile(Files.readString(file.toPath()).trim()).getPath();
                 return getIconForFileI(new File(path), depth-1);
             } catch (IOException e) {
                 return null;
@@ -248,14 +247,15 @@ public class FileSystem {
         if(name.toLowerCase().endsWith(".lnk")) {
             try {
                 String path = Files.readString(file.toPath()).trim();
-                if(path.startsWith("/")) path = root()+path;
-                executeFileI(new File(path), depth-1);
+                executeFileI(toFile(path), depth-1);
             } catch (IOException ignored) {}
         }
         String[] parts = name.split("\\.");
         String association = getAssociatedProgram(parts[parts.length-1]);
-        if(association != null)
-            launchFromApplication(association, file.getPath());
+        if(association != null) {
+            if(!launchFromApplication(association, file.getPath()))
+                System.err.println("Failed to launch application for `"+association+"'");
+        }
     }
 
     /**
@@ -317,10 +317,11 @@ public class FileSystem {
      */
     public BufferedImage loadImage(String path) {
         BufferedImage result;
+        File f = toFile("/"+path);
         String _path;
-        if(path.startsWith("/")) _path = path.substring(1);
+        if(f != null) _path = f.getPath();
         else _path = path;
-        InputStream is = this.getClass().getResourceAsStream("/"+_path);
+        InputStream is = this.getClass().getResourceAsStream(_path);
         try {
             if(is == null) throw new IOException();
             result = ImageIO.read(is);
@@ -340,21 +341,21 @@ public class FileSystem {
     }
 
     public boolean launchApplication(String Rpath, String className, String... args) {
+        System.out.println("Starting application...");
         URL url;
-        String _path;
-        if(Rpath.startsWith("/")) _path = Rpath.substring(1);
-        else _path = Rpath;
-        String path = new File(_path).getAbsolutePath();
+        String _path = toFile(Rpath).getAbsolutePath();
         if(className.contains(":")) {
             try {
                 String[] parts = className.split(":");
                 String appName = parts[0].trim();
 
                 String[] nArgs = new String[args.length+1];
-                nArgs[0] = path;
+                nArgs[0] = _path;
                 System.arraycopy(args, 0, nArgs, 1, args.length);
 
-                if(!(new File(root()+"/usr/Applications/"+appName+".app/application.jar").exists())) {
+                String root = new File(root()).getAbsolutePath();
+                if(!new File(root+"/usr/Applications/"+appName+".app/application.jar").exists()
+                        && new File(root+"/usr/Applications/"+appName+".app/application.dll").exists()) {
                     NativeWindowApplication.main(nArgs);
                     return true;
                 }
@@ -362,7 +363,7 @@ public class FileSystem {
                 String clsName = parts[1].trim();
 
                 URLClassLoader child = new URLClassLoader(
-                        new URL[] { new File(root()+"/usr/Applications/"+appName+".app/application.jar").toURI().toURL() },
+                        new URL[] { new File(root+"/usr/Applications/"+appName+".app/application.jar").toURI().toURL() },
                         this.getClass().getClassLoader()
                 );
                 Class<?> cls = Class.forName(clsName, true, child);
@@ -382,7 +383,7 @@ public class FileSystem {
             Class<?> cls = Class.forName(className, true, child);
             Method main = cls.getMethod("main", String[].class);
             String[] nArgs = new String[args.length+1];
-            nArgs[0] = path;
+            nArgs[0] = _path;
             System.arraycopy(args, 0, nArgs, 1, args.length);
             main.invoke(null, (Object) nArgs);
             return true;
@@ -407,7 +408,7 @@ public class FileSystem {
             Class<?> cls = loader.loadClass(className);
             Method main = cls.getMethod("main", String[].class);
             String[] nArgs = new String[args.length+1];
-            nArgs[0] = path;
+            nArgs[0] = _path;
             System.arraycopy(args, 0, nArgs, 1, args.length);
             main.invoke(null, (Object) nArgs);
             return true;
@@ -450,10 +451,10 @@ public class FileSystem {
     }
 
     public boolean launchFromApplication(String path, String... args) {
-        String data = path + "/application";
+        String data = path + ((path.endsWith("/")||path.endsWith("\\"))? "":"/") + "application";
         File dataFile = toFile(data);
         String contents = null;
-        if(dataFile == null || !dataFile.exists()) {
+        if(dataFile != null && dataFile.exists()) {
             contents = readFile(data);
         }
         if(contents == null) return false;
@@ -461,12 +462,10 @@ public class FileSystem {
     }
 
     public String readFile(String path) {
-        String _path;
-        if(path.startsWith("/")) _path = path.substring(1);
-        else _path = path;
+        String _path = toFile(path).getPath();
         InputStream inputStream;
         try {
-            inputStream = this.getClass().getResourceAsStream("/"+_path);
+            inputStream = this.getClass().getResourceAsStream(_path);
             if(inputStream == null) throw new IOException();
         } catch (IOException ignored) {
             try {
@@ -489,21 +488,22 @@ public class FileSystem {
     }
 
     public File toFile(String Rpath) {
-        String path = Rpath.replace("\\", "/");
-        String _path;
-        if(path.startsWith("/")) _path = path.substring(1);
-        else _path = path;
+        String _path = Rpath.replace("\\", "/");
         File file;
         try {
-            file = new File(getClass().getResource("/"+_path).toURI());
+            file = new File(getClass().getResource(_path).toURI());
             if(!file.exists()) throw new Exception();
         } catch (Exception e) {
-            file = new File(rootfs.getPath()+"/"+_path);
+            file = new File(rootfs.getPath()+_path);
             if(!file.exists()) {
-                file = new File(_path);
-                if(!file.exists()) {
-                    System.err.println("Failed to find file.");
-                    return null;
+                file = new File(rootfs.getPath()+"/"+_path);
+                if (!file.exists()) {
+                    file = new File(_path);
+                    if (!file.exists()) {
+                        if (_path.startsWith("/")) return toFile(_path.substring(1));
+                        System.err.println("Failed to find file.");
+                        return null;
+                    }
                 }
             }
         }
@@ -533,8 +533,14 @@ public class FileSystem {
 
     public void createAssociation(String programPath, String... extensions) {
         StringBuilder result = new StringBuilder();
-        for(String ext : extensions) result.append(ext).append(",");
+        for(String ext : extensions) {
+            if(!associationMap.containsKey(ext))
+                result.append(ext).append(",");
+        }
+        if(result.isEmpty()) return;
         result = new StringBuilder(result.substring(0, result.length() - 1));
+        result.append(": ");
+        result.append(programPath);
         result.append("\n");
         try {
             result.append(Files.readString(associations.toPath()));
