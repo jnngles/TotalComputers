@@ -522,6 +522,10 @@ public class FileSystem {
 
         for(String line : lines) {
             String[] association = line.split(":");
+            if(association.length != 2) {
+                System.err.println("[FileSystem:526] Failed to process line `"+line+'\'');
+                continue;
+            }
             String fExtensions = association[0].trim();
             String program = association[1].trim();
             String[] extensions = fExtensions.split(",");
