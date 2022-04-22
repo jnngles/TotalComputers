@@ -26,6 +26,7 @@ public class VideoPlayerApplication extends WindowApplication {
     private boolean started = false;
     private ElementList videos;
     private Button start;
+    private boolean clearScreen = false;
     private final static String[] SUPPORTED_FORMATS = {
             "3dostr", "3g2", "3gp", "4xm", "a64", "aa", "aac", "ac3", "acm", "act", "adf", "adp", "ads",
             "adts", "adx", "aea", "afc", "aiff", "aix", "alaw", "alias_pix", "amr", "amrnb", "amrwb", "anm", "apc",
@@ -76,6 +77,7 @@ public class VideoPlayerApplication extends WindowApplication {
             bH = (int) (grabber.getImageHeight()/dif);
             bY = getHeight()/2-bH/2;
         }
+        clearScreen = true;
     }
 
     private void startVideo(String file) {
@@ -109,7 +111,7 @@ public class VideoPlayerApplication extends WindowApplication {
 
                 while(!loopThread.isInterrupted()) {
                     if(!playing) continue;
-                    Frame frame = grabber.grab();
+                    Frame frame = grabber.grabFrame(false, true, true, false, false);
                     if(frame != null) {
                         lastFrame = frame;
                         renderCanvas();
@@ -123,6 +125,7 @@ public class VideoPlayerApplication extends WindowApplication {
         });
         loopThread.start();
         playing = true;
+        clearScreen = true;
     }
 
     public VideoPlayerApplication(TotalOS os, String path, String[] args) {
@@ -221,7 +224,6 @@ public class VideoPlayerApplication extends WindowApplication {
         if(!playing) return;
         if(lastFrame == null) return;
         if(lastFrame.imageWidth == 0 || lastFrame.imageHeight == 0) return;
-
         ByteBuffer image = (ByteBuffer) lastFrame.image[0];
         image.clear();
 
@@ -239,6 +241,11 @@ public class VideoPlayerApplication extends WindowApplication {
         }
         lastFrame = null;
 
+        if(clearScreen) {
+            g2d.setColor(Color.BLACK);
+            g2d.fillRect(0, 0, getWidth(), getHeight());
+            clearScreen = false;
+        }
         g2d.drawImage(buffer, bX, bY, bW, bH, null);
     }
 
