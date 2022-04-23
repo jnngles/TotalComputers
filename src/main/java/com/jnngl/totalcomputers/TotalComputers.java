@@ -918,6 +918,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                     sender.sendMessage(replyPrefix + "Help [1/1]");
                     sender.sendMessage(ChatColor.GOLD + "Aliases: " + ChatColor.WHITE  + " /tcomputers, /tcmp");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers help" + ChatColor.WHITE + " - show help menu.");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers sound" + ChatColor.WHITE + " - creates a link to access audio.");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers create <name>" + ChatColor.WHITE + " - creates new computer at area of wall selected with wand. (See also /totalcomputers selection)");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers remove <name>" + ChatColor.WHITE + " - removes computer.");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers list" + ChatColor.WHITE + " - prints list of created computers.");
@@ -1224,9 +1225,9 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         String[] all = {};
         if(command.getName().equalsIgnoreCase("totalcomputers")) {
             if(args.length == 1) {
-                if(locked.containsKey(player)) all = new String[]{"help", "create", "remove", "selection", "list",
+                if(locked.containsKey(player)) all = new String[]{"help", "sound", "create", "remove", "selection", "list",
                         "reload", "data", "wand", "paste", "erase", "release"};
-                else all = new String[]{"help", "create", "remove", "selection", "list",
+                else all = new String[]{"help", "sound", "create", "remove", "selection", "list",
                         "reload", "data", "wand", "paste", "erase"};
             }
             else if(args[0].equalsIgnoreCase("selection")) {
