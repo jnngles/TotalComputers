@@ -24,7 +24,6 @@ import com.jnngl.packet.PacketListener;
 import com.jnngl.totalcomputers.motion.MotionCapabilities;
 import com.jnngl.totalcomputers.motion.MotionCapture;
 import com.jnngl.totalcomputers.motion.MotionCaptureDesc;
-import com.jnngl.totalcomputers.sound.SoundManager;
 import com.jnngl.totalcomputers.sound.SoundWebServer;
 import com.jnngl.totalcomputers.sound.SoundWebSocketServer;
 import com.jnngl.totalcomputers.system.TotalOS;
@@ -71,6 +70,7 @@ import java.util.logging.Logger;
 public class TotalComputers extends JavaPlugin implements Listener, MotionCapture {
 
     /* *************** CODE SECTION: FIELDS *************** */
+    private static int free_session = 0;
 
     private final static String replyPrefix = ChatColor.GOLD + "[TotalComputers] " + ChatColor.RESET;
     private int delay = 1;
@@ -88,6 +88,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     private Map<String, BukkitTask> tasks;
     private Map<TotalOS, DoubleBuffer> packets;
     private List<String> registeredComputers;
+    private Map<Player, String> links;
     private Map<String, SelectionArea> computersPhysicalData;
     private NamespacedKey recipe = null;
     private boolean is1_8 = false;
@@ -723,6 +724,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         else registeredComputers = new ArrayList<>();
         computersPhysicalData = new HashMap<>();
         systems = new HashMap<>();
+        links = new HashMap<>();
         interactiveTiles = new HashMap<>();
         for(String name : registeredComputers) {
             World world = getServer().getWorld(computers.getString("computers."+name+".world"));
@@ -912,10 +914,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                     sender.sendMessage(replyPrefix + ChatColor.RED + "You do not have enough permissions.");
                     return true;
                 }
-                if(args[0].equalsIgnoreCase("soundtest")) {
-                    SoundManager.play("test.ogg");
-                }
-                else if(args.length == 0 || args[0].equalsIgnoreCase("help")) { // Help subcommand
+                if(args.length == 0 || args[0].equalsIgnoreCase("help")) { // Help subcommand
                     sender.sendMessage(replyPrefix + "Help [1/1]");
                     sender.sendMessage(ChatColor.GOLD + "Aliases: " + ChatColor.WHITE  + " /tcomputers, /tcmp");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers help" + ChatColor.WHITE + " - show help menu.");
@@ -928,6 +927,16 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers paste <text>" + ChatColor.WHITE + " - pastes text. (Keyboard alternative)");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers erase <all|numChars>" + ChatColor.WHITE + " - erases text. (Keyboard alternative)");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers reload" + ChatColor.WHITE + " - reloads all configuration files.");
+                }
+                else if(args[0].equalsIgnoreCase("sound")) { // Sound subcommand
+                    String link;
+                    if(links.containsKey((Player)sender)) {
+                        link = links.get((Player)sender);
+                    } else {
+                        link = "http://"+Bukkit.getServer().getIp()+":7254/index.html?name="+sender.getName()+"&sessionId="+(free_session++);
+                        links.put((Player)sender, link);
+                    }
+                    sender.sendMessage(replyPrefix + ChatColor.GREEN + "Open this website in your browser: "+ChatColor.WHITE+link);
                 }
                 else if(args[0].equalsIgnoreCase("reload")) { // Reload subcommand
                     if(!sender.hasPermission("totalcomputers.plugin.manage")) {
