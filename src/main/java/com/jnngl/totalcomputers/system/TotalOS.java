@@ -18,19 +18,12 @@
 
 package com.jnngl.totalcomputers.system;
 
-import com.jnngl.totalcomputers.MapColor;
 import com.jnngl.totalcomputers.TotalComputers;
 import com.jnngl.totalcomputers.motion.MotionCapture;
 import com.jnngl.totalcomputers.system.overlays.Information;
 import com.jnngl.totalcomputers.system.overlays.Keyboard;
 import com.jnngl.totalcomputers.system.states.SplashScreen;
 import com.jnngl.totalcomputers.system.states.StateManager;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.map.MapCanvas;
-import org.bukkit.map.MapCursor;
-import org.bukkit.map.MapRenderer;
-import org.bukkit.map.MapView;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,9 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -60,7 +51,7 @@ public class TotalOS {
      * @return API version
      */
     public static int getApiVersion() {
-        return 3;
+        return 4;
     }
 
     /**

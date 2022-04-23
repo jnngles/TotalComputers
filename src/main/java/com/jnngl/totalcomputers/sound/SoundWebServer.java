@@ -17,19 +17,20 @@ import java.nio.file.Files;
 
 public class SoundWebServer {
     private static Server server;
+    public static File HTTDOCS;
 
     public static void run() {
         server = new Server(7254);
         ResourceHandler handler = new ResourceHandler();
         handler.setDirectoriesListed(true);
-        handler.setWelcomeFiles(new String[] { "plugins/TotalComputers/httdocs/index.html" });
+        handler.setWelcomeFiles(new String[] { "index.html" });
 
         File dataFolder = JavaPlugin.getPlugin(TotalComputers.class).getDataFolder();
-        File httdocs = new File(dataFolder, "httdocs");
-        httdocs.mkdirs();
-        handler.setResourceBase(httdocs.getAbsolutePath());
+        HTTDOCS = new File(dataFolder, "httdocs");
+        HTTDOCS.mkdirs();
+        handler.setResourceBase(HTTDOCS.getAbsolutePath());
 
-        createFiles(httdocs);
+        createFiles(HTTDOCS);
 
         HandlerList handlers = new HandlerList();
         handlers.setHandlers(new Handler[] { handler, new DefaultHandler() });

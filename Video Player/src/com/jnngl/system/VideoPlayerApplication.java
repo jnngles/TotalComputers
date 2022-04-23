@@ -150,7 +150,7 @@ public class VideoPlayerApplication extends WindowApplication {
             if(videos.getSelectedIndex() < 0) return;
             startVideo(videos.getSelectedElement().startsWith("Desktop: ")?
                     "/usr/Desktop/"+videos.getSelectedElement().substring(9) :
-                    "/usr/Applications/"+videos.getSelectedElement().substring(5));
+                    "/usr/Applications/Video Player.app/"+videos.getSelectedElement().substring(5));
         });
 
         for(String file : os.fs.toFile("/usr/Desktop").list()) {

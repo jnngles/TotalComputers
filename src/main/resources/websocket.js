@@ -11,6 +11,7 @@ const soundByName = new Map();
 ws.onopen = function () {
 
     if (name != null) {
+        document.write("<b>Click somewhere on this page several times to make the sound work!!!</b> <br>");
         document.write("Connected to websocket server! <br>");
         ws.send("name:" + delineate(text));
         document.write("Sent data: name:" + delineate(text) + "<br>");
@@ -24,12 +25,16 @@ ws.onmessage = function (evt) {
         var id = IDbyName.get(evt.data);
         if(sound.playing(id)) sound.pause(id);
         else sound.play(id);
+        ws.send("duration:"+evt.data+"="+sound.duration());
     } else {
         var sound = new Howl({
             src: ['sounds/'+evt.data]
         });
-        soundByName.set(evt.data, sound)
-        IDbyName.set(evt.data, sound.play());
+        sound.load();
+        var id = sound.play();
+        soundByName.set(evt.data, sound);
+        IDbyName.set(evt.data, id);
+        ws.send("duration:"+evt.data+"="+sound.duration());
     }
 };
 

@@ -7,9 +7,17 @@ import org.java_websocket.server.WebSocketServer;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SoundWebSocketServer extends WebSocketServer {
     public static SoundWebSocketServer server;
+
+    private static Map<String, String> durations = new HashMap<>();
+
+    static String getDuration(String name) {
+        return durations.getOrDefault(name, "-1");
+    }
 
     public SoundWebSocketServer(int port) throws UnknownHostException {
         super(new InetSocketAddress(port));
@@ -40,6 +48,10 @@ public class SoundWebSocketServer extends WebSocketServer {
         if(message.split(":")[0].equalsIgnoreCase("name")) {
             SoundWebSocketSessionManager.getSessionManager().addSessionUsername
                     (conn.getRemoteSocketAddress().getAddress().getHostAddress(), message.split(":")[1]);
+        }
+        else if(message.split(":")[0].equalsIgnoreCase("duration")) {
+            durations.put(message.split(":")[1].split("=")[0],
+                    message.split(":")[1].split("=")[1]);
         }
     }
 
