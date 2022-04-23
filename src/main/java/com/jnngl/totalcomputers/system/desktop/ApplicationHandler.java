@@ -57,9 +57,8 @@ public class ApplicationHandler {
         if(application instanceof WindowApplication) d.drawable.remove((WindowApplication) application);
     }
 
-    private static boolean checkApiLevel(Class<?> cls) {
+    private static boolean checkApiLevel(TotalOS os, Class<?> cls) {
         RequiresAPI api;
-        TotalOS os = TotalOS.current();
         if((api = cls.getAnnotation(RequiresAPI.class)) != null) {
             if(api.apiLevel() > TotalOS.getApiVersion()) {
                 os.information.displayMessage(Information.Type.ERROR,
@@ -70,10 +69,9 @@ public class ApplicationHandler {
         return true;
     }
 
-    public static void open(Class<? extends Application> cls, String path) {
-        if(TotalOS.current() == null) return;
-        if(!checkApiLevel(cls)) return;
-        TotalOS dst = TotalOS.current();
+    public static void open(TotalOS dst, Class<? extends Application> cls, String path) {
+        if(dst == null) return;
+        if(!checkApiLevel(dst, cls)) return;
         dst.runInSystemThread(() -> {
             try {
                 Constructor<? extends Application> constructor = cls.getConstructor(TotalOS.class, String.class);
@@ -87,10 +85,13 @@ public class ApplicationHandler {
         });
     }
 
-    public static void open(Class<? extends Application> cls, String path, String[] args) {
-        if(TotalOS.current() == null) return;
-        if(!checkApiLevel(cls)) return;
-        TotalOS dst = TotalOS.current();
+    public static void open(Class<? extends Application> cls, String path) {
+        open(TotalOS.current(), cls, path);
+    }
+
+    public static void open(TotalOS dst, Class<? extends Application> cls, String path, String[] args) {
+        if(dst == null) return;
+        if(!checkApiLevel(dst, cls)) return;
         dst.runInSystemThread(() -> {
             try {
                 Constructor<? extends Application> constructor = cls.getConstructor(TotalOS.class, String.class, String[].class);
@@ -103,27 +104,39 @@ public class ApplicationHandler {
         });
     }
 
-    public static void addTaskBarEntry(String name, String link, BufferedImage icon) {
-        desktop.get(TotalOS.current()).taskbar.addApplication(new TaskBarLink(TotalOS.current(), name, link, icon));
-        desktop.get(TotalOS.current()).getOS().fs.addTaskBarEntry(name, link);
+    public static void open(Class<? extends Application> cls, String path, String[] args) {
+        open(TotalOS.current(), cls, path, args);
     }
 
-    public static void removeTaskBarEntry(String name) {
+    public static void addTaskBarEntry(TotalOS os, String name, String link, BufferedImage icon) {
+        desktop.get(os).taskbar.addApplication(new TaskBarLink(os, name, link, icon));
+        os.fs.addTaskBarEntry(name, link);
+    }
+
+    public static void addTaskBarEntry(String name, String link, BufferedImage icon) {
+        addTaskBarEntry(TotalOS.current(), name, link, icon);
+    }
+
+    public static void removeTaskBarEntry(TotalOS os, String name) {
         TaskBarLink toRemove = null;
-        for(Application application : desktop.get(TotalOS.current()).taskbar.applications()) {
+        for(Application application : desktop.get(os).taskbar.applications()) {
             if(application.name.equals(name) && application instanceof TaskBarLink) {
                 toRemove = (TaskBarLink) application;
                 break;
             }
         }
         if(toRemove == null) return;
-        desktop.get(TotalOS.current()).taskbar.removeApplication(toRemove);
-        desktop.get(TotalOS.current()).getOS().fs.removeTaskBarEntry(name);
+        desktop.get(os).taskbar.removeApplication(toRemove);
+        os.fs.removeTaskBarEntry(name);
     }
 
-    public static void refreshDesktop() {
-        desktop.get(TotalOS.current()).updateDesktop();
+    public static void removeTaskBarEntry(String name) { removeTaskBarEntry(TotalOS.current(), name); }
+
+    public static void refreshDesktop(TotalOS os) {
+        desktop.get(os).updateDesktop();
     }
+
+    public static void refreshDesktop() { refreshDesktop(TotalOS.current()); }
 
     @RequiresAPI(apiLevel = 5)
     public static WindowApplication[] getApplicationsForClass(TotalOS os, Class<? extends WindowApplication> cls) {

@@ -24,6 +24,9 @@ import com.jnngl.packet.PacketListener;
 import com.jnngl.totalcomputers.motion.MotionCapabilities;
 import com.jnngl.totalcomputers.motion.MotionCapture;
 import com.jnngl.totalcomputers.motion.MotionCaptureDesc;
+import com.jnngl.totalcomputers.sound.SoundManager;
+import com.jnngl.totalcomputers.sound.SoundWebServer;
+import com.jnngl.totalcomputers.sound.SoundWebSocketServer;
 import com.jnngl.totalcomputers.system.TotalOS;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -55,6 +58,7 @@ import java.awt.image.BufferedImage;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -879,6 +883,15 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         secondPoses = new HashMap<>();
         areas = new HashMap<>();
         logger.info("Total Computers enabled. (Made by JNNGL)");
+
+        logger.info("Starting sound server...");
+        try {
+            SoundWebServer.run();
+            SoundWebSocketServer.runServer();
+        } catch (UnknownHostException e) {
+            logger.warning("Failed to start sound server :(");
+            logger.warning("[SoundServer] -> "+e.getMessage());
+        }
     }
 
     /* *************** CODE SECTION: COMMANDS AND AUTOCOMPLETION *************** */
@@ -899,7 +912,10 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                     sender.sendMessage(replyPrefix + ChatColor.RED + "You do not have enough permissions.");
                     return true;
                 }
-                if(args.length == 0 || args[0].equalsIgnoreCase("help")) { // Help subcommand
+                if(args[0].equalsIgnoreCase("soundtest")) {
+                    SoundManager.play("test.ogg");
+                }
+                else if(args.length == 0 || args[0].equalsIgnoreCase("help")) { // Help subcommand
                     sender.sendMessage(replyPrefix + "Help [1/1]");
                     sender.sendMessage(ChatColor.GOLD + "Aliases: " + ChatColor.WHITE  + " /tcomputers, /tcmp");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers help" + ChatColor.WHITE + " - show help menu.");
@@ -1398,6 +1414,13 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         for(String computer : computers)
             removeComputer(computer);
         logger.info("Total Computers disabled.");
+        try {
+            SoundWebSocketServer.shutdown();
+            SoundWebServer.shutdown();
+        } catch (Exception e) {
+            logger.warning("Failed to shutdown server");
+            logger.warning(e.getMessage());
+        }
     }
 
     /* *************** CODE SECTION: HELPERS *************** */

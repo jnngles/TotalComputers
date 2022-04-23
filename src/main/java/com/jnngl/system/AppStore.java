@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -253,7 +252,7 @@ public class AppStore extends WindowApplication {
                         deleteDirectory(new File(os.fs.root()+"/usr/Applications/"+app.name+".app"));
                         renderCanvas();
                         new File(os.fs.root()+"/usr/Desktop", app.name+".lnk").delete();
-                        ApplicationHandler.refreshDesktop();
+                        ApplicationHandler.refreshDesktop(os);
                     } catch (IOException e) {
                         System.err.println("Failed to delete app.");
                     }
@@ -291,7 +290,7 @@ public class AppStore extends WindowApplication {
                                 File dst = new File(os.fs.root()+"/usr/Desktop", app.name+".lnk");
                                 dst.createNewFile();
                                 Files.writeString(dst.toPath(), basePath);
-                                ApplicationHandler.refreshDesktop();
+                                ApplicationHandler.refreshDesktop(os);
                             }
                         } catch (IOException e) {
                             System.err.println("Failed to install app. (" + e.getClass().getSimpleName() + ")");

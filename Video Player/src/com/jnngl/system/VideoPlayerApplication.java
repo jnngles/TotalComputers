@@ -1,6 +1,7 @@
 package com.jnngl.system;
 
 import com.jnngl.totalcomputers.TotalComputers;
+import com.jnngl.totalcomputers.sound.SoundManager;
 import com.jnngl.totalcomputers.system.TotalOS;
 import com.jnngl.totalcomputers.system.Utils;
 import com.jnngl.totalcomputers.system.desktop.ApplicationHandler;
@@ -13,7 +14,6 @@ import org.bytedeco.javacv.FrameGrabber;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.nio.ByteBuffer;
 
 public class VideoPlayerApplication extends WindowApplication {
@@ -84,8 +84,10 @@ public class VideoPlayerApplication extends WindowApplication {
         started = true;
         loopThread = new Thread(() -> {
             grabber = new FFmpegFrameGrabber(os.fs.toFile(file).getAbsoluteFile());
+
             try {
                 grabber.start();
+
                 double await = 1000d/grabber.getFrameRate();
                 buffer = new BufferedImage(grabber.getImageWidth(), grabber.getImageHeight(), BufferedImage.TYPE_INT_RGB);
                 calcBounds();

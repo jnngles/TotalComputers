@@ -35,6 +35,11 @@ dependencies {
     compileOnly 'org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT'
     compileOnly 'io.netty:netty-all:4.1.75.Final'
 
+    implementation 'org.eclipse.jetty:jetty-server:11.0.9'
+    implementation 'org.eclipse.jetty:jetty-util:11.0.9'
+    implementation 'org.eclipse.jetty.aggregate:jetty-all-server:8.2.0.v20160908'
+    implementation 'org.java-websocket:Java-WebSocket:1.5.2'
+
     implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
 
     implementation "org.lwjgl:lwjgl"
@@ -67,5 +72,7 @@ jar {
     dependsOn configurations.runtimeClasspath
     from {
         configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+    } {
+        exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
     }
 }
