@@ -1,9 +1,13 @@
 package com.jnngl.system;
 
+import org.cef.OS;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.rmi.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -12,12 +16,15 @@ import java.rmi.server.UnicastRemoteObject;
 public class RemoteBrowser extends UnicastRemoteObject implements IRemoteBrowser {
 
     private IBrowser browser;
+    private static boolean DEBUG = false;
 
     public static void main(String[] args) {
         if(args.length < 1) {
             System.err.println("Invalid arguments.");
             return;
         }
+
+        if(args[0].equalsIgnoreCase("debug")) DEBUG = true;
 
         Registry registry;
         try {
@@ -42,14 +49,20 @@ public class RemoteBrowser extends UnicastRemoteObject implements IRemoteBrowser
     public RemoteBrowser() throws RemoteException {
         super();
         try {
-            browser = new BrowserImpl_JCEF();
-//            throw new UnsupportedOperationException();
+//            browser = new BrowserImpl_JCEF();
+            throw new UnsupportedOperationException();
         } catch (Throwable e) {
+            if(DEBUG)
+                System.out.println(" -> Failed to create AWT browser. Using Native Impl instead. "+e.getMessage());
             browser = new BrowserImpl_Native();
+            if(DEBUG)
+                System.out.println(" -> Created "+browser.getClass().getName()+" instance");
             System.out.println("Using BrowserImpl_Native");
+            if(DEBUG)
+                onStart(200, 100);
             return;
         }
-        System.out.println("Using BrowserImpl_JCEF");
+//        System.out.println("Using BrowserImpl_JCEF");
     }
 
     @Override
@@ -63,6 +76,7 @@ public class RemoteBrowser extends UnicastRemoteObject implements IRemoteBrowser
     }
 
     public void onStart(int width, int height) throws RemoteException {
+        System.out.println("Invoked onStart");
         browser.onStart(width, height);
     }
 

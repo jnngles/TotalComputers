@@ -3,6 +3,8 @@ package com.jnngl.system;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.rmi.RemoteException;
@@ -99,6 +101,20 @@ public class RemoteNativeCaller extends UnicastRemoteObject implements INativeCa
     public void init(String applicationPath) throws RemoteException {
         if(System.getProperty("os.name").toLowerCase().startsWith("windows")) {
             System.load(applicationPath + "/vbox_native.dll");
+            FilenameFilter filter = new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    return name.endsWith(".dll");
+                }
+            };
+            File[] libraries = new File(System.getProperty("java.home"), "bin").listFiles(filter);
+            for(File l : libraries) {
+                try {
+                    System.load(l.getAbsoluteFile().getAbsolutePath());
+                } catch (Throwable e) {
+                    System.err.println("Caught "+e.getClass().getSimpleName()+": "+e.getMessage());
+                }
+            }
             iface = new VBoxMS();
         } else {
             iface = new VBoxUnix();

@@ -224,7 +224,7 @@ public class FileSystem {
             try {
                 String path = Files.readString(file.toPath()).trim();
                 if(path.startsWith("/")) path = root()+path;
-                return getIconForFileI(new File(path), depth-1);
+                return getIconForFileI(toFile(path), depth-1);
             } catch (IOException e) {
                 return null;
             }
@@ -249,7 +249,7 @@ public class FileSystem {
             try {
                 String path = Files.readString(file.toPath()).trim();
                 if(path.startsWith("/")) path = root()+path;
-                executeFileI(new File(path), depth-1);
+                executeFileI(toFile(path), depth-1);
             } catch (IOException ignored) {}
         }
         String[] parts = name.split("\\.");

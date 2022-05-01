@@ -43,7 +43,9 @@ public class JukeboxApplication extends WindowApplication {
     private void start(File file) {
         current = System.currentTimeMillis()+file.getName();
         try {
-            Files.copy(file.toPath(), new File(SoundWebServer.HTTDOCS, "sounds/"+current).toPath());
+            File sounds = new File(SoundWebServer.HTTDOCS, "sounds");
+            sounds.mkdirs();
+            Files.copy(file.toPath(), new File(sounds, current).toPath());
         } catch (IOException e) {
             System.err.println("Failed to copy file");
         }

@@ -58,12 +58,17 @@ public class BrowserImpl_Native implements IBrowser {
 
     @Override
     public void onStart(int width, int height) {
+        System.out.println("NATIVE -> onStart");
         this.width[0] = width;
         this.height[0] = height;
+        System.out.println("Resolving natives");
         libpath = CEFNativeLoader.resolveLibpath();
         CEFNativeLoader.downloadAndLoad(libpath);
+        System.out.println("Invoking N_createCef");
+        System.out.println("CefClient="+libpath.getAbsolutePath()+"/cefclient"+(OS.isWindows()? ".exe" : ""));
         handle = N_createCef(width, height, libpath.getAbsolutePath()+"/cefclient"+
                 (OS.isWindows()? ".exe" : ""));
+        System.out.println("onStart -> done");
     }
 
     @Override

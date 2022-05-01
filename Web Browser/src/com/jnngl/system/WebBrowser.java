@@ -169,9 +169,9 @@ public class WebBrowser extends WindowApplication {
                     break;
                 } catch (RemoteException | NotBoundException e) {
                     if(e instanceof NotBoundException) continue;
-                    System.err.println("(WebBrowser::onStart) -> Failed to create/access remote object. (" +
-                            e.getClass().getSimpleName() + ")");
-                    System.err.println(" -> " + e.getMessage());
+//                    System.err.println("(WebBrowser::onStart) -> Failed to create/access remote object. (" +
+//                            e.getClass().getSimpleName() + ")");
+//                    System.err.println(" -> " + e.getMessage());
 //                    break;
                 }
             }
@@ -205,8 +205,6 @@ public class WebBrowser extends WindowApplication {
             if(url != null) urlField.setText(url);
             setName(server.getTitle());
 
-            g.setColor(Color.BLACK);
-            g.fillRect(0, 0, getWidth(), getHeight());
             byte[] bytes = server.render();
             if(bytes == null) {
                 g.setFont(font);

@@ -15,5 +15,5 @@ file(GLOB SOURCE_FILES
 )
 
 include_directories(${INCLUDES})
-link_libraries(${JNI_LIBRARIES})
+#link_libraries(${JNI_LIBRARIES})
 add_library(vbox_native SHARED ${SOURCE_FILES})

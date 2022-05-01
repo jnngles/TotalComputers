@@ -63,7 +63,7 @@ public class CEFNativeLoader {
         if(OS.isWindows()) {
             url = "https://drive.google.com/uc?export=download&confirm=yTib&id=1V6QEdBdCCn4YGWp-9oaqutuQVv-_xMTf";
         } else {
-            url = "https://drive.google.com/uc?export=download&confirm=yTib&id=1O93autsbszjC4bm7_PNwMhP1WceKRC_Z";
+            url = "https://drive.google.com/uc?export=download&confirm=yTib&id=1DcmE3dwvwAu_ohlBB2kmS973KTmlwSFx";
         }
 
         File dst = new File(path, "native_bin.zip");

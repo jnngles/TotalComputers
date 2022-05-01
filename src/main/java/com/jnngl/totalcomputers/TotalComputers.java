@@ -511,200 +511,6 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     }
 
     /**
-     * Creates monitor piece
-     * @param name Name of the computer
-     * @param area Physical data of the computer
-     * @param x1 World X
-     * @param y1 World Y
-     * @param z1 World Z
-     * @param displacement Displacement
-     * @param monitorPieces Monitor
-     * @param i Index of the piece
-     */
-    private int proceedMonitorPiece(TotalOS os, String name, SelectionArea area, int x1, int y1, int z1, Vector displacement, List<MonitorPiece> monitorPieces, int[] i) {
-        Location loc = new Location(area.firstPos.getWorld(), x1, y1, z1).add(displacement);
-
-        final MapView map = Bukkit.createMap(loc.getWorld());
-        map.setScale(MapView.Scale.FARTHEST);
-
-        Material material;
-        try {
-            Field filledMap = Material.class.getDeclaredField("FILLED_MAP");
-            filledMap.setAccessible(true);
-            material = (Material) filledMap.get(null);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            material = Material.MAP;
-        }
-        ItemStack is = null;
-        Object mapId = 0;
-        try {
-            mapId = map.getClass().getMethod("getId").invoke(map);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-        if(isLegacy) {
-            is = new ItemStack(material, 1, (Short) mapId );
-        }
-        else {
-            is = new ItemStack(material, 1);
-
-            try {
-                MapMeta meta = (MapMeta) is.getItemMeta();
-                Method setMapId = MapMeta.class.getMethod("setMapId", int.class);
-                setMapId.invoke(meta, mapId);
-                is.setItemMeta(meta);
-            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
-                System.err.println("Failed to assign map id");
-            }
-        }
-
-        ItemFrame f = null;
-        try {
-            for(Entity entity : loc.getWorld().getEntitiesByClasses(ItemFrame.class)) {
-                if(entity.getLocation().getBlockX() == loc.getBlockX() && entity.getLocation().getBlockY() == loc.getBlockY() && entity.getLocation().getBlockZ() == loc.getBlockZ()) {
-                    f = (ItemFrame) entity;
-                    break;
-                }
-            }
-            if(f == null)
-                f = area.firstPos.getWorld().spawn(loc, ItemFrame.class);
-        } catch (Exception ignored) {}
-
-        if(f != null) {
-            f.setItem(is);
-            interactiveTiles.put(f, new MonitorPieceIndex(name, i[0]));
-            monitorPieces.add(new MonitorPiece(map, f));
-        } else logger.info("Failed to init computer: Unable to create or load item frame.");
-
-        i[0]++;
-        return (mapId instanceof Short)? (short)mapId : (int)mapId;
-    }
-
-    /**
-     * Initializes the computer
-     * @param name Name of the computer to initialize
-     */
-    private void initComputer(String name) {
-        final SelectionArea area = computersPhysicalData.get(name);
-
-        Vector displacement;
-
-        int topRightX = Math.max(area.firstPos.getBlockX(), area.secondPos.getBlockX()),
-                topRightY = Math.max(area.firstPos.getBlockY(), area.secondPos.getBlockY()),
-                topRightZ = Math.max(area.firstPos.getBlockZ(), area.secondPos.getBlockZ()),
-                downLeftX = Math.min(area.firstPos.getBlockX(), area.secondPos.getBlockX()),
-                downLeftY = Math.min(area.firstPos.getBlockY(), area.secondPos.getBlockY()),
-                downLeftZ = Math.min(area.firstPos.getBlockZ(), area.secondPos.getBlockZ());
-
-        if(area.direction == SelectionArea.Direction.RIGHT) displacement = new Vector(1, 0, 0);
-        else if(area.direction == SelectionArea.Direction.LEFT) displacement = new Vector(-1, 0, 0);
-        else if(area.direction == SelectionArea.Direction.FORWARD) displacement = new Vector(0, 0, 1);
-        else if(area.direction == SelectionArea.Direction.BACKWARD) displacement = new Vector(0, 0, -1);
-        else displacement = new Vector();
-
-        final int[] i = {0};
-
-        List<MonitorPiece> monitorPieces = new ArrayList<>();
-
-        boolean invert = area.direction == SelectionArea.Direction.BACKWARD || area.direction == SelectionArea.Direction.RIGHT;
-
-        TotalOS os = new TotalOS(area.width*128, area.height*128, name);
-        os.motionCapture = this;
-
-        int[] maps = new int[area.area];
-
-        for(int y1 = topRightY; y1 >= downLeftY; y1--) {
-            if(invert) {
-                for (int x1 = topRightX; x1 >= downLeftX; x1--) {
-                    for (int z1 = topRightZ; z1 >= downLeftZ; z1--) {
-                        maps[i[0]] = proceedMonitorPiece(os, name, area, x1, y1, z1, displacement, monitorPieces, i);
-                    }
-                }
-            } else {
-                for (int x1 = downLeftX; x1 <= topRightX; x1++) {
-                    for (int z1 = downLeftZ; z1 <= topRightZ; z1++) {
-                        maps[i[0]] = proceedMonitorPiece(os, name, area, x1, y1, z1, displacement, monitorPieces, i);
-                    }
-                }
-            }
-        }
-
-        if(sender != null) {
-
-            Object[] frame1 = new Object[area.area], frame2 = new Object[area.area];
-            BufferedImage empty = new BufferedImage(128, 128, BufferedImage.TYPE_INT_RGB);
-            for(int j = 0; j < area.area; j++) {
-                try {
-                    frame1[j] = sender.createPacket(maps[j], empty);
-                    frame2[j] = sender.createPacket(maps[j], empty);
-                } catch (ReflectiveOperationException e) {
-                    logger.warning("Failed to create packet");
-                }
-            }
-            packets.put(os, new DoubleBuffer(frame1, frame2));
-
-            tasks.put(os.name, Bukkit.getScheduler().runTaskTimer(this, () -> {
-                List<TotalComputers.InputInfo> handledInputs = new ArrayList<>();
-
-                for (int x = 0; x < area.width; x++) {
-                    for (int y = 0; y < area.height; y++) {
-                        int id = y * area.width + x;
-                        int absX = x * 128;
-                        int absY = y * 128;
-                        for (TotalComputers.InputInfo inputInfo : unhandledInputs.toArray(new InputInfo[0])) {
-                            if (inputInfo.index().name().equals(name) && inputInfo.index().index() == id) {
-                                executors.put(os, inputInfo.player);
-                                os.processTouch(absX + inputInfo.x(), absY + inputInfo.y(), inputInfo.interactType(), inputInfo.player().hasPermission("totalcomputers.admin"));
-                                executors.remove(os);
-                                handledInputs.add(inputInfo);
-                            }
-                        }
-                    }
-                }
-                unhandledInputs.removeAll(handledInputs);
-
-                Bukkit.getScheduler().runTaskAsynchronously(this, () ->{
-
-                    BufferedImage screen = os.renderFrame();
-
-                    Object[] framePacket = packets.get(os).get();
-
-                    for (int x = 0; x < area.width; x++) {
-                        for (int y = 0; y < area.height; y++) {
-                            int id = y * area.width + x;
-                            int absX = x * 128;
-                            int absY = y * 128;
-                            try {
-                                sender.modifyPacket(framePacket[id], screen.getSubimage(absX, absY, 128, 128));
-                            } catch (ReflectiveOperationException e) {
-                                logger.warning("Failed to create packet");
-                                logger.warning(" -> " + e.getMessage());
-                            }
-                        }
-                    }
-
-
-                    for (Player player : Bukkit.getOnlinePlayers()) {
-                        for (int id = 0; id < area.area; id++) {
-                            try {
-                                sender.sendPacket(player, framePacket[id]);
-                            } catch (ReflectiveOperationException e) {
-                                logger.warning("Failed to create packet");
-                                logger.warning(" -> " + e.getMessage());
-                            }
-                        }
-                    }
-                });
-            }, 0, delay));
-
-        }
-
-        systems.put(name, os);
-        monitors.remove(name);
-        monitors.put(name, monitorPieces);
-    }
-
-    /**
      * Loads all computers from config
      */
     private void loadComputers() {
@@ -1697,6 +1503,214 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         }
         areas.put(player, new SelectionArea(first, second, axis, direction, width, height, area));
         player.sendMessage(replyPrefix + ChatColor.LIGHT_PURPLE + "Selected Area: [Direction: "+direction+", Area: "+area+" ("+width+"*"+height+")]");
+    }
+
+    /**
+     * Creates monitor piece
+     * @param name Name of the computer
+     * @param area Physical data of the computer
+     * @param x1 World X
+     * @param y1 World Y
+     * @param z1 World Z
+     * @param displacement Displacement
+     * @param monitorPieces Monitor
+     * @param i Index of the piece
+     */
+    private int proceedMonitorPiece(TotalOS os, String name, SelectionArea area, int x1, int y1, int z1, Vector displacement, List<MonitorPiece> monitorPieces, int[] i) {
+        Location loc = new Location(area.firstPos.getWorld(), x1, y1, z1).add(displacement);
+
+        final MapView map = Bukkit.createMap(loc.getWorld());
+        map.setScale(MapView.Scale.FARTHEST);
+
+        Material material;
+        try {
+            Field filledMap = Material.class.getDeclaredField("FILLED_MAP");
+            filledMap.setAccessible(true);
+            material = (Material) filledMap.get(null);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            material = Material.MAP;
+        }
+        ItemStack is = null;
+        Object mapId = 0;
+        try {
+            mapId = map.getClass().getMethod("getId").invoke(map);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        if(isLegacy) {
+            is = new ItemStack(material, 1, (Short) mapId );
+        }
+        else {
+            is = new ItemStack(material, 1);
+
+            try {
+                MapMeta meta = (MapMeta) is.getItemMeta();
+                Method setMapId = MapMeta.class.getMethod("setMapId", int.class);
+                setMapId.invoke(meta, mapId);
+                is.setItemMeta(meta);
+            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
+                System.err.println("Failed to assign map id");
+            }
+        }
+
+        ItemFrame f = null;
+        try {
+            for(Entity entity : loc.getWorld().getEntitiesByClasses(ItemFrame.class)) {
+                if(entity.getLocation().getBlockX() == loc.getBlockX() && entity.getLocation().getBlockY() == loc.getBlockY() && entity.getLocation().getBlockZ() == loc.getBlockZ()) {
+                    f = (ItemFrame) entity;
+                    break;
+                }
+            }
+            if(f == null)
+                f = area.firstPos.getWorld().spawn(loc, ItemFrame.class);
+        } catch (Exception ignored) {}
+
+        if(f != null) {
+            f.setItem(is);
+            interactiveTiles.put(f, new MonitorPieceIndex(name, i[0]));
+            monitorPieces.add(new MonitorPiece(map, f));
+        } else logger.info("Failed to init computer: Unable to create or load item frame.");
+
+        i[0]++;
+        return (mapId instanceof Short)? (short)mapId : (int)mapId;
+    }
+
+    /**
+     * Initializes the computer
+     * @param name Name of the computer to initialize
+     */
+    private void initComputer(String name) {
+        final SelectionArea area = computersPhysicalData.get(name);
+
+        Vector displacement;
+
+        int topRightX = Math.max(area.firstPos.getBlockX(), area.secondPos.getBlockX()),
+                topRightY = Math.max(area.firstPos.getBlockY(), area.secondPos.getBlockY()),
+                topRightZ = Math.max(area.firstPos.getBlockZ(), area.secondPos.getBlockZ()),
+                downLeftX = Math.min(area.firstPos.getBlockX(), area.secondPos.getBlockX()),
+                downLeftY = Math.min(area.firstPos.getBlockY(), area.secondPos.getBlockY()),
+                downLeftZ = Math.min(area.firstPos.getBlockZ(), area.secondPos.getBlockZ());
+
+        if(area.direction == SelectionArea.Direction.RIGHT) displacement = new Vector(1, 0, 0);
+        else if(area.direction == SelectionArea.Direction.LEFT) displacement = new Vector(-1, 0, 0);
+        else if(area.direction == SelectionArea.Direction.FORWARD) displacement = new Vector(0, 0, 1);
+        else if(area.direction == SelectionArea.Direction.BACKWARD) displacement = new Vector(0, 0, -1);
+        else displacement = new Vector();
+
+        final int[] i = {0};
+
+        List<MonitorPiece> monitorPieces = new ArrayList<>();
+
+        boolean invert = area.direction == SelectionArea.Direction.BACKWARD || area.direction == SelectionArea.Direction.RIGHT;
+
+        TotalOS os = new TotalOS(area.width*128, area.height*128, name);
+        os.motionCapture = this;
+
+        int[] maps = new int[area.area];
+
+        for(int y1 = topRightY; y1 >= downLeftY; y1--) {
+            if(invert) {
+                for (int x1 = topRightX; x1 >= downLeftX; x1--) {
+                    for (int z1 = topRightZ; z1 >= downLeftZ; z1--) {
+                        maps[i[0]] = proceedMonitorPiece(os, name, area, x1, y1, z1, displacement, monitorPieces, i);
+                    }
+                }
+            } else {
+                for (int x1 = downLeftX; x1 <= topRightX; x1++) {
+                    for (int z1 = downLeftZ; z1 <= topRightZ; z1++) {
+                        maps[i[0]] = proceedMonitorPiece(os, name, area, x1, y1, z1, displacement, monitorPieces, i);
+                    }
+                }
+            }
+        }
+
+        if(sender != null) {
+
+            Object[] frame1 = new Object[area.area], frame2 = new Object[area.area];
+            BufferedImage empty = new BufferedImage(128, 128, BufferedImage.TYPE_INT_RGB);
+            for(int j = 0; j < area.area; j++) {
+                try {
+                    frame1[j] = sender.createPacket(maps[j], empty);
+                    frame2[j] = sender.createPacket(maps[j], empty);
+                } catch (ReflectiveOperationException e) {
+                    logger.warning("Failed to create packet");
+                }
+            }
+            packets.put(os, new DoubleBuffer(frame1, frame2));
+
+            int[] uncaught = { 0 };
+            tasks.put(os.name, Bukkit.getScheduler().runTaskTimer(this, () -> {
+                Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+                    try {
+                        List<TotalComputers.InputInfo> handledInputs = new ArrayList<>();
+                        for (int x = 0; x < area.width; x++) {
+                            for (int y = 0; y < area.height; y++) {
+                                int id = y * area.width + x;
+                                int absX = x * 128;
+                                int absY = y * 128;
+                                for (TotalComputers.InputInfo inputInfo : unhandledInputs.toArray(new InputInfo[0])) {
+                                    if (inputInfo.index().name().equals(name) && inputInfo.index().index() == id) {
+                                        executors.put(os, inputInfo.player);
+                                        os.processTouch(absX + inputInfo.x(), absY + inputInfo.y(), inputInfo.interactType(), inputInfo.player().hasPermission("totalcomputers.admin"));
+                                        executors.remove(os);
+                                        handledInputs.add(inputInfo);
+                                    }
+                                }
+                            }
+                        }
+                        unhandledInputs.removeAll(handledInputs);
+
+                        BufferedImage screen = os.renderFrame();
+                        if(screen == null) throw new Exception("Failed to render screen");
+
+                        Object[] framePacket = packets.get(os).get();
+
+                        for (int x = 0; x < area.width; x++) {
+                            for (int y = 0; y < area.height; y++) {
+                                int id = y * area.width + x;
+                                int absX = x * 128;
+                                int absY = y * 128;
+                                try {
+                                    sender.modifyPacket(framePacket[id], screen.getSubimage(absX, absY, 128, 128));
+                                } catch (ReflectiveOperationException e) {
+                                    logger.warning("Failed to create packet");
+                                    logger.warning(" -> " + e.getMessage());
+                                }
+                            }
+                        }
+
+
+                        for (Player player : Bukkit.getOnlinePlayers()) {
+                            for (int id = 0; id < area.area; id++) {
+                                try {
+                                    sender.sendPacket(player, framePacket[id]);
+                                } catch (ReflectiveOperationException e) {
+                                    logger.warning("Failed to create packet");
+                                    logger.warning(" -> " + e.getMessage());
+                                }
+                            }
+                        }
+                        uncaught[0] = 0;
+                    } catch(Throwable e) {
+                        if(e instanceof OutOfMemoryError) {
+                            os.invokeBSoD("Not enough RAM", e, 0x03);
+                        }
+                        else if(uncaught[0]/(delay == 0? 60 : (20/delay)) >= 3) {
+                            os.invokeBSoD("Fatal ERROR", new Throwable(e), 0x01);
+                        }
+                        else {
+                            uncaught[0]++;
+                            System.err.println("Fatal ERROR #"+uncaught[0]+" -> Uncaught exception: " + e.getMessage());
+                        }
+                    }
+                });
+            }, 0, delay));
+
+        }
+
+        systems.put(name, os);
+        monitors.remove(name);
+        monitors.put(name, monitorPieces);
     }
 
 }

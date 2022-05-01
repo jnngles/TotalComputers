@@ -19,6 +19,7 @@
 package com.jnngl.totalcomputers.system;
 
 import com.jnngl.totalcomputers.TotalComputers;
+import com.jnngl.totalcomputers.bsod.Cause;
 import com.jnngl.totalcomputers.motion.MotionCapture;
 import com.jnngl.totalcomputers.system.overlays.Information;
 import com.jnngl.totalcomputers.system.overlays.Keyboard;
@@ -43,6 +44,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class TotalOS {
 
+    private static final SharedStorage singletonStorage = new SharedStorage();
+
     private static final List<TotalOS> active = new ArrayList<>();
     private static TotalOS current;
     public static TotalOS current() { return current; }
@@ -51,7 +54,7 @@ public class TotalOS {
      * @return API version
      */
     public static int getApiVersion() {
-        return 4;
+        return 5;
     }
 
     /**
@@ -79,6 +82,7 @@ public class TotalOS {
     private final BufferedImage image;
     private BufferedImage lastFrame;
     private final Graphics2D imageGraphics;
+    public final SharedStorage storage;
 
     /**
      * Screen width
@@ -163,6 +167,7 @@ public class TotalOS {
         this.screenWidth = widthPix;
         this.screenHeight = heightPix;
         this.name = name;
+        storage = singletonStorage;
         hasAdminRights = false;
         stateManager = new StateManager();
     }
@@ -302,6 +307,16 @@ public class TotalOS {
 //        stateManager.setState(new Desktop(stateManager, this)); // For testing
 
         active.add(this);
+    }
+
+    @RequiresAPI(apiLevel = 6)
+    public void invokeBSoD(String title, Throwable error, Cause cause) {
+        stateManager.setState(new BSoD(stateManager, this, title, error, cause));
+    }
+
+    @RequiresAPI(apiLevel = 5)
+    public void invokeBSoD(String title, Throwable error, int code) {
+        invokeBSoD(title, error, Cause.fromCode(code));
     }
 
     /**

@@ -51,6 +51,7 @@ JNIEXPORT jobject JNICALL Java_com_jnngl_system_BrowserImpl_1Native_N_1createCef
 
 	CefSettings settings;
 	settings.multi_threaded_message_loop = false;
+	settings.no_sandbox = true;
 	settings.windowless_rendering_enabled = true;
 	const char* chars = env->GetStringUTFChars(path, 0);
 	CefString(&settings.browser_subprocess_path).FromASCII(chars);
@@ -65,8 +66,7 @@ JNIEXPORT jobject JNICALL Java_com_jnngl_system_BrowserImpl_1Native_N_1createCef
 
 	CefWindowInfo window_info;
 	CefBrowserSettings browser_settings;
-	browser_settings.windowless_frame_rate = 60;
-	browser_settings.webgl = STATE_DISABLED;
+	browser_settings.windowless_frame_rate = 20;
 	
 	window_info.SetAsWindowless(0);
 
