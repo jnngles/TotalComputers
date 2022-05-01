@@ -1693,7 +1693,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         uncaught[0] = 0;
                     } catch(Throwable e) {
                         if(e instanceof OutOfMemoryError) {
-                            os.invokeBSoD("Not enough RAM", e, 0x03);
+                            os.invokeBSoD("Not enough RAM", new Throwable(e), 0x03);
                         }
                         else if(uncaught[0]/(delay == 0? 60 : (20/delay)) >= 3) {
                             os.invokeBSoD("Fatal ERROR", new Throwable(e), 0x01);
