@@ -80,7 +80,6 @@ public class TotalOS {
      * Screen
      */
     private final BufferedImage image;
-    private BufferedImage lastFrame;
     private final Graphics2D imageGraphics;
     public final SharedStorage storage;
 
@@ -178,15 +177,7 @@ public class TotalOS {
     }
 
     public BufferedImage getScreen() {
-        return lastFrame;
-    }
-
-    private static BufferedImage copyImage(BufferedImage source){
-        BufferedImage b = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
-        Graphics g = b.getGraphics();
-        g.drawImage(source, 0, 0, null);
-        g.dispose();
-        return b;
+        return image;
     }
 
     /**
@@ -194,8 +185,6 @@ public class TotalOS {
      */
     public BufferedImage renderFrame() {
         current = this;
-        BufferedImage b = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
-        Graphics2D imageGraphics = b.createGraphics();
         List<Runnable> finished = new ArrayList<>();
         for(Runnable thread : threads) {
             thread.run();
@@ -203,13 +192,13 @@ public class TotalOS {
         }
         threads.removeAll(finished);
         stateManager.update();
-        current = null;
         imageGraphics.setColor(Color.BLACK);
         imageGraphics.fillRect(0, 0, screenWidth, screenHeight);
         stateManager.render(imageGraphics);
         if (keyboard != null) keyboard.render(imageGraphics);
         if (information != null) information.render(imageGraphics);
-        return b;
+        current = null;
+        return image;
     }
 
     /**

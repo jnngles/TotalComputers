@@ -57,7 +57,7 @@ class BSoD extends State {
         g.drawString("Maximum memory (bytes): "+(Runtime.getRuntime().maxMemory() == Long.MAX_VALUE? "No limit" : Runtime.getRuntime().maxMemory()), os.screenWidth/2-metrics.stringWidth("Maximum memory (bytes): "), y+=metrics.getHeight());
         g.drawString("Total memory (bytes): "+Runtime.getRuntime().totalMemory(), os.screenWidth/2-metrics.stringWidth("Total memory (bytes): "), y+=metrics.getHeight());
         y += metrics.getAscent();
-        g.drawString("Host Operating System: "+System.getProperty("os.name"), os.screenWidth/2-metrics.stringWidth("Operating System: "), y+=metrics.getHeight());
+        g.drawString("Host Operating System: "+System.getProperty("os.name"), os.screenWidth/2-metrics.stringWidth("Host Operating System: "), y+=metrics.getHeight());
         g.drawString("Java Version: "+System.getProperty("java.version"), os.screenWidth/2-metrics.stringWidth("Java Version: "), y+=metrics.getHeight());
         y += metrics.getHeight()*3;
         String str = Integer.toHexString(this.cause.getCode()).toUpperCase();

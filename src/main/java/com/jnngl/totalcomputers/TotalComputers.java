@@ -165,10 +165,12 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         target.sendMessage(replyPrefix + ChatColor.BLUE + "  Item Drop: " + (desc.requiresItemDropCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
         target.sendMessage(replyPrefix + ChatColor.BLUE + "Type "+ChatColor.GREEN+"/tcmp release"+ChatColor.BLUE+" to stop it");
 
-        Arrow arrow = target.getWorld().spawn(target.getLocation(), Arrow.class);
-        arrow.setGravity(false);
-        arrow.setInvulnerable(true);
-        arrow.setPassenger(target);
+        Bukkit.getScheduler().runTask(this, () -> {
+            Arrow arrow = target.getWorld().spawn(target.getLocation(), Arrow.class);
+            arrow.setGravity(false);
+            arrow.setInvulnerable(true);
+            arrow.setPassenger(target);
+        });
 
         if(desc.requiresSlotCapture()) {
             int slot1, slot2, slot3;

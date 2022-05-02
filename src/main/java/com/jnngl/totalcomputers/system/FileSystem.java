@@ -20,6 +20,7 @@ package com.jnngl.totalcomputers.system;
 
 import com.jnngl.system.NativeWindowApplication;
 import com.jnngl.totalcomputers.system.desktop.TaskBarLink;
+import org.eclipse.jetty.util.IO;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -49,6 +50,7 @@ public class FileSystem {
     /** /sys/locale       */ private final File       locale;
     /** /sys/account      */ private final File       account;
     /** /sys/associations */ private final File       associations;
+    /** /sys/wp_dither    */ private final File       wp_dither;
     /** /usr              */ private final File   usr;
     /** /usr/Desktop      */ private final File       Desktop;
 
@@ -107,23 +109,25 @@ public class FileSystem {
         account = new File(sys.getPath()+"/account");
         wallpaper = new File(sys.getPath()+"/wallpaper");
         associations = new File(sys.getPath()+"/associations");
-        if(!initFlag.exists()) {
-            firstRun = true;
-            try {
-                usr.mkdirs();
-                Desktop.mkdirs();
-                sys.mkdirs();
-                taskbar.createNewFile();
-                this.name.createNewFile();
-                associations.createNewFile();
+        wp_dither = new File(sys.getPath()+"/wp_dither");
+        firstRun = !initFlag.exists();
+        try {
+            usr.mkdirs();
+            Desktop.mkdirs();
+            sys.mkdirs();
+            if(!this.name.exists())
                 Files.writeString(this.name.toPath(), name);
+            if(!this.taskbar.exists())
                 Files.writeString(this.taskbar.toPath(), "Files\n!/sys/bin/Files.app\nApp Store\n!/sys/bin/AppStore.app\n");
+            if(!this.wallpaper.exists())
                 Files.writeString(this.wallpaper.toPath(), "/res/system/wallpaper.png");
+            if(!this.associations.exists())
                 Files.writeString(this.associations.toPath(), "png,jpg: /sys/bin/ImageViewer.app");
-            } catch (IOException e) {
-                System.err.println("Failed to init file system. (IOException)");
-            }
-        } else firstRun = false;
+            if(!this.wp_dither.exists())
+                Files.writeString(this.wp_dither.toPath(), "false");
+        } catch (IOException e) {
+            System.err.println("Failed to init file system. (IOException)");
+        }
     }
 
     /**
@@ -148,6 +152,33 @@ public class FileSystem {
         } catch (IOException e) {
             System.err.println("Failed to access file system");
         }
+    }
+
+    public void disableWallpaperDithering() {
+        try {
+            Files.writeString(this.wp_dither.toPath(), "false");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void enableWallpaperDithering() {
+        try {
+            Files.writeString(this.wp_dither.toPath(), "true");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean isWallpaperDitheringEnabled() {
+        if(!wp_dither.exists())
+            enableWallpaperDithering();
+        try {
+            return !Files.readString(wp_dither.toPath()).equalsIgnoreCase("false");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return true;
     }
 
     /**

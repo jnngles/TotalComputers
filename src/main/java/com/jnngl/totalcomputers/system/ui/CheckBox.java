@@ -97,6 +97,10 @@ public class CheckBox implements ComponentUI {
         this.y = y;
     }
 
+    public void setValue(boolean value) {
+        this.value = value;
+    }
+
     public String getLabel() {
         return label;
     }

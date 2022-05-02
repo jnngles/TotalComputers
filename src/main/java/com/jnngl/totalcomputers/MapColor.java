@@ -3,8 +3,6 @@ package com.jnngl.totalcomputers;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Convert {@link Color} to map color
@@ -30,7 +28,7 @@ public class MapColor {
     /**
      * Colors used in map
      */
-    private static Color[] colors;
+    public static Color[] colors;
 
     /**
      * Cached values
@@ -127,15 +125,6 @@ public class MapColor {
         return cache[(rgb & 0xF00000) >> 12 | (rgb & 0xF000) >> 8 | (rgb & 0xF0) >> 4];
     }
 
-    /**
-     * Deprecated function from bukkit.
-     * <p>
-     * I don't know what actually it does.
-     * </p>
-     * @param c1 Idk
-     * @param c2 Idk
-     * @return Idk
-     */
     private static double getDistance(Color c1, Color c2) {
         double rMean = (double)(c1.getRed() + c2.getRed()) / 2.0D;
         double r = c1.getRed() - c2.getRed();

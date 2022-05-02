@@ -76,7 +76,9 @@ public class LoginScreen extends State {
             return;
         }
 
-        stateManager.setState(new Desktop(stateManager, os));
+        new Thread(() -> {
+            stateManager.setState(new Desktop(stateManager, os));
+        }).start();
     }
 
     private String passwordKeyTyped(String character, Keyboard.Keys key, Keyboard keyboard) {

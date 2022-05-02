@@ -18,6 +18,7 @@
 
 package com.jnngl.totalcomputers.system.desktop;
 
+import com.jnngl.totalcomputers.system.Utils;
 import com.jnngl.totalcomputers.system.states.Desktop;
 
 import java.awt.*;
@@ -37,20 +38,27 @@ public class Wallpaper {
     private BufferedImage wallpaper;
     private final Desktop desktop;
     private ResizeType resizeType;
+    private boolean loaded = false;
 
     private int x, y, width, height;
 
     public Wallpaper(Desktop desktop) {
         this.desktop = desktop;
         resizeType = ResizeType.AUTO_CROP;
-        loadWallpaper();
     }
 
     public void render(Graphics2D g) {
-        g.drawImage(wallpaper, x, y, width, height, null);
+        if(!loaded) {
+            loaded = true;
+            Thread loadThread = new Thread(this::loadWallpaper);
+            loadThread.setPriority(Thread.MIN_PRIORITY);
+            loadThread.start();
+        }
+        if(wallpaper == null) return;
+        wallpaper.copyData(desktop.getOS().getScreen().getRaster());
     }
 
-    public void updateBounds() {
+    private void updateBounds(BufferedImage wallpaper) {
         if(resizeType == ResizeType.NATIVE_SIZE) {
             x = desktop.getOS().screenWidth/2-wallpaper.getWidth()/2;
             y = desktop.getOS().screenHeight/2-wallpaper.getHeight()/2;
@@ -105,8 +113,10 @@ public class Wallpaper {
     }
 
     public void loadWallpaper() {
-        wallpaper = desktop.getOS().fs.loadImage(desktop.getOS().fs.readFile("/sys/wallpaper"));
-        updateBounds();
+        wallpaper =
+                new BufferedImage(desktop.getOS().screenWidth,desktop.getOS().screenHeight,BufferedImage.TYPE_INT_RGB);
+        new Thread(() ->
+                setWallpaper(desktop.getOS().fs.loadImage(desktop.getOS().fs.readFile("/sys/wallpaper")))).start();
     }
 
     public void changeWallpaper(String path) {
@@ -115,13 +125,28 @@ public class Wallpaper {
     }
 
     public void setWallpaper(BufferedImage wallpaper) {
-        this.wallpaper = wallpaper;
-        updateBounds();
+        updateBounds(wallpaper);
+        BufferedImage tmp = new BufferedImage(desktop.getOS().screenWidth,
+                desktop.getOS().screenHeight,BufferedImage.TYPE_INT_RGB);
+        new Thread(() -> {
+            this.wallpaper = new BufferedImage(desktop.getOS().screenWidth, desktop.getOS().screenHeight,
+                    BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = tmp.createGraphics();
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            g.drawImage(wallpaper, x, y, width, height, null);
+            tmp.copyData(this.wallpaper.getRaster());
+            if(desktop.getOS().fs.isWallpaperDitheringEnabled()) {
+                Utils.floydSteinbergDithering(tmp);
+                tmp.copyData(this.wallpaper.getRaster());
+            }
+        }).start();
     }
 
     public void setResizeType(ResizeType type) {
         this.resizeType = type;
-        updateBounds();
+        loadWallpaper();
     }
 
     public ResizeType getResizeType() {
