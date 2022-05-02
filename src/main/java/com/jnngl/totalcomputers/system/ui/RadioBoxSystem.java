@@ -63,6 +63,22 @@ public class RadioBoxSystem implements ComponentUI {
         this.selected = selected;
     }
 
+    public void setSelected(int index) {
+        if(selected >= 0 && selected < boxes.size())
+            getAt(selected).setSelected(false);
+        this.selected = index;
+        if(selected >= 0 && selected < boxes.size())
+            getAt(selected).setSelected(true);
+    }
+
+    public void setSelected(RadioBox radioBox) {
+        if(!boxes.contains(radioBox)) return;
+        if(selected >= 0 && selected < boxes.size())
+            getAt(selected).setSelected(false);
+        this.selected = boxes.indexOf(radioBox);
+        radioBox.setSelected(true);
+    }
+
     /**
      * Sets the event on radio box selected
      * @param event Event

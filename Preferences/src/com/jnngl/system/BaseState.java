@@ -9,15 +9,25 @@ import java.util.Set;
 
 public class BaseState extends AppState {
 
-    private Set<Button> buttons = new HashSet<>();
-    private Font font;
+    private final Set<Button> buttons = new HashSet<>();
+    private final Font font;
 
     private void init() {
         buttons.clear();
         Button tmp;
         buttons.add(tmp=new Button(Button.ButtonColor.WHITE, 0, 0,application.getWidth()/2,
-                application.getHeight()/3, font, "Wallpaper"));
+                application.getHeight()/2, font, "Wallpaper"));
         tmp.registerClickEvent(() -> application.switchState(new WallpaperState(application)));
+        buttons.add(tmp=new Button(Button.ButtonColor.WHITE, application.getWidth()/2, 0,
+                application.getWidth()/2, application.getHeight()/2, font, "Account"));
+        tmp.registerClickEvent(() -> application.switchState(new AccountState(application)));
+        buttons.add(tmp=new Button(Button.ButtonColor.WHITE, 0, application.getHeight()/2,
+                application.getWidth()/2, application.getHeight()/2, font, "Shutdown"));
+        tmp.registerClickEvent(() -> application.switchState(new ShutdownState(application)));
+        buttons.add(tmp=new Button(Button.ButtonColor.WHITE, application.getWidth()/2,
+                application.getHeight()/2,
+                application.getWidth()/2, application.getHeight()/2, font, "Reset"));
+        tmp.registerClickEvent(() -> application.switchState(new ResetState(application)));
     }
 
     public BaseState(Preferences preferences) {

@@ -1,12 +1,14 @@
 package com.jnngl.system;
 
 import com.jnngl.totalcomputers.TotalComputers;
+import com.jnngl.totalcomputers.system.RequiresAPI;
 import com.jnngl.totalcomputers.system.TotalOS;
 import com.jnngl.totalcomputers.system.desktop.ApplicationHandler;
 import com.jnngl.totalcomputers.system.desktop.WindowApplication;
 
 import java.awt.*;
 
+@RequiresAPI(apiLevel = 5)
 public class Preferences extends WindowApplication {
 
     private AppState state;

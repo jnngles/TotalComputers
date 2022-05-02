@@ -16,13 +16,14 @@ import java.lang.reflect.Field;
 public class WallpaperState extends AppState {
 
     private final Rectangle bar;
-    private final Button back, apply;
+    private final Button back, apply, resize;
     private final Text title, text;
     private final FontMetrics metrics;
     private final ElementList wallpapers;
     private final CheckBox dithering;
 
-    private Wallpaper accessWallpaper() throws NoSuchFieldException, IllegalAccessException {
+    static Wallpaper accessWallpaper(Preferences application)
+            throws NoSuchFieldException, IllegalAccessException {
         Field smf = application.os().getClass().getDeclaredField("stateManager");
         boolean a = smf.canAccess(application.os());
         smf.setAccessible(true);
@@ -65,7 +66,7 @@ public class WallpaperState extends AppState {
             if(dithering.getValue()) application.os().fs.enableWallpaperDithering();
             else application.os().fs.disableWallpaperDithering();
             try {
-                Wallpaper wp = accessWallpaper();
+                Wallpaper wp = accessWallpaper(application);
                 if (wp == null) return;
                 wp.loadWallpaper();
             } catch (Throwable e) {
@@ -74,7 +75,7 @@ public class WallpaperState extends AppState {
         });
         apply.registerClickEvent(() -> new Thread(() -> {
             try {
-                Wallpaper wp = accessWallpaper();
+                Wallpaper wp = accessWallpaper(application);
                 if(wp == null) return;
                 if (wallpapers.getSelectedIndex() == 0) {
                     wp.changeWallpaper("/res/system/wallpaper.png");
@@ -85,6 +86,10 @@ public class WallpaperState extends AppState {
                 e.printStackTrace();
             }
         }).start());
+        resize = new Button(Button.ButtonColor.WHITE, 0, offset, metrics.stringWidth("  Resize method   "),
+                back.getHeight(), font, "Resize method");
+        resize.setX(application.getWidth()-resize.getWidth()-offset);
+        resize.registerClickEvent(() -> application.switchState(new WallpaperResizeState(application)));
         File searchDir = new File(application.os().fs.root(), "usr/Wallpapers");
         if(!searchDir.exists()) return;
         searchDir.listFiles(pathname -> {
@@ -108,6 +113,7 @@ public class WallpaperState extends AppState {
         wallpapers.render(g);
         text.render(g);
         dithering.render(g);
+        resize.render(g);
     }
 
     @Override
@@ -116,6 +122,7 @@ public class WallpaperState extends AppState {
         apply.processInput(x, y, type);
         wallpapers.processInput(x, y, type);
         dithering.processInput(x, y, type);
+        resize.processInput(x, y, type);
     }
 
     @Override
@@ -125,5 +132,6 @@ public class WallpaperState extends AppState {
         int offset = bar.getHeight()/5;
         wallpapers.setWidth(application.getWidth()-wallpapers.getX()-offset);
         wallpapers.setHeight(application.getHeight()-bar.getHeight()-offset*2);
+        resize.setX(application.getWidth()-resize.getWidth()-offset);
     }
 }

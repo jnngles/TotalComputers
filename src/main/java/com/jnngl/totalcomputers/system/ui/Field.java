@@ -32,6 +32,7 @@ public class Field implements ComponentUI {
     private boolean isLocked;
     private int x, y, width, height;
     private final Font font;
+    private final FontMetrics metrics;
     private Text text;
     private Text description;
     private final Keyboard keyboard;
@@ -54,7 +55,7 @@ public class Field implements ComponentUI {
         this.width = width;
         this.height = height;
         this.font = font;
-        FontMetrics metrics = Utils.getFontMetrics(font);
+        this.metrics = Utils.getFontMetrics(font);
         this.text = new Text(x + 10, y+height/2+metrics.getHeight()/4, width-15, height, font, Color.BLACK, text);
         this.description = new Text(x + 10, y+height/2+metrics.getHeight()/4, width-15, height, font, Color.GRAY, description);
         this.keyboard = keyboard;
@@ -148,6 +149,8 @@ public class Field implements ComponentUI {
      */
     public void setX(int x) {
         this.x = x;
+        text.setX(x + 10);
+        description.setX(x + 10);
     }
 
     /**
@@ -164,6 +167,8 @@ public class Field implements ComponentUI {
      */
     public void setY(int y) {
         this.y = y;
+        text.setY(y+height/2+metrics.getHeight()/4);
+        description.setY(y+height/2+metrics.getHeight()/4);
     }
 
     /**
