@@ -1278,7 +1278,7 @@ Random::Random()
 {}
 
 Random::Random(long seed)
- : instance(tc::jEnv->NewObject(InitRandom(), tc::jEnv->GetMethodID(InitRandom(), "<init>", "(J)V"), (jlong)seed)), lang::Object(instance)
+ : lang::Object(instance), instance(tc::jEnv->NewObject(InitRandom(), tc::jEnv->GetMethodID(InitRandom(), "<init>", "(J)V"), (jlong)seed))
 {}
 
 bool Random::NextBoolean() {

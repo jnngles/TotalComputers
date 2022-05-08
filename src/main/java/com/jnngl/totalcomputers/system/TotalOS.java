@@ -76,11 +76,6 @@ public class TotalOS {
 
     private final StateManager stateManager;
 
-    /**
-     * Screen
-     */
-    private final BufferedImage image;
-    private final Graphics2D imageGraphics;
     public final SharedStorage storage;
 
     /**
@@ -148,6 +143,8 @@ public class TotalOS {
     private final List<Runnable> threads;
     public int x, y;
 
+    private int currentIdx = 0;
+
     public void runInSystemThread(Runnable action) {
         threads.add(action);
     }
@@ -161,8 +158,6 @@ public class TotalOS {
     public TotalOS(int widthPix, int heightPix, String name) {
         currentState = ComputerState.OFF;
         threads = new ArrayList<>();
-        image = new BufferedImage(widthPix, heightPix, BufferedImage.TYPE_INT_RGB);
-        imageGraphics = image.createGraphics();
         this.screenWidth = widthPix;
         this.screenHeight = heightPix;
         this.name = name;
@@ -176,39 +171,40 @@ public class TotalOS {
         return motionCapture != null;
     }
 
-    public BufferedImage getScreen() {
-        return image;
-    }
-
     /**
      * Renders frame into buffered image
      */
     public BufferedImage renderFrame() {
         current = this;
+        int idx = currentIdx;
         List<Runnable> finished = new ArrayList<>();
-        for(Runnable thread : threads) {
+        for (Runnable thread : threads) {
             thread.run();
             finished.add(thread);
         }
+        BufferedImage image = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D imageGraphics = image.createGraphics();
+        imageGraphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
+        imageGraphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        imageGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+        imageGraphics.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_DISABLE);
+        imageGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         threads.removeAll(finished);
         stateManager.update();
-        imageGraphics.setColor(Color.BLACK);
-        imageGraphics.fillRect(0, 0, screenWidth, screenHeight);
         stateManager.render(imageGraphics);
         if (keyboard != null) keyboard.render(imageGraphics);
         if (information != null) information.render(imageGraphics);
         current = null;
+        imageGraphics.dispose();
+        if(!(stateManager.getState() instanceof BSoD)) {
+            final long limit = (long) (Runtime.getRuntime().totalMemory() * 0.15f);
+            if (Runtime.getRuntime().freeMemory() < limit) {
+                invokeBSoD("Not enough RAM", new Throwable(new Error(Runtime.getRuntime().freeMemory() + " < " + limit)),
+                        Cause.PURPOSEFUL);
+                System.gc();
+            }
+        }
         return image;
-    }
-
-    /**
-     * Returns color at specific pixel
-     * @param x X coordinate of the pixel
-     * @param y Y coordinate of the pixel
-     * @return color
-     */
-    public Color getColorAt(int x, int y) {
-        return new Color(image.getRGB(x,y));
     }
 
     /**
@@ -266,8 +262,6 @@ public class TotalOS {
     public void turnOn() {
         if(currentState == ComputerState.RUNNING) return;
         currentState = ComputerState.RUNNING;
-        fs = new FileSystem(name);
-        firstRun = fs.firstRun;
         try {
             GraphicsEnvironment ge =
                     GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -286,6 +280,8 @@ public class TotalOS {
             baseFont = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts()[0];
             System.out.println(baseFont.getName());
         }
+        fs = new FileSystem(name);
+        firstRun = fs.firstRun;
         information = new Information(this);
         keyboard = new Keyboard(this);
 
@@ -293,7 +289,6 @@ public class TotalOS {
         fs.loadResources();
 
         stateManager.setState(new SplashScreen(stateManager, this));
-//        stateManager.setState(new Desktop(stateManager, this)); // For testing
 
         active.add(this);
     }
@@ -393,9 +388,9 @@ public class TotalOS {
          */
         @Override
         public void paint(Graphics g) {
-            os.renderFrame();
+            BufferedImage img = os.renderFrame();
             Graphics2D g2D = (Graphics2D) g;
-            g2D.drawImage(os.image, 0, 0, null);
+            g2D.drawImage(img, 0, 0, null);
             g2D.dispose();
         }
 

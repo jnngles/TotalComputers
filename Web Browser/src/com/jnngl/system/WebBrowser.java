@@ -28,10 +28,8 @@ import com.jnngl.totalcomputers.system.ui.Button;
 import com.jnngl.totalcomputers.system.ui.Field;
 import org.cef.OS;
 
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.rmi.NotBoundException;
@@ -200,19 +198,23 @@ public class WebBrowser extends WindowApplication {
     @Override
     protected void render(Graphics2D g) {
         if(!init) return;
+        SerializableImage img;
+        try {
+            img = server.render();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+        if(img == null) {
+            g.setFont(font);
+            g.setColor(Color.WHITE);
+            g.drawString("Initializing CEF (It might take some time)", 10, 10);
+            return;
+        }
         try {
             String url = server.getURL();
             if(url != null) urlField.setText(url);
             setName(server.getTitle());
-
-            byte[] bytes = server.render();
-            if(bytes == null) {
-                g.setFont(font);
-                g.setColor(Color.WHITE);
-                g.drawString("Initializing CEF (It might take some time)", 10, 10);
-            }
-            ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-            BufferedImage screen = ImageIO.read(bais);
+            BufferedImage screen = img.toBufferedImage();
             g.drawImage(screen, 0, urlField.getHeight(), getWidth(), getHeight() - urlField.getHeight(),
                     null);
             urlField.render(g);
@@ -221,8 +223,6 @@ public class WebBrowser extends WindowApplication {
             goForward.setLocked(!server.canGoForward());
             goBackward.render(g);
             goForward.render(g);
-        } catch(RemoteException e) {
-            System.err.println("Failed to call remote method. ("+e.getClass().getSimpleName()+")");
         } catch (IOException e) {
             System.err.println("Failed to read buffered image.");
         }

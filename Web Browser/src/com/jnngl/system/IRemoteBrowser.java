@@ -10,7 +10,7 @@ public interface IRemoteBrowser extends Remote {
 
     public void onStart(int width, int height) throws RemoteException;
     public void close() throws RemoteException;
-    public byte[] render() throws RemoteException;
+    public SerializableImage render() throws RemoteException;
     public void processInput(int x, int y, boolean isLeft) throws RemoteException;
     public void keyTyped(String key, String name) throws RemoteException;
 

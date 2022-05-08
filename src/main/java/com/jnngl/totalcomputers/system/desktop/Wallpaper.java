@@ -55,7 +55,7 @@ public class Wallpaper {
             loadThread.start();
         }
         if(wallpaper == null) return;
-        wallpaper.copyData(desktop.getOS().getScreen().getRaster());
+        g.drawImage(wallpaper, 0, 0, null);
     }
 
     private void updateBounds(BufferedImage wallpaper) {

@@ -11,6 +11,8 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class RemoteNativeCaller extends UnicastRemoteObject implements INativeCaller {
 
@@ -78,48 +80,43 @@ public class RemoteNativeCaller extends UnicastRemoteObject implements INativeCa
 
     @Override
     public byte[] getScreen() throws RemoteException {
-        if(screen == null) {
+        if (screen == null) {
             screen = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         }
         iface.getScreenPixels(vb, session, screen);
-        if(iface.getWidth() == 0 || iface.getHeight() == 0) return null;
-        if(screen.getWidth() != iface.getWidth() || screen.getHeight() != iface.getHeight()) {
+        if (iface.getWidth() == 0 || iface.getHeight() == 0) return null;
+        if (screen.getWidth() != iface.getWidth() || screen.getHeight() != iface.getHeight()) {
             screen = new BufferedImage(iface.getWidth(), iface.getHeight(), BufferedImage.TYPE_INT_ARGB);
         }
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
+        try(ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             ImageIO.write(screen, "PNG", baos);
+            return baos.toByteArray();
         } catch (IOException e) {
-            System.err.println("Failed to compress buffered image.");
+            e.printStackTrace();
             return null;
+        } finally {
+            screen.getGraphics().dispose();
         }
-        return baos.toByteArray();
     }
 
     @Override
     public void init(String applicationPath) throws RemoteException {
         if(System.getProperty("os.name").toLowerCase().startsWith("windows")) {
             System.load(applicationPath + "/vbox_native.dll");
-            FilenameFilter filter = new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.endsWith(".dll");
-                }
-            };
-            File[] libraries = new File(System.getProperty("java.home"), "bin").listFiles(filter);
-            for(File l : libraries) {
-                try {
-                    System.load(l.getAbsoluteFile().getAbsolutePath());
-                } catch (Throwable e) {
-                    System.err.println("Caught "+e.getClass().getSimpleName()+": "+e.getMessage());
-                }
-            }
             iface = new VBoxMS();
         } else {
+            System.setProperty("vbox.home", "/opt/VirtualBox");
             iface = new VBoxUnix();
         }
         vb = iface.init();
+
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                System.gc();
+            }
+        }, 20000, 20000);
     }
 
     @Override

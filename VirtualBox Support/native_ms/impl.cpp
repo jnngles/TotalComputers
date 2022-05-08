@@ -3,7 +3,7 @@
 #include "com_jnngl_system_VBoxMS.h"
 #include <vector>
 #include <string>
-#include <atlsafe.h>
+//#include <atlsafe.h>
 
 #define SAFE_RELEASE(x) \
     if (x) { \
@@ -217,39 +217,78 @@ JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_closeVM
 	CoUninitialize();
 }
 
-JNIEXPORT jobject JNICALL Java_com_jnngl_system_VBoxMS_getScreen
-(JNIEnv* env, jobject, jobject vbBuffer, jobject vmBuffer, jintArray oWidth, jintArray oHeight) {
-	if (!env || !vbBuffer || !vmBuffer || !oWidth || !oHeight) return nullptr;
+JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_getScreen
+(JNIEnv* env, jobject, jobject vbBuffer, jobject vmBuffer, jintArray oWidth, jintArray oHeight, jobject img) {
+	if (!env || !vbBuffer || !vmBuffer || !oWidth || !oHeight || !img) return;
 	void* raw = env->GetDirectBufferAddress(vmBuffer);
-	if (!raw) return nullptr;
+	if (!raw) return;
 	vm_session* vm = reinterpret_cast<vm_session*>(raw);
-	if (!vm || !vm->display || !vm->console) return nullptr;
+	if (!vm || !vm->display || !vm->console) return;
 	MachineState state;
 	vm->console->get_State(&state);
-	if (state != MachineState_Running) return nullptr;
+	if (state != MachineState_Running) return;
 
 	ULONG width, height, bpp;
 	LONG x, y;
 	GuestMonitorStatus status;
-	vm->display->GetScreenResolution(0, &width, &height, &bpp, &x, &y, &status);
+	 vm->display->GetScreenResolution(0, &width, &height, &bpp, &x, &y, &status);
 
-	if (width == 0 || height == 0 || bpp == 0) return nullptr;
+	 if (width == 0 || height == 0 || bpp == 0) return;
 
-	if(oWidth)
-		env->SetIntArrayRegion(oWidth, 0, 1, new jint[]{ (jint)width });
-	if(oHeight)
-		env->SetIntArrayRegion(oHeight, 0, 1, new jint[]{ (jint)height });
+	 jint* wp = env->GetIntArrayElements(oWidth, 0);
+	 jint* hp = env->GetIntArrayElements(oHeight, 0);
+	 if (wp[0] != width || hp[0] != height) {
+			env->ReleaseIntArrayElements(oWidth, wp, 0);
+			env->ReleaseIntArrayElements(oHeight, hp, 0);
+			env->SetIntArrayRegion(oWidth, 0, 1, new jint[]{ (jint)width });
+			env->SetIntArrayRegion(oHeight, 0, 1, new jint[]{ (jint)height });
+			return;
+	}
+	 env->ReleaseIntArrayElements(oWidth, wp, 0);
+	 env->ReleaseIntArrayElements(oHeight, hp, 0);
 
-	SAFEARRAY* pixArr;
-	vm->display->TakeScreenShotToArray(0, width, height, BitmapFormat_RGBA, &pixArr);
-	jsize length = (jsize)width * (jsize)height * (jsize)4;
-	if (length <= 0) return nullptr;;
-	void* data = NULL;
-	SafeArrayAccessData(pixArr, &data);
-	jobject buffer = env->NewDirectByteBuffer(data, length);
+	 SAFEARRAY* pixArr = NULL;
+	 vm->display->TakeScreenShotToArray(0, width, height, BitmapFormat_RGBA, &pixArr);
+	 if (!pixArr) return;
+	 jsize length = (jsize)width * (jsize)height;
+	 if (length <= 0) return;
 
-	return buffer;
+	 std::vector<jint> pixels;
+	 for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
+				union {
+				struct {
+					unsigned char b,g,r,a;
+				};
+				jint value;
+			} dst;
+			LONG idx = (y * width + x)*4;
+			if (idx < 0 || !pixArr || idx >= length * 4) continue;
+			SafeArrayGetElement(pixArr, &idx, &dst.r);
+			idx = (y * width + x) * 4 + 1;
+			if (idx < 0 || !pixArr || idx >= length * 4) continue;
+			SafeArrayGetElement(pixArr, &idx, &dst.g);
+			idx = (y * width + x) * 4 + 2;
+			if (idx < 0 || !pixArr || idx >= length * 4) continue;
+			SafeArrayGetElement(pixArr, &idx, &dst.b);
+			idx = (y * width + x) * 4 + 3;
+			if (idx < 0 || !pixArr || idx >= length * 4) continue;
+			SafeArrayGetElement(pixArr, &idx, &dst.a);
+			pixels.push_back(dst.value);
+		}
+	}
 
+	 if (pixels.size() == length) {
+		 jmethodID setRGB = env->GetMethodID(env->GetObjectClass(img), "setRGB", "(IIII[III)V");
+		  jintArray jpix = env->NewIntArray(length);
+		  env->SetIntArrayRegion(jpix, 0, length, pixels.data());
+		  env->CallVoidMethod(img, setRGB, 0, 0, width, height, jpix, 0, width);
+	}
+	
+	 if (pixArr) {
+		 SafeArrayDestroy(pixArr);
+		 pixArr = NULL;
+	}
 }
 
 JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_click

@@ -38,7 +38,7 @@ public class TotalOSWrapper extends WindowApplication {
 
     @Override
     public void render(Graphics2D g) {
-        g.drawImage(childOS.getScreen(), 0, 0, null);
+        g.drawImage(childOS.renderFrame(), 0, 0, null);
     }
 
     @Override

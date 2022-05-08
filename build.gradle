@@ -6,9 +6,6 @@ plugins {
 group "com.jnngl"
 version '0.9b'
 
-targetCompatibility = 16.0
-sourceCompatibility = 16.0
-
 compileJava {
     options.encoding = "UTF-8"
 }
@@ -28,20 +25,14 @@ repositories {
     maven { url = 'https://oss.sonatype.org/content/repositories/central' }
 }
 
-project.ext.lwjglVersion = "3.3.1"
-project.ext.jomlVersion = "1.10.4"
-
 dependencies {
     compileOnly 'org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT'
-    compileOnly 'io.netty:netty-all:4.1.75.Final'
-
+    compileOnly 'io.netty:netty-all:4.1.76.Final'
     implementation 'org.eclipse.jetty:jetty-server:11.0.9'
     implementation 'org.eclipse.jetty:jetty-util:11.0.9'
     implementation 'org.eclipse.jetty.aggregate:jetty-all-server:8.2.0.v20160908'
-    implementation 'org.java-websocket:Java-WebSocket:1.5.2'
-
-    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
-
+    implementation 'org.java-websocket:Java-WebSocket:1.5.3'
+    implementation platform("org.lwjgl:lwjgl-bom:3.3.1")
     implementation "org.lwjgl:lwjgl"
     implementation "org.lwjgl:lwjgl-glfw"
     implementation "org.lwjgl:lwjgl-opengl"
@@ -58,11 +49,10 @@ dependencies {
     runtimeOnly "org.lwjgl:lwjgl-glfw::natives-linux"
     runtimeOnly "org.lwjgl:lwjgl-opengl::natives-linux"
     runtimeOnly "org.lwjgl:lwjgl-stb::natives-linux"
-    implementation "org.joml:joml:${jomlVersion}"
-
+    implementation "org.joml:joml:1.10.4"
     implementation "commons-io:commons-io:2.11.0"
-    implementation "org.slf4j:slf4j-api:1.7.25"
-    compileOnly "com.google.guava:guava:r05"
+    implementation 'org.slf4j:slf4j-api:1.7.36'
+    compileOnly 'com.google.guava:guava:31.1-jre'
 }
 
 jar {

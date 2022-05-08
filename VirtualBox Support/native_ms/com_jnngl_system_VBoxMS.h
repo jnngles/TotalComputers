@@ -36,8 +36,8 @@ extern "C" {
 	 * Method:    getScreen
 	 * Signature: (Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;[B[I[I)
 	 */
-	JNIEXPORT jobject JNICALL Java_com_jnngl_system_VBoxMS_getScreen
-	(JNIEnv*, jobject, jobject, jobject, jintArray, jintArray);
+	JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_getScreen
+	(JNIEnv*, jobject, jobject, jobject, jintArray, jintArray, jobject);
 
 	/*
 	 * Class:     com_jnngl_system_VBoxMS

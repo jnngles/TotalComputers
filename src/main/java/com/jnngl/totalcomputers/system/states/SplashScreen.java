@@ -74,6 +74,8 @@ public class SplashScreen extends State {
      */
     @Override
     public void render(Graphics2D g) {
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, os.screenWidth, os.screenHeight);
         splashText.setColor(new Color(splashColor, splashColor, splashColor));
         splashText.render(g);
     }

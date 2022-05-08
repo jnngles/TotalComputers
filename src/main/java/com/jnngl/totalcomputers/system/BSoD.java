@@ -42,11 +42,18 @@ class BSoD extends State {
         String tmp;
         y += metrics.getAscent();
         if(error.getCause() == null) {
-            g.drawString(tmp="Cause: "+error.getCause().getStackTrace()[0].getFileName() + " at line " + error.getCause().getStackTrace()[0].getLineNumber(), os.screenWidth/2-metrics.stringWidth(tmp)/2, y += metrics.getHeight());
+            StackTraceElement[] stackTrace = error.getStackTrace();
+            if(stackTrace.length > 0)
+                g.drawString(tmp="Cause: "+error.getCause().getStackTrace()[0].getFileName() + " at line " + error.getCause().getStackTrace()[0].getLineNumber(), os.screenWidth/2-metrics.stringWidth(tmp)/2, y += metrics.getHeight());
         } else {
-            g.drawString(tmp="Invoked by " + error.getStackTrace()[0].getFileName() + " at line " + error.getStackTrace()[0].getLineNumber(), os.screenWidth/2-metrics.stringWidth(tmp)/2, y += metrics.getHeight());
-            g.drawString(tmp="Cause: "+error.getCause().getStackTrace()[0].getFileName() + " at line " + error.getCause().getStackTrace()[0].getLineNumber(), os.screenWidth/2-metrics.stringWidth(tmp)/2, y += metrics.getHeight());
-            cause = error.getCause();
+            StackTraceElement[] stackTrace = error.getStackTrace();
+            if(stackTrace.length > 0)
+                g.drawString(tmp="Invoked by " + stackTrace[0].getFileName() + " at line " + error.getStackTrace()[0].getLineNumber(), os.screenWidth/2-metrics.stringWidth(tmp)/2, y += metrics.getHeight());
+            stackTrace = error.getCause().getStackTrace();
+            if(stackTrace.length > 0) {
+                g.drawString(tmp = "Cause: " + error.getCause().getStackTrace()[0].getFileName() + " at line " + error.getCause().getStackTrace()[0].getLineNumber(), os.screenWidth / 2 - metrics.stringWidth(tmp) / 2, y += metrics.getHeight());
+                cause = error.getCause();
+            }
         }
         y += metrics.getAscent();
         if(cause.getMessage() != null)

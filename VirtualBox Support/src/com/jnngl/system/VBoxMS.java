@@ -2,6 +2,8 @@ package com.jnngl.system;
 
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
+import java.util.Set;
 
 class VBoxMS implements IVBox {
 
@@ -23,29 +25,17 @@ class VBoxMS implements IVBox {
     @Override
     public int getHeight() { return height[0]; }
 
+    private static final Set<Long> threads = new HashSet<>();
     @Override
     public void getScreenPixels(ByteBuffer vb, ByteBuffer vm, BufferedImage dst) {
-        ByteBuffer pixels = getScreen(vb.duplicate(), vm.duplicate(), width, height);
-        if(pixels == null) return;
-
-        pixels.clear();
-
-        for(int y = 0; y < dst.getHeight(); y++) {
-            for(int x = 0; x < dst.getWidth(); x++) {
-                if(x >= dst.getWidth() || y >= dst.getHeight()) return;
-                int r = (pixels.get() & 0xff);
-                int g = (pixels.get() & 0xff);
-                int b = (pixels.get() & 0xff);
-                int a = (pixels.get() & 0xff);
-                int argb = (a << 24) | (r << 16) | (g << 8) | b;
-
-                dst.setRGB(x, y, argb);
-            }
-        }
-
+//        if(!threads.isEmpty()) return;
+//        long tid = Thread.currentThread().getId();
+//        threads.add(tid);
+        getScreen(vb, vm, width, height, dst);
+//        threads.remove(tid);
     }
 
-    public native ByteBuffer getScreen(ByteBuffer vb, ByteBuffer vm, int[] width, int[] height);
+    public native void getScreen(ByteBuffer vb, ByteBuffer vm, int[] width, int[] height, BufferedImage dst);
 
     @Override
     public native ByteBuffer init();

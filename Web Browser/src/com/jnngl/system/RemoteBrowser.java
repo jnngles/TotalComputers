@@ -1,13 +1,6 @@
 package com.jnngl.system;
 
-import org.cef.OS;
-
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 import java.rmi.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -49,20 +42,25 @@ public class RemoteBrowser extends UnicastRemoteObject implements IRemoteBrowser
     public RemoteBrowser() throws RemoteException {
         super();
         try {
+            try {
 //            browser = new BrowserImpl_JCEF();
-            throw new UnsupportedOperationException();
-        } catch (Throwable e) {
-            if(DEBUG)
-                System.out.println(" -> Failed to create AWT browser. Using Native Impl instead. "+e.getMessage());
-            browser = new BrowserImpl_Native();
-            if(DEBUG)
-                System.out.println(" -> Created "+browser.getClass().getName()+" instance");
-            System.out.println("Using BrowserImpl_Native");
-            if(DEBUG)
-                onStart(200, 100);
-            return;
-        }
+                throw new UnsupportedOperationException();
+            } catch (Throwable e) {
+                if (DEBUG)
+                    System.out.println(" -> Failed to create AWT browser. Using Native Impl instead. " + e.getMessage());
+                browser = new BrowserImpl_Native();
+                if (DEBUG)
+                    System.out.println(" -> Created " + browser.getClass().getName() + " instance");
+                System.out.println("Using BrowserImpl_Native");
+                if (DEBUG)
+                    onStart(200, 100);
+                return;
+            }
 //        System.out.println("Using BrowserImpl_JCEF");
+        } catch (Throwable e) {
+            System.err.println("Fatal error in SERVER process: "+e.getMessage());
+            System.err.println("Instance of "+e.getClass().getName());
+        }
     }
 
     @Override
@@ -85,18 +83,10 @@ public class RemoteBrowser extends UnicastRemoteObject implements IRemoteBrowser
         System.exit(0);
     }
 
-    public byte[] render() throws RemoteException {
+    public SerializableImage render() throws RemoteException {
         BufferedImage buffer = browser.render();
-        if(buffer != null) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try {
-                ImageIO.write(buffer, "PNG", baos);
-            } catch (IOException e) {
-                System.err.println("Failed to compress buffered image.");
-                return null;
-            }
-            return baos.toByteArray();
-        }
+        if(buffer != null)
+            return SerializableImage.fromBufferedImage(buffer);
         return null;
     }
 

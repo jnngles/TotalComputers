@@ -34,10 +34,10 @@ JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_closeVM
 /*
  * Class:     com_jnngl_system_VBoxMS
  * Method:    getScreen
- * Signature: (Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;[I[I)Ljava/nio/ByteBuffer;
+ * Signature: (Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;[I[ILjava/awt/image/BufferedImage;)V
  */
-JNIEXPORT jobject JNICALL Java_com_jnngl_system_VBoxMS_getScreen
-  (JNIEnv *, jobject, jobject, jobject, jintArray, jintArray);
+JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_getScreen
+  (JNIEnv *, jobject, jobject, jobject, jintArray, jintArray, jobject);
 
 /*
  * Class:     com_jnngl_system_VBoxMS

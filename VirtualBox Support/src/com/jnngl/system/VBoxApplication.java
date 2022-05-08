@@ -5,6 +5,7 @@ import com.jnngl.totalcomputers.system.TotalOS;
 import com.jnngl.totalcomputers.system.Utils;
 import com.jnngl.totalcomputers.system.desktop.ApplicationHandler;
 import com.jnngl.totalcomputers.system.desktop.WindowApplication;
+import com.jnngl.totalcomputers.system.overlays.Information;
 import com.jnngl.totalcomputers.system.overlays.Keyboard;
 import com.jnngl.totalcomputers.system.ui.Button;
 import com.jnngl.totalcomputers.system.ui.ElementList;
@@ -19,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.ServerException;
 import java.rmi.registry.LocateRegistry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,6 +71,12 @@ public class VBoxApplication extends WindowApplication {
 
     @Override
     protected void onStart() {
+//        if(System.getProperty("os.name").toLowerCase().startsWith("windows")) {
+//            os.information.displayMessage(Information.Type.ERROR,
+//                    "This application is incompatible with servers on Windows", null);
+//            close();
+//        }
+
         Font uiFont = os.baseFont.deriveFont((float)os.screenHeight/128*3);
         toolbarHeight = Utils.getFontMetrics(uiFont).getHeight();
 
@@ -129,6 +137,7 @@ public class VBoxApplication extends WindowApplication {
                 String java = System.getProperty("java.home")+File.separator+"bin"+File.separator+"java";
                 cmd.add(java);
             }
+            cmd.add("-Xcheck:jni");
             cmd.add("-jar");
             if(!vmArgs.isEmpty())
                 cmd.addAll(Arrays.asList(vmArgs.split(" ")));
@@ -142,8 +151,7 @@ public class VBoxApplication extends WindowApplication {
                 pb.inheritIO();
                 process = pb.start();
             } catch (IOException e) {
-                System.err.println("Failed to spawn subprocess. ");
-                System.err.println(" -> "+e.getMessage());
+                throw new Error(e);
             }
             long startTime = System.currentTimeMillis();
             while(true) {
@@ -170,8 +178,7 @@ public class VBoxApplication extends WindowApplication {
                         try {
                             server.launchVM(selected);
                         } catch (RemoteException e) {
-                            System.err.println("Failed to invoke remote method ("+e.getClass().getSimpleName()+")");
-                            System.err.println(" -> "+e.getMessage());
+                            throw new Error(e);
                         }
                         launched = true;
 
@@ -283,10 +290,9 @@ public class VBoxApplication extends WindowApplication {
 
                     break;
                 } catch (RemoteException | NotBoundException e) {
-                    if(e instanceof NotBoundException) continue;
-                    System.err.println("(VBoxApplication::onStart) -> Failed to create/access remote object. (" +
-                            e.getClass().getSimpleName() + ")");
-                    System.err.println(" -> " + e.getMessage());
+                    if(e instanceof ServerException se) {
+                        throw new Error(se);
+                    }
                 }
             }
         }).start();
@@ -302,8 +308,7 @@ public class VBoxApplication extends WindowApplication {
         try {
             server.closeVM();
         } catch (RemoteException e) {
-            System.err.println("Failed to invoke remote method ("+e.getClass().getSimpleName()+")");
-            System.err.println(" -> "+e.getMessage());
+            throw new Error(e);
         }
         return true;
     }
@@ -328,9 +333,7 @@ public class VBoxApplication extends WindowApplication {
             width[0] = server.getWidth();
             height[0] = server.getHeight();
         } catch (RemoteException e) {
-            System.err.println("Failed to invoke remote method ("+e.getClass().getSimpleName()+")");
-            System.err.println(" -> "+e.getMessage());
-            return;
+            throw new Error(e);
         }
         if(buffer == null || buffer.length < 4) return;
 
@@ -339,8 +342,7 @@ public class VBoxApplication extends WindowApplication {
         try {
             screen = ImageIO.read(bais);
         } catch (IOException e) {
-            e.printStackTrace();
-            return;
+            throw new Error(e);
         }
 
         if(lastW != width[0] || lastH != height[0]) {
@@ -377,8 +379,7 @@ public class VBoxApplication extends WindowApplication {
         try {
             server.click(absX, absY, type == TotalComputers.InputInfo.InteractType.LEFT_CLICK);
         } catch (RemoteException e) {
-            System.err.println("Failed to invoke remote method ("+e.getClass().getSimpleName()+")");
-            System.err.println(" -> "+e.getMessage());
+            throw new Error(e);
         }
     }
 }

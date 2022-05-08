@@ -42,7 +42,12 @@ public class SoundWebSocketSessionManager {
 
     public SoundWebSocketSession getSessionByName(String name) {
         for(SoundWebSocketSession s : sessions) {
-            if(s.getName().equalsIgnoreCase(name))
+            String a = s.getName();
+            if(a == null) {
+                System.err.println("Warning: "+s+".name == null");
+                continue;
+            }
+            if(a.equalsIgnoreCase(name))
                 return s;
         }
         return null;

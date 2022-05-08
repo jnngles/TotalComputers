@@ -54,10 +54,12 @@ import org.bukkit.util.Vector;
 import org.spigotmc.event.entity.EntityDismountEvent;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.UnknownHostException;
+import java.nio.IntBuffer;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -79,7 +81,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     private FileConfiguration config, computers, players;
     private Map<String, List<MonitorPiece>> monitors;
     private Map<ItemFrame, MonitorPieceIndex> interactiveTiles;
-    /** Unhandled touch inputs */ public List<InputInfo> unhandledInputs;
+    /** Unhandled touch inputs */ public Set<InputInfo> unhandledInputs;
     private Map<Player, Location> firstPoses, secondPoses;
     private Map<String, SlotControl> slotsToRestore;
     private List<String> playersThatQuitWhileControl;
@@ -167,7 +169,12 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
 
         Bukkit.getScheduler().runTask(this, () -> {
             Arrow arrow = target.getWorld().spawn(target.getLocation(), Arrow.class);
-            arrow.setGravity(false);
+            try {
+                arrow.getClass().getMethod("setGravity", boolean.class);
+                arrow.setGravity(false);
+            } catch (Throwable e) {
+                logger.warning("Arrow#setGravity not found");
+            }
             arrow.setInvulnerable(true);
             arrow.setPassenger(target);
         });
@@ -473,23 +480,17 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     public static record MonitorPiece(MapView mapView, ItemFrame frame) {}
 
     private static class DoubleBuffer {
-        private final Object[] frame1;
-        private final Object[] frame2;
-        private byte current = 0;
+        private final Object[][] frames;
+        private int current = 0;
 
-        public DoubleBuffer(Object[] frame1, Object[] frame2) {
-            this.frame1 = frame1;
-            this.frame2 = frame2;
+        public DoubleBuffer(Object[]... frames) {
+            this.frames = frames;
         }
 
         public Object[] get() {
-            if(current == 0) {
-                current = 1;
-                return frame1;
-            } else {
-                current = 0;
-                return frame2;
-            }
+            current++;
+            if(current >= frames.length) current = 0;
+            return frames[current];
         }
 
     }
@@ -519,7 +520,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         for(BukkitTask task : tasks.values())
             task.cancel();
         tasks.clear();
-        unhandledInputs = new ArrayList<>();
+        unhandledInputs = new HashSet<>();
         monitors = new HashMap<>();
         targets = new HashMap<>();
         locked = new HashMap<>();
@@ -1628,39 +1629,25 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
 
         if(sender != null) {
 
-            Object[] frame1 = new Object[area.area], frame2 = new Object[area.area];
+            Object[] frame1 = new Object[area.area], frame2 = new Object[area.area],
+                    frame3 = new Object[area.area], frame4 = new Object[area.area];
             BufferedImage empty = new BufferedImage(128, 128, BufferedImage.TYPE_INT_RGB);
             for(int j = 0; j < area.area; j++) {
                 try {
                     frame1[j] = sender.createPacket(maps[j], empty);
                     frame2[j] = sender.createPacket(maps[j], empty);
+                    frame3[j] = sender.createPacket(maps[j], empty);
+                    frame4[j] = sender.createPacket(maps[j], empty);
                 } catch (ReflectiveOperationException e) {
                     logger.warning("Failed to create packet");
                 }
             }
-            packets.put(os, new DoubleBuffer(frame1, frame2));
+            packets.put(os, new DoubleBuffer(frame1, frame2, frame3, frame4));
 
             int[] uncaught = { 0 };
             tasks.put(os.name, Bukkit.getScheduler().runTaskTimer(this, () -> {
                 Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
                     try {
-                        List<TotalComputers.InputInfo> handledInputs = new ArrayList<>();
-                        for (int x = 0; x < area.width; x++) {
-                            for (int y = 0; y < area.height; y++) {
-                                int id = y * area.width + x;
-                                int absX = x * 128;
-                                int absY = y * 128;
-                                for (TotalComputers.InputInfo inputInfo : unhandledInputs.toArray(new InputInfo[0])) {
-                                    if (inputInfo.index().name().equals(name) && inputInfo.index().index() == id) {
-                                        executors.put(os, inputInfo.player);
-                                        os.processTouch(absX + inputInfo.x(), absY + inputInfo.y(), inputInfo.interactType(), inputInfo.player().hasPermission("totalcomputers.admin"));
-                                        executors.remove(os);
-                                        handledInputs.add(inputInfo);
-                                    }
-                                }
-                            }
-                        }
-                        unhandledInputs.removeAll(handledInputs);
 
                         BufferedImage screen = os.renderFrame();
                         if(screen == null) throw new Exception("Failed to render screen");
@@ -1703,9 +1690,28 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         else {
                             uncaught[0]++;
                             System.err.println("Fatal ERROR #"+uncaught[0]+" -> Uncaught exception: " + e.getMessage());
+                            e.printStackTrace();
                         }
                     }
                 });
+
+                List<TotalComputers.InputInfo> handledInputs = new ArrayList<>();
+                for (int x = 0; x < area.width; x++) {
+                    for (int y = 0; y < area.height; y++) {
+                        int id = y * area.width + x;
+                        int absX = x * 128;
+                        int absY = y * 128;
+                        for (TotalComputers.InputInfo inputInfo : unhandledInputs.toArray(new InputInfo[0])) {
+                            if (inputInfo.index().name().equals(name) && inputInfo.index().index() == id) {
+                                executors.put(os, inputInfo.player);
+                                os.processTouch(absX + inputInfo.x(), absY + inputInfo.y(), inputInfo.interactType(), inputInfo.player().hasPermission("totalcomputers.admin"));
+                                executors.remove(os);
+                                handledInputs.add(inputInfo);
+                            }
+                        }
+                    }
+                }
+                handledInputs.forEach(unhandledInputs::remove);
             }, 0, delay));
 
         }
