@@ -488,9 +488,10 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         }
 
         public Object[] get() {
-            current++;
-            if(current >= frames.length) current = 0;
-            return frames[current];
+            int tmp = ++current;
+            tmp %= frames.length;
+            current = tmp;
+            return frames[tmp];
         }
 
     }
