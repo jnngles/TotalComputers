@@ -43,8 +43,8 @@ public class RemoteBrowser extends UnicastRemoteObject implements IRemoteBrowser
         super();
         try {
             try {
-//            browser = new BrowserImpl_JCEF();
-                throw new UnsupportedOperationException();
+            browser = new BrowserImpl_JCEF();
+//                throw new UnsupportedOperationException();
             } catch (Throwable e) {
                 if (DEBUG)
                     System.out.println(" -> Failed to create AWT browser. Using Native Impl instead. " + e.getMessage());

@@ -14,7 +14,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class RemoteNativeCaller extends UnicastRemoteObject implements INativeCaller {
+public class RemoteNativeCaller implements INativeCaller {
 
     private IVBox iface;
     private ByteBuffer vb, session;
@@ -40,17 +40,14 @@ public class RemoteNativeCaller extends UnicastRemoteObject implements INativeCa
         }
 
         try {
-            registry.rebind(args[0].trim(), new RemoteNativeCaller());
+            registry.rebind(args[0].trim(), UnicastRemoteObject.exportObject(new RemoteNativeCaller(), 0));
         } catch (RemoteException e) {
             System.err.println("Failed to create server ("+e.getClass().getSimpleName()+")");
+            e.printStackTrace();
             return;
         }
 
         System.out.println("Successfully created new server.");
-    }
-
-    public RemoteNativeCaller() throws RemoteException {
-        super();
     }
 
     @Override

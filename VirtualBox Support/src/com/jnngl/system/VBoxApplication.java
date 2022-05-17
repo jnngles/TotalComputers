@@ -133,7 +133,7 @@ public class VBoxApplication extends WindowApplication {
                     path = "/opt/VirtualBox";
                     System.err.println("Failed to read `vbox_root.txt'. Using /opt/VirtualBox");
                 }
-                vmArgs = "-Dvbox.home="+path+" -Djava.library.path="+path;
+                vmArgs = "-Dsun.boot.library.path="+path+" -Dvbox.home="+path+" -Djava.library.path="+path;
                 String java = System.getProperty("java.home")+File.separator+"bin"+File.separator+"java";
                 cmd.add(java);
             }
@@ -163,7 +163,12 @@ public class VBoxApplication extends WindowApplication {
                     }
                     server = (INativeCaller) LocateRegistry.getRegistry(null, 2099).lookup(target);
                     System.out.println("Successfully found virtual box process -> PID: "+process.pid()+"");
-                    server.init(applicationPath);
+                    try {
+                        server.init(applicationPath);
+                    } catch (Throwable e) {
+                        System.err.println("Error: Unable to initialize VBox ("+e.getClass().getName()+"): "+e.getMessage());
+                        throw new Error(e);
+                    }
                     System.out.println("Successfully bound new session to '" + target + "' [localhost:2099]");
 
                     String[] names = server.getMachineNames();

@@ -1,10 +1,11 @@
 
 plugins {
     id 'java'
+    id 'maven-publish'
 }
 
 group "com.jnngl"
-version '0.9b'
+version '0.9.2b3'
 
 compileJava {
     options.encoding = "UTF-8"
@@ -64,5 +65,25 @@ jar {
         configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
     } {
         exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/JNNGL/TotalComputers")
+            credentials {
+                username = 'JNNGL'
+                password = project.properties['TCMP_TOKEN']
+            }
+        }
+    }
+    publications {
+        gpr(MavenPublication) {
+            from(components.java)
+            groupId 'com.jnngl'
+            artifactId 'totalcomputers'
+        }
     }
 }

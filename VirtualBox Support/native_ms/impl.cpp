@@ -3,7 +3,7 @@
 #include "com_jnngl_system_VBoxMS.h"
 #include <vector>
 #include <string>
-//#include <atlsafe.h>
+#include <atlsafe.h>
 
 #define SAFE_RELEASE(x) \
     if (x) { \
