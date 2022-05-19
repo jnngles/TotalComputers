@@ -131,3 +131,6 @@ publishing {
 signing {
     sign configurations.archives
 }
+tasks.withType(Sign) {
+    onlyIf { project.properties['tcmp_sign'] == 'true' }
+}
