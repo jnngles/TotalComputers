@@ -113,6 +113,12 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         return new MotionCapabilities(true, false, true, true, true, true);
     }
 
+    /**
+     * Motion capture realization
+     * @param desc See {@link MotionCaptureDesc}
+     * @param os Operating System
+     * @return
+     */
     @Override
     public boolean startCapture(MotionCaptureDesc desc, TotalOS os) {
         if(!executors.containsKey(os)) {
@@ -283,6 +289,11 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         return true;
     }
 
+    /**
+     * Realization. See {@link MotionCapture#stopCapture(TotalOS)}
+     * @param os Operating System
+     * @return Whether motion capture was stopped
+     */
     @Override
     public boolean stopCapture(TotalOS os) {
         if(!executors.containsKey(os)) return false;
@@ -295,6 +306,10 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         return false;
     }
 
+    /**
+     * Realization. See {@link MotionCapture#forceStopCapture(TotalOS)}
+     * @param os Operating System
+     */
     @Override
     public void forceStopCapture(TotalOS os) {
         if(!targets.containsKey(os)) return;
@@ -320,11 +335,20 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         targets.remove(os);
     }
 
+    /**
+     * Checks if someone is using motion capture feature for given OS
+     * @param os Operating System
+     * @return boolean
+     */
     @Override
     public boolean isCapturing(TotalOS os) {
         return targets.containsKey(os);
     }
 
+    /**
+     * Event Handler
+     * @param e event
+     */
     @EventHandler
     public void drop(PlayerDropItemEvent e) {
         if(drop.contains(e.getPlayer())) {
@@ -340,6 +364,10 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         }
     }
 
+    /**
+     * Event Handler
+     * @param e event
+     */
     @EventHandler
     public void dismount(EntityDismountEvent e) {
         if(!(e.getEntity() instanceof Player player)) return;

@@ -143,8 +143,6 @@ public class TotalOS {
     private final List<Runnable> threads;
     public int x, y;
 
-    private int currentIdx = 0;
-
     public void runInSystemThread(Runnable action) {
         threads.add(action);
     }
@@ -166,6 +164,10 @@ public class TotalOS {
         stateManager = new StateManager();
     }
 
+    /**
+     * Whether operating system supports motion capture
+     * @return boolean
+     */
     @RequiresAPI(apiLevel = 3)
     public boolean supportsMotionCapture() {
         return motionCapture != null;
@@ -173,10 +175,10 @@ public class TotalOS {
 
     /**
      * Renders frame into buffered image
+     * @return BufferedImage
      */
     public BufferedImage renderFrame() {
         current = this;
-        int idx = currentIdx;
         List<Runnable> finished = new ArrayList<>();
         for (Runnable thread : threads) {
             thread.run();
@@ -196,14 +198,6 @@ public class TotalOS {
         if (information != null) information.render(imageGraphics);
         current = null;
         imageGraphics.dispose();
-        if(!(stateManager.getState() instanceof BSoD)) {
-            final long limit = (long) (Runtime.getRuntime().totalMemory() * 0.15f);
-            if (Runtime.getRuntime().freeMemory() < limit) {
-                invokeBSoD("Not enough RAM", new Throwable(new Error(Runtime.getRuntime().freeMemory() + " < " + limit)),
-                        Cause.PURPOSEFUL);
-                System.gc();
-            }
-        }
         return image;
     }
 
@@ -293,11 +287,23 @@ public class TotalOS {
         active.add(this);
     }
 
+    /**
+     * Terminates OS and displays BSoD
+     * @param title Title
+     * @param error Error or exception
+     * @param cause See {@link Cause}
+     */
     @RequiresAPI(apiLevel = 6)
     public void invokeBSoD(String title, Throwable error, Cause cause) {
         stateManager.setState(new BSoD(stateManager, this, title, error, cause));
     }
 
+    /**
+     * Terminates OS and displays BSoD
+     * @param title Title
+     * @param error Error or exception
+     * @param code See {@link Cause}
+     */
     @RequiresAPI(apiLevel = 5)
     public void invokeBSoD(String title, Throwable error, int code) {
         invokeBSoD(title, error, Cause.fromCode(code));

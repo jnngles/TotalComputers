@@ -27,18 +27,33 @@ import static org.lwjgl.opengl.GL33.*;
 
 import java.awt.*;
 
+/**
+ * Example OpenGL Application
+ */
 public class OpenGLApplication extends GLWindow {
 
+    /**
+     * Entry point
+     * @param args
+     */
     public static void main(String[] args) {
         ApplicationHandler.open(OpenGLApplication.class, args[0]);
     }
 
+    /**
+     * Constructor
+     * @param os Operating System
+     * @param path Absolute path to application folder
+     */
     public OpenGLApplication(TotalOS os, String path) {
         super(os, "OpenGL", os.screenWidth/3*2, os.screenHeight/3*2, path);
     }
 
     private int vao, program;
 
+    /**
+     * Render framebuffer using OpenGL
+     */
     @Override
     protected void renderGL() {
         glClearColor(1, 0, 0, 1);
@@ -48,11 +63,17 @@ public class OpenGLApplication extends GLWindow {
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
 
+    /**
+     * Update
+     */
     @Override
     protected void updateGL() {
         renderCanvas();
     }
 
+    /**
+     * Initialization
+     */
     @Override
     protected void onStart() {
         float[] vertices = {
@@ -110,14 +131,28 @@ public class OpenGLApplication extends GLWindow {
         glDeleteShader(fragmentShader);
     }
 
+    /**
+     * Called when app closes
+     * @return true, this application always closes
+     */
     @Override
     protected boolean onClose() {
         return true;
     }
 
+    /**
+     * Render overlay
+     * @param unused Graphics2D instance
+     */
     @Override
     public void render(Graphics2D unused) {}
 
+    /**
+     * Input
+     * @param x x
+     * @param y y
+     * @param type See {@link TotalComputers.InputInfo.InteractType}
+     */
     @Override
     public void processInput(int x, int y, TotalComputers.InputInfo.InteractType type) {
 

@@ -97,6 +97,12 @@ public class Utils {
     }
 
     private static C3[] palette = null;
+
+    /**
+     * Dithers image using Floyd-Steinberg method
+     * @param img Source image
+     * @return Dithered image
+     */
     public static BufferedImage floydSteinbergDithering(BufferedImage img) {
         if(palette == null) {
             palette = new C3[MapColor.colors.length];

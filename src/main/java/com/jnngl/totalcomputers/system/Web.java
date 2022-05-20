@@ -28,6 +28,11 @@ import java.util.Scanner;
 
 public class Web {
 
+    /**
+     * Reads raw data from URL
+     * @param url
+     * @return Raw data
+     */
     public static String readFromURL(String url) {
         try {
             Scanner scanner = new Scanner(new URL(url).openStream());
@@ -42,6 +47,11 @@ public class Web {
         }
     }
 
+    /**
+     * Reads image from URL
+     * @param url URL
+     * @return Image
+     */
     public static BufferedImage readImageFromURL(String url) {
         try {
             return ImageIO.read(new URL(url));
@@ -51,6 +61,14 @@ public class Web {
         }
     }
 
+    /**
+     * Downloads file from URL
+     * @param url URL
+     * @param dst Destination file
+     * @param mbDone Called on every downloaded kilobyte
+     * @return Whether file was successfully downloaded
+     * @throws IOException I/O error
+     */
     public static boolean downloadFileFromURL(String url, String dst, Event... mbDone) throws IOException {
         try {
             BufferedInputStream in = new BufferedInputStream(new URL(url).openStream());
@@ -63,6 +81,7 @@ public class Web {
             }
         } catch (IOException e) {
             System.err.println("Failed to download file.");
+            throw e;
         }
         return true;
     }
