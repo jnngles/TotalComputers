@@ -18,6 +18,8 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 set(VCPKG_C_FLAGS_DEBUG "/D_ITERATOR_DEBUG_LEVEL=0")
 set(VCPKG_CXX_FLAGS_DEBUG "/D_ITERATOR_DEBUG_LEVEL=0")
 
+add_definitions(-w)
+
 include_directories(${INCLUDES})
 link_libraries(${JNI_LIBRARIES})
 add_library(total_computers_dll SHARED ${SOURCE_FILES})
