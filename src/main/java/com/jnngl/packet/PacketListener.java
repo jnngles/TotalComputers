@@ -3,6 +3,7 @@ package com.jnngl.packet;
 import io.netty.channel.*;
 import org.bukkit.entity.Player;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -61,10 +62,9 @@ public class PacketListener {
             } catch (Throwable e) {
                 networkManager = playerConnection.getClass().getField("a").get(playerConnection);
             }
-            try {
-                return (Channel) networkManager.getClass().getField("channel").get(networkManager);
-            } catch (Throwable e) {
-                return (Channel) networkManager.getClass().getField("m").get(networkManager);
+            for(Field field : networkManager.getClass().getFields()) {
+                if(field.get(networkManager) instanceof Channel)
+                    return (Channel)field.get(networkManager);
             }
         } catch (Throwable e) {
             System.err.println(" -> "+e.getMessage());
