@@ -54,12 +54,10 @@ import org.bukkit.util.Vector;
 import org.spigotmc.event.entity.EntityDismountEvent;
 
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.UnknownHostException;
-import java.nio.IntBuffer;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -509,6 +507,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
 
     private static class DoubleBuffer {
         private final Object[][] frames;
+        private static boolean warned = false;
         private int current = 0;
 
         public DoubleBuffer(Object[]... frames) {
@@ -516,10 +515,18 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         }
 
         public Object[] get() {
-            int tmp = ++current;
-            tmp %= frames.length;
-            current = tmp;
-            return frames[tmp];
+            try {
+                int tmp = ++current;
+                tmp %= frames.length;
+                current = tmp;
+                return frames[tmp];
+            } catch(Throwable e) {
+                if(!warned) {
+                    System.err.println("Frames are processed too slowly. If this affects the server or plugin, try to increase delay-ticks in config.yml");
+                    warned = true;
+                }
+                return frames[0];
+            }
         }
 
     }
@@ -1709,7 +1716,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                                 }
                             }
                         }
-                        if(prevException[0] == null) {
+                        if(uncaught[0] != 0 && prevException[0] != null) {
                             System.err.println("An error occurred in the OS/application. This did not affect the operation of the OS, but if something does not work properly, create an issue on GitHub. In other cases, this error can be ignored.");
                             System.err.println("Stack Trace:");
                             prevException[0].printStackTrace();
