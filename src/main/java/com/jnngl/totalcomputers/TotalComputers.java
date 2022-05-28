@@ -1590,7 +1590,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             try {
                 MapMeta meta = (MapMeta) is.getItemMeta();
                 Method setMapId = MapMeta.class.getMethod("setMapId", int.class);
-                setMapId.invoke(meta, mapId);
+                setMapId.invoke(meta, (int)mapId);
                 is.setItemMeta(meta);
             } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
                 System.err.println("Failed to assign map id");
@@ -1605,8 +1605,16 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                     break;
                 }
             }
-            if(f == null)
+            if(f == null) {
                 f = area.firstPos.getWorld().spawn(loc, ItemFrame.class);
+                BlockFace face;
+                if(area.direction == SelectionArea.Direction.LEFT) face = BlockFace.WEST;
+                else if(area.direction == SelectionArea.Direction.RIGHT) face = BlockFace.EAST;
+                else if(area.direction == SelectionArea.Direction.BACKWARD) face = BlockFace.NORTH;
+                else face = BlockFace.SOUTH;
+                f.setFacingDirection(face, true);
+            }
+
         } catch (Exception ignored) {}
 
         if(f != null) {
