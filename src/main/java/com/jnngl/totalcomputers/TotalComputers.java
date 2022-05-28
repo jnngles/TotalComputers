@@ -311,25 +311,30 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     @Override
     public void forceStopCapture(TotalOS os) {
         if(!targets.containsKey(os)) return;
-        if(slots.containsKey(targets.get(os).target)) {
-            Inventory inv = targets.get(os).target.getInventory();
-            SlotControl event = slots.get(targets.get(os).target);
+        Player target = targets.get(os).target;
+        if(target == null) {
+            System.err.println("Motion Capture: Target not found");
+            return;
+        }
+        if(slots.containsKey(target)) {
+            Inventory inv = target.getInventory();
+            SlotControl event = slots.get(target);
             event.task.cancel();
             inv.setItem(event.s1, event.first);
             inv.setItem(event.s2, event.second);
             inv.setItem(event.s3, event.third);
-            slots.remove(targets.get(os).target);
+            slots.remove(target);
         }
-        drop.remove(targets.get(os).target);
-        PacketListener.removePlayer(targets.get(os).target);
-        Entity vehicle = targets.get(os).target.getVehicle();
+        drop.remove(target);
+        PacketListener.removePlayer(target);
+        Entity vehicle = target.getVehicle();
         if(vehicle != null) {
-            vehicle.getPassengers().remove(targets.get(os).target);
+            vehicle.getPassengers().remove(target);
             vehicle.remove();
         }
-        targets.get(os).target.sendMessage(replyPrefix + ChatColor.BLUE +
+        target.sendMessage(replyPrefix + ChatColor.BLUE +
                 "You are no longer using the capture feature.");
-        locked.remove(targets.get(os).target);
+        locked.remove(target);
         targets.remove(os);
     }
 
