@@ -72,7 +72,7 @@ public class HeadlessUI implements GUIInterface {
 
     @Override
     public void messageBox(String message) {
-        System.err.println(message); // Shouldn't get any messages except errors
+        /* System.err.println(message); // Shouldn't get any messages except errors */ // Shouldn't get any messages at all!
     }
 
     @Override

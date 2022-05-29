@@ -176,6 +176,7 @@ public class NESEmulator extends WindowApplication {
         }
 
         g.clearRect(0, 0, getWidth(), getHeight());
+        if(nes.getLastFrame() == null) return;
         if(bW == 0 || bH == 0)
             resizeImage(nes.getLastFrame().getWidth(), nes.getLastFrame().getHeight());
         g.drawImage(nes.getLastFrame(), bX, bY, bW, bH, null);
