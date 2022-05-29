@@ -7,7 +7,7 @@ plugins {
 
 group "com.jnngl"
 archivesBaseName = "totalcomputers"
-version '0.9.2b5'
+version '0.9.2b6'
 
 
 compileJava {
@@ -95,7 +95,7 @@ publishing {
         mavenJava(MavenPublication) {
             groupId = 'com.jnngl'
             artifactId = 'totalcomputers'
-            version = '0.9.2b5'
+            version = '0.9.2b6'
             from components.java
 
             pom {
