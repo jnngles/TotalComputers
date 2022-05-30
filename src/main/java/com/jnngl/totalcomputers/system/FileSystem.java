@@ -78,28 +78,29 @@ public class FileSystem {
         rootfs = new File("rootfs/"+name);
         rootfs.mkdirs();
 
-        try {
-            try {
-                String libName = null;
-                String os_name = System.getProperty("os.name").toLowerCase();
-                if (os_name.startsWith("windows")) libName = "total_computers.dll";
-                else if (os_name.startsWith("linux")) libName = "libtotal_computers.so";
-                URL url = FileSystem.class.getResource("/" + libName);
-                File tmpDir = Files.createTempDirectory("libs").toFile();
-                File nativeLibTmpFile = new File(tmpDir, libName);
-                try (InputStream in = url.openStream()) {
-                    Files.copy(in, nativeLibTmpFile.toPath());
-                }
-                System.load(nativeLibTmpFile.getAbsolutePath());
-                nativeLibTmpFile.deleteOnExit();
-                tmpDir.deleteOnExit();
-            } catch (Exception e) {
-                System.loadLibrary("total_computers");
-            }
-        } catch(Throwable t) {
-            System.err.println("Unable to load natives. Some features may not work.");
-            t.printStackTrace();
-        }
+//        try {
+//            try {
+//                String libName = null;
+//                String os_name = System.getProperty("os.name").toLowerCase();
+//                if (os_name.startsWith("windows")) libName = "total_computers.dll";
+//                else if (os_name.startsWith("linux")) libName = "libtotal_computers.so";
+//                URL url = FileSystem.class.getResource("/" + libName);
+//                File tmpDir = Files.createTempDirectory("libs").toFile();
+//                File nativeLibTmpFile = new File(tmpDir, libName);
+//                try (InputStream in = url.openStream()) {
+//                    Files.copy(in, nativeLibTmpFile.toPath());
+//                }
+//                System.load(nativeLibTmpFile.getAbsolutePath());
+//                nativeLibTmpFile.deleteOnExit();
+//                tmpDir.deleteOnExit();
+//            } catch (Exception e) {
+//                System.loadLibrary("total_computers");
+//            }
+//        } catch(Throwable t) {
+//            System.err.println("Unable to load natives. Some features may not work.");
+//            t.printStackTrace();
+//        }
+        // Natives are not required
 
         images = new HashMap<>();
         associationMap = new HashMap<>();
