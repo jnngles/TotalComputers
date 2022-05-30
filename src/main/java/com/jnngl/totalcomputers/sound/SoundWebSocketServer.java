@@ -10,23 +10,30 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+@Deprecated
 public class SoundWebSocketServer extends WebSocketServer {
+    @Deprecated
     public static SoundWebSocketServer server;
 
+    @Deprecated
     private static Map<String, String> durations = new HashMap<>();
 
+    @Deprecated
     static String getDuration(String name) {
         return durations.getOrDefault(name, "-1");
     }
 
+    @Deprecated
     public SoundWebSocketServer(int port) throws UnknownHostException {
         super(new InetSocketAddress(port));
     }
 
+    @Deprecated
     public SoundWebSocketServer(InetSocketAddress address) {
         super(address);
     }
 
+    @Deprecated
     @Override
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
         String hostAddr = conn.getRemoteSocketAddress().getAddress().getHostAddress();
@@ -34,6 +41,7 @@ public class SoundWebSocketServer extends WebSocketServer {
         System.out.println("[TotalComputers: Sound WebSocketServer] <-- " + hostAddr + " has connected");
     }
 
+    @Deprecated
     @Override
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
         String hostAddr = conn.getRemoteSocketAddress().getAddress().getHostAddress();
@@ -41,6 +49,7 @@ public class SoundWebSocketServer extends WebSocketServer {
         System.out.println("[TotalComputers: Sound WebSocketServer] --> " + hostAddr + " has disconnected");
     }
 
+    @Deprecated
     @Override
     public void onMessage(WebSocket conn, String message) {
         System.out.println("[TotalComputers: Sound WebSocketServer] <-- Received packet from "
@@ -55,6 +64,7 @@ public class SoundWebSocketServer extends WebSocketServer {
         }
     }
 
+    @Deprecated
     public static void runServer() throws UnknownHostException {
         final int port = 7255;
         server = new SoundWebSocketServer(port);
@@ -62,20 +72,24 @@ public class SoundWebSocketServer extends WebSocketServer {
         System.out.println("[TotalComputers: Sound WebSocketServer] <-> Started on port: "+server.getPort());
     }
 
+    @Deprecated
     public static void shutdown() throws InterruptedException {
         server.stop();
     }
 
+    @Deprecated
     @Override
     public void onError(WebSocket conn, Exception ex) {
         System.err.println("[TotalComputers: Sound WebSocketServer] <-- Oops! "+ex.getMessage());
     }
 
+    @Deprecated
     @Override
     public void onStart() {
 
     }
 
+    @Deprecated
     public void sendToAll(String data) {
         Collection<WebSocket> cons = getConnections();
         synchronized (cons) {
@@ -85,6 +99,7 @@ public class SoundWebSocketServer extends WebSocketServer {
         }
     }
 
+    @Deprecated
     public void sendData(SoundWebSocketSession session, String data) {
         Collection<WebSocket> cons = getConnections();
         synchronized (cons) {

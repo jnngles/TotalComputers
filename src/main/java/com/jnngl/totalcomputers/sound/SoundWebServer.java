@@ -15,10 +15,13 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
+@Deprecated
 public class SoundWebServer {
     private static Server server;
+    @Deprecated
     public static File HTTDOCS;
 
+    @Deprecated
     public static void run() {
         server = new Server(7254);
         ResourceHandler handler = new ResourceHandler();
@@ -44,10 +47,12 @@ public class SoundWebServer {
         }
     }
 
+    @Deprecated
     public static void shutdown() throws Exception {
         server.stop();
     }
 
+    @Deprecated
     private static String readResource(String name) {
         InputStream is = SoundWebServer.class.getClassLoader().getResourceAsStream(name);
         try {
@@ -58,6 +63,7 @@ public class SoundWebServer {
         }
     }
 
+    @Deprecated
     private static void createFiles(File httdocs) {
         try {
             Files.writeString(new File(httdocs, "index.html").toPath(),

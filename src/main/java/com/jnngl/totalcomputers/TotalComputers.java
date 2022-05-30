@@ -26,6 +26,7 @@ import com.jnngl.totalcomputers.motion.MotionCapture;
 import com.jnngl.totalcomputers.motion.MotionCaptureDesc;
 import com.jnngl.totalcomputers.sound.SoundWebServer;
 import com.jnngl.totalcomputers.sound.SoundWebSocketServer;
+import com.jnngl.totalcomputers.sound.discord.DiscordBot;
 import com.jnngl.totalcomputers.system.TotalOS;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -628,6 +629,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         delay = config.getInt("delay-ticks");
         if(!config.isSet("selection")) config.set("selection", true);
         if(!config.isSet("allowCraft")) config.set("allowCraft", false);
+        if(!config.isSet("discord_bot_token")) config.set("discord_bot_token", "");
         if(!config.isSet("craft.row1")) config.set("craft.row1", "   ");
         if(!config.isSet("craft.row2")) config.set("craft.row2", "   ");
         if(!config.isSet("craft.row3")) config.set("craft.row3", "   ");
@@ -736,6 +738,11 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         areas = new HashMap<>();
         logger.info("Total Computers enabled. (Made by JNNGL)");
 
+        if(!config.getString("discord_bot_token").trim().isEmpty()) {
+            logger.info("Starting discord bot...");
+            TotalOS.audio = DiscordBot.start(config.getString("discord_bot_token"));
+        }
+
         logger.info("Starting sound server...");
         try {
             SoundWebServer.run();
@@ -787,6 +794,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         link = "http://"+Bukkit.getServer().getIp()+":7254/index.html?name="+sender.getName()+"&sessionId="+(free_session++);
                         links.put((Player)sender, link);
                     }
+                    sender.sendMessage(replyPrefix + ChatColor.RED + "This subcommand is deprecated and highly not recommended to use! Use discord bot instead");
                     sender.sendMessage(replyPrefix + ChatColor.GREEN + "Open this website in your browser: "+ChatColor.WHITE+link);
                 }
                 else if(args[0].equalsIgnoreCase("reload")) { // Reload subcommand

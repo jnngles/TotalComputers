@@ -21,6 +21,7 @@ package com.jnngl.totalcomputers.system;
 import com.jnngl.totalcomputers.TotalComputers;
 import com.jnngl.totalcomputers.bsod.Cause;
 import com.jnngl.totalcomputers.motion.MotionCapture;
+import com.jnngl.totalcomputers.sound.discord.DiscordBot;
 import com.jnngl.totalcomputers.system.overlays.Information;
 import com.jnngl.totalcomputers.system.overlays.Keyboard;
 import com.jnngl.totalcomputers.system.states.SplashScreen;
@@ -46,6 +47,8 @@ public class TotalOS {
 
     private static final SharedStorage singletonStorage = new SharedStorage();
 
+    public static DiscordBot audio;
+
     private static final List<TotalOS> active = new ArrayList<>();
     private static TotalOS current;
     public static TotalOS current() { return current; }
@@ -54,7 +57,7 @@ public class TotalOS {
      * @return API version
      */
     public static int getApiVersion() {
-        return 5;
+        return 6;
     }
 
     /**
