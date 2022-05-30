@@ -629,7 +629,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         delay = config.getInt("delay-ticks");
         if(!config.isSet("selection")) config.set("selection", true);
         if(!config.isSet("allowCraft")) config.set("allowCraft", false);
-        if(!config.isSet("discord_bot_token")) config.set("discord_bot_token", "");
+        if(!config.isSet("discord_bot_token")) config.set("discord_bot_token", "yourdiscordbottoken");
         if(!config.isSet("craft.row1")) config.set("craft.row1", "   ");
         if(!config.isSet("craft.row2")) config.set("craft.row2", "   ");
         if(!config.isSet("craft.row3")) config.set("craft.row3", "   ");
@@ -738,7 +738,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         areas = new HashMap<>();
         logger.info("Total Computers enabled. (Made by JNNGL)");
 
-        if(!config.getString("discord_bot_token").trim().isEmpty()) {
+        if(!config.getString("discord_bot_token").equals("yourdiscordbottoken")) {
             logger.info("Starting discord bot...");
             TotalOS.audio = DiscordBot.start(config.getString("discord_bot_token"));
         }
@@ -1272,6 +1272,9 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      */
     @Override
     public void onDisable() {
+        if(TotalOS.audio != null) {
+            TotalOS.audio.jda.shutdownNow();
+        }
         for(TotalOS os : systems.values())
             forceStopCapture(os);
         String[] computers = new String[registeredComputers.size()];

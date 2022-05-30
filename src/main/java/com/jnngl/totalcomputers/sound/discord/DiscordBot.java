@@ -39,7 +39,7 @@ public class DiscordBot extends ListenerAdapter implements AudioSendHandler {
 
 
     private static boolean isPlaying = false;
-    private static boolean canPlay = false;
+    public static boolean canPlay = false;
     private static boolean isPaused = false;
 
     public DiscordBot() {
