@@ -133,74 +133,74 @@ public class DiscordBot extends ListenerAdapter implements AudioSendHandler {
             message.addReaction("✅").queue();
             return;
         }
-        else if(messageText.startsWith("`play")) {
-            String[] parts = messageText.split(" ");
-            if(parts.length > 1) {
-                loadMusic(parts[1], new AudioLoadResultHandler() {
-                    @Override
-                    public void trackLoaded(AudioTrack track) {
-                        play(track);
-                        message.addReaction("✅").queue();
-                        return;
-                    }
-
-                    @Override
-                    public void playlistLoaded(AudioPlaylist playlist) {
-                        message.addReaction("❌").queue();
-                        channel.sendMessage("Playlists are not supported yet!").queue();
-                        return;
-                    }
-
-                    @Override
-                    public void noMatches() {
-                        message.addReaction("❌").queue();
-                        channel.sendMessage("Nothing found!").queue();
-                        return;
-                    }
-
-                    @Override
-                    public void loadFailed(FriendlyException exception) {
-                        message.addReaction("❌").queue();
-                        channel.sendMessage("Failed to load! \n"+exception.toString()).queue();
-                        return;
-                    }
-                });
-            } else {
-                message.addReaction("❌").queue();
-                channel.sendMessage("What should I play?").queue();
-                return;
-            }
-        } else if(messageText.equals("`pause")) {
-            if(!isPlaying()) {
-                message.addReaction("❌").queue();
-                channel.sendMessage("Nothing is playing").queue();
-                return;
-            } else if(isPaused()) {
-                message.addReaction("❌").queue();
-                channel.sendMessage("Already paused").queue();
-                return;
-            } else {
-                pause();
-                message.addReaction("✅").queue();
-                return;
-            }
-        } else if(messageText.equals("`resume")) {
-            if(!isPaused()) {
-                message.addReaction("❌").queue();
-                channel.sendMessage("Already playing").queue();
-            } else {
-                resume();
-                message.addReaction("✅").queue();
-            }
-        } else if(messageText.equals("`stop")) {
-            if(!isPlaying()) {
-                message.addReaction("❌").queue();
-                channel.sendMessage("Nothing is playing").queue();
-            } else {
-                stop();
-                message.addReaction("✅").queue();
-            }
-        }
+//        else if(messageText.startsWith("`play")) {
+//            String[] parts = messageText.split(" ");
+//            if(parts.length > 1) {
+//                loadMusic(parts[1], new AudioLoadResultHandler() {
+//                    @Override
+//                    public void trackLoaded(AudioTrack track) {
+//                        play(track);
+//                        message.addReaction("✅").queue();
+//                        return;
+//                    }
+//
+//                    @Override
+//                    public void playlistLoaded(AudioPlaylist playlist) {
+//                        message.addReaction("❌").queue();
+//                        channel.sendMessage("Playlists are not supported yet!").queue();
+//                        return;
+//                    }
+//
+//                    @Override
+//                    public void noMatches() {
+//                        message.addReaction("❌").queue();
+//                        channel.sendMessage("Nothing found!").queue();
+//                        return;
+//                    }
+//
+//                    @Override
+//                    public void loadFailed(FriendlyException exception) {
+//                        message.addReaction("❌").queue();
+//                        channel.sendMessage("Failed to load! \n"+exception.toString()).queue();
+//                        return;
+//                    }
+//                });
+//            } else {
+//                message.addReaction("❌").queue();
+//                channel.sendMessage("What should I play?").queue();
+//                return;
+//            }
+//        } else if(messageText.equals("`pause")) {
+//            if(!isPlaying()) {
+//                message.addReaction("❌").queue();
+//                channel.sendMessage("Nothing is playing").queue();
+//                return;
+//            } else if(isPaused()) {
+//                message.addReaction("❌").queue();
+//                channel.sendMessage("Already paused").queue();
+//                return;
+//            } else {
+//                pause();
+//                message.addReaction("✅").queue();
+//                return;
+//            }
+//        } else if(messageText.equals("`resume")) {
+//            if(!isPaused()) {
+//                message.addReaction("❌").queue();
+//                channel.sendMessage("Already playing").queue();
+//            } else {
+//                resume();
+//                message.addReaction("✅").queue();
+//            }
+//        } else if(messageText.equals("`stop")) {
+//            if(!isPlaying()) {
+//                message.addReaction("❌").queue();
+//                channel.sendMessage("Nothing is playing").queue();
+//            } else {
+//                stop();
+//                message.addReaction("✅").queue();
+//            }
+//        }
     }
 
     public void loadMusic(String location, AudioLoadResultHandler callback) {

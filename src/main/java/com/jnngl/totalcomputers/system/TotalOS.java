@@ -49,6 +49,10 @@ public class TotalOS {
 
     public static DiscordBot audio;
 
+    public static boolean isDiscordBotAvailable() {
+        return audio != null;
+    }
+
     private static final List<TotalOS> active = new ArrayList<>();
     private static TotalOS current;
     public static TotalOS current() { return current; }
