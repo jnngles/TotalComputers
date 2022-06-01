@@ -1729,8 +1729,9 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                             }
                         }
 
-
                         for (Player player : Bukkit.getOnlinePlayers()) {
+                            if(!player.getWorld().getName().equals(area.firstPos.getWorld().getName())) continue;
+                            if(player.getLocation().distanceSquared(area.firstPos) > 1024) continue;
                             for (int id = 0; id < area.area; id++) {
                                 try {
                                     sender.sendPacket(player, framePacket[id]);
