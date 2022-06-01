@@ -1,7 +1,10 @@
 name: TotalComputers
 version: 0.9.2b7
+description: Computers in vanilla Minecraft
 author: JNNGL
+website: https://jnngl.com/totalcomputers
 main: com.jnngl.totalcomputers.TotalComputers
+load: POSTWORLD
 
 commands:
   totalcomputers:
