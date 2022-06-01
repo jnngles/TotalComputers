@@ -20,6 +20,7 @@ package com.jnngl.system;
 
 import com.jnngl.totalcomputers.TotalComputers;
 import com.jnngl.totalcomputers.system.TotalOS;
+import com.jnngl.totalcomputers.system.Utils;
 import com.jnngl.totalcomputers.system.desktop.ApplicationHandler;
 import com.jnngl.totalcomputers.system.desktop.WindowApplication;
 
@@ -28,8 +29,6 @@ import java.awt.image.BufferedImage;
 import java.util.Random;
 
 public class ImageViewer extends WindowApplication {
-
-    private static final int STRENGTH = 10;
 
     private int x, y, width, height;
     private float zoom;
@@ -64,18 +63,6 @@ public class ImageViewer extends WindowApplication {
 
     private void loadImage(String path) {
         image = os.fs.loadImage(path);
-        Random random = new Random();
-        for(int x = 0; x < image.getWidth(); x++) {
-            for(int y = 0; y < image.getHeight(); y++) {
-                Color color = new Color(image.getRGB(x, y));
-                int noise = (int)((random.nextFloat()-0.5f)*2*STRENGTH);
-                int nR = color.getRed()   + noise;
-                int nG = color.getGreen() + noise;
-                int nB = color.getBlue()  + noise;
-                if(nR < 0) nR = 0; if(nR > 255) nR = 255; if(nG < 0) nG = 0; if(nG > 255) nG = 255; if(nB < 0) nB = 0; if(nB > 255) nB = 255;
-                image.setRGB(x, y, new Color(nR, nG, nB).getRGB());
-            }
-        }
         updateLayout();
     }
 
@@ -100,6 +87,18 @@ public class ImageViewer extends WindowApplication {
         y -= zoom*height;
         width += zoom*width*2;
         height += zoom*height*2;
+        updateDithering();
+    }
+
+    public void updateDithering() {
+        dithered_image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = dithered_image.createGraphics();
+        g.drawImage(image, 0, 0, getWidth(), getHeight(), null);
+        g.dispose();
+        new Thread(() -> {
+            Utils.floydSteinbergDithering(dithered_image);
+            renderCanvas();
+        }).start();
     }
 
     public static void main(String[] args) {
@@ -107,6 +106,7 @@ public class ImageViewer extends WindowApplication {
     }
 
     private BufferedImage image;
+    private BufferedImage dithered_image;
 
     @Override
     protected void onStart() {
@@ -127,7 +127,7 @@ public class ImageViewer extends WindowApplication {
     public void render(Graphics2D g) {
         g.setColor(Color.BLACK);
         g.fillRect(0, 0, getWidth(), getHeight());
-        g.drawImage(image, x, y, width, height, null);
+        g.drawImage(dithered_image == null? image : dithered_image, x, y, width, height, null);
     }
 
     @Override
