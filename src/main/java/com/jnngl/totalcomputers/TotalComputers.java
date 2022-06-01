@@ -1740,11 +1740,14 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                                 }
                             }
                         }
-                        if(uncaught[0] != 0 && prevException[0] != null) {
-                            System.err.println("An error occurred in the OS/application. This did not affect the operation of the OS, but if something does not work properly, create an issue on GitHub. In other cases, this error can be ignored.");
-                            System.err.println("Stack Trace:");
-                            prevException[0].printStackTrace();
-                            prevException[0] = null;
+
+                        if(os.getState().equals(TotalOS.ComputerState.RUNNING)) {
+                            if (uncaught[0] != 0 && prevException[0] != null) {
+                                System.err.println("An error occurred in the OS/application. This did not affect the operation of the OS, but if something does not work properly, create an issue on GitHub. In other cases, this error can be ignored.");
+                                System.err.println("Stack Trace:");
+                                prevException[0].printStackTrace();
+                                prevException[0] = null;
+                            }
                         }
                         uncaught[0] = 0;
                     } catch(Throwable e) {

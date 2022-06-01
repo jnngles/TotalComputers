@@ -61,7 +61,7 @@ public class TotalOS {
      * @return API version
      */
     public static int getApiVersion() {
-        return 6;
+        return 7;
     }
 
     /**
@@ -255,6 +255,14 @@ public class TotalOS {
 
         stateManager.setState(null);
         active.remove(this);
+    }
+
+    /**
+     * See {@link ComputerState}
+     * @return State
+     */
+    public ComputerState getState() {
+        return currentState;
     }
 
     /**
