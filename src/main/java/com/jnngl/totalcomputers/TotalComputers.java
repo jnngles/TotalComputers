@@ -1704,7 +1704,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             }
             packets.put(os, new DoubleBuffer(frame1, frame2, frame3, frame4));
 
-            int[] uncaught = { 0 };
+            int[] uncaught = { -2 };
             Throwable[] prevException = { null };
             tasks.put(os.name, Bukkit.getScheduler().runTaskTimer(this, () -> {
                 Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
@@ -1743,7 +1743,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         }
 
                         if(os.getState().equals(TotalOS.ComputerState.RUNNING)) {
-                            if (uncaught[0] != 0 && prevException[0] != null) {
+                            if (uncaught[0] > 0 && prevException[0] != null) {
                                 System.err.println("An error occurred in the OS/application. This did not affect the operation of the OS, but if something does not work properly, create an issue on GitHub. In other cases, this error can be ignored.");
                                 System.err.println("Stack Trace:");
                                 prevException[0].printStackTrace();
@@ -1752,17 +1752,19 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         }
                         uncaught[0] = 0;
                     } catch(Throwable e) {
-                        if(e instanceof OutOfMemoryError) {
-                            os.invokeBSoD("Not enough RAM", new Throwable(e), 0x03);
-                        }
-                        else if(uncaught[0]/(delay == 0? 60 : (20/delay)) >= 3) {
-                            os.invokeBSoD("Critical Error", new Throwable(e), 0x01);
-                            prevException[0] = null;
-                            System.err.println("Critical Error -> Uncaught exception: " + e.getMessage());
-                        }
-                        else {
+                        if(uncaught[0] < 0) {
                             uncaught[0]++;
-                            prevException[0] = e;
+                        } else {
+                            if (e instanceof OutOfMemoryError) {
+                                os.invokeBSoD("Not enough RAM", new Throwable(e), 0x03);
+                            } else if (uncaught[0] / (delay == 0 ? 60 : (20 / delay)) >= 3) {
+                                os.invokeBSoD("Critical Error", new Throwable(e), 0x01);
+                                prevException[0] = null;
+                                System.err.println("Critical Error -> Uncaught exception: " + e.getMessage());
+                            } else {
+                                uncaught[0]++;
+                                prevException[0] = e;
+                            }
                         }
                     }
                 });
