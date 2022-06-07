@@ -21,6 +21,7 @@ package com.jnngl.totalcomputers;
 import com.jnngl.packet.MapPacketSender;
 import com.jnngl.packet.MapPacketSenderFactory;
 import com.jnngl.packet.PacketListener;
+import com.jnngl.server.Server;
 import com.jnngl.totalcomputers.motion.MotionCapabilities;
 import com.jnngl.totalcomputers.motion.MotionCapture;
 import com.jnngl.totalcomputers.motion.MotionCaptureDesc;
@@ -96,6 +97,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     private boolean isLegacy = false;
     private MapPacketSender sender;
     private Map<TotalOS, Player> executors;
+    private Server server;
 
     /* *************** CODE SECTION: MOTION CAPTURE *************** */
 
@@ -727,7 +729,11 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
 
                 for(Ingredient i : ingredients) recipe.setIngredient(i.key, i.mat);
 
-                getServer().addRecipe(recipe);
+                try {
+                    getServer().addRecipe(recipe);
+                } catch (Throwable e) {
+                    logger.warning("Unable to add recipe: "+e.getMessage());
+                }
                 logger.log(Level.INFO, "Crafting recipe successfully created!");
             } while(false);
         }
@@ -751,6 +757,16 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             logger.warning("Failed to start sound server :(");
             logger.warning("[SoundServer] -> "+e.getMessage());
         }
+
+        logger.info("Starting TotalComputers server...");
+        server = new Server(this);
+        logger.info("-> Injecting...");
+        try {
+            server.inject();
+        } catch (ReflectiveOperationException e) {
+            logger.warning(" --> Unable to inject: "+e.getMessage());
+        }
+        logger.info("Done.");
     }
 
     /* *************** CODE SECTION: COMMANDS AND AUTOCOMPLETION *************** */
@@ -1272,6 +1288,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      */
     @Override
     public void onDisable() {
+        server.removeInjection();
         if(TotalOS.audio != null) {
             TotalOS.audio.jda.shutdownNow();
         }
@@ -1289,7 +1306,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             SoundWebSocketServer.shutdown();
             SoundWebServer.shutdown();
         } catch (Exception e) {
-            logger.warning("Failed to shutdown server");
+            logger.warning("Unable to shutdown server");
             logger.warning(e.getMessage());
         }
     }
