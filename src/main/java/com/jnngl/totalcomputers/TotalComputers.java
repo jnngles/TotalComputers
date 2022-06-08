@@ -759,13 +759,8 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         }
 
         logger.info("Starting TotalComputers server...");
-        server = new Server(this);
-        logger.info("-> Injecting...");
-        try {
-            server.inject();
-        } catch (ReflectiveOperationException e) {
-            logger.warning(" --> Unable to inject: "+e.getMessage());
-        }
+        server = new Server();
+        server.start("localhost", 29077); // TODO: move hostname and port to config.yml
         logger.info("Done.");
     }
 
@@ -1288,7 +1283,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      */
     @Override
     public void onDisable() {
-        server.removeInjection();
+        server.shutdown();
         if(TotalOS.audio != null) {
             TotalOS.audio.jda.shutdownNow();
         }
