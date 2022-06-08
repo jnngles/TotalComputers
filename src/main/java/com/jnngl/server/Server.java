@@ -33,13 +33,16 @@ public class Server {
             bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 protected void initChannel(@NotNull SocketChannel ch) {
-                    System.out.println("Server is listening on "+ip+":"+port);
+                    System.out.println("Connected "+ch.remoteAddress().toString());
                     ch.pipeline().addLast("decoder", new PacketDecoder());
                     ch.pipeline().addLast("packet_handler", new PacketHandler());
+                    ch.pipeline().addLast("exception_handler", new ExceptionHandler());
                 }
             });
             try {
-                ChannelFuture channelFuture = bootstrap.bind().sync();
+                ChannelFuture channelFuture = bootstrap.bind();
+                System.out.println("Server is listening on "+ip+":"+port);
+                channelFuture = channelFuture.sync();
                 channelFuture.channel().closeFuture().sync();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
