@@ -29,6 +29,7 @@ import com.jnngl.totalcomputers.sound.SoundWebServer;
 import com.jnngl.totalcomputers.sound.SoundWebSocketServer;
 import com.jnngl.totalcomputers.sound.discord.DiscordBot;
 import com.jnngl.totalcomputers.system.TotalOS;
+import org.apache.commons.lang.RandomStringUtils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -53,6 +54,7 @@ import org.bukkit.map.MapView;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 import org.spigotmc.event.entity.EntityDismountEvent;
 
 import java.awt.image.BufferedImage;
@@ -108,6 +110,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     private Map<TotalOS, CaptureTarget> targets;
     private Map<Player, SlotControl> slots;
     private List<Player> drop;
+    private Map<Player, String> tokens;
 
     @Override
     public MotionCapabilities getCapabilities() {
@@ -569,6 +572,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         targets = new HashMap<>();
         locked = new HashMap<>();
         slots = new HashMap<>();
+        tokens = new HashMap<>();
         slotsToRestore = new HashMap<>();
         playersThatQuitWhileControl = new ArrayList<>();
         drop = new ArrayList<>();
@@ -796,6 +800,8 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers paste <text>" + ChatColor.WHITE + " - pastes text. (Keyboard alternative)");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers erase <all|numChars>" + ChatColor.WHITE + " - erases text. (Keyboard alternative)");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers reload" + ChatColor.WHITE + " - reloads all configuration files.");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers token reset" + ChatColor.WHITE + " - resets TotalComputers client token");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers token - prints your TotalComputers client token");
                 }
                 else if(args[0].equalsIgnoreCase("sound")) { // Sound subcommand
                     String link;
@@ -1036,6 +1042,34 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                     }
                     forceStopCapture(locked.get((Player)sender));
                 }
+                else if(args[0].equalsIgnoreCase("token")) { // Token subcommand
+                    String token;
+                    if(!tokens.containsKey((Player)sender)
+                        || args.length > 1 && args[1].equalsIgnoreCase("reset")) {
+                        String oldToken = tokens.getOrDefault((Player)sender, null);
+                        if(oldToken != null)
+                            server.unregisterToken(oldToken);
+                        if(tokens.size() >= Integer.MAX_VALUE) token = ChatColor.RED+"There is no free tokens :(";
+                        else {
+                            while (true) {
+                                token = RandomStringUtils.randomAlphanumeric(6);
+                                boolean found = false;
+                                for (String t : tokens.values()) {
+                                    if (t.equals(token)) {
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (found) continue;
+                                break;
+                            }
+                            server.registerToken(token, (Player)sender);
+                            tokens.put((Player)sender, token);
+                        }
+                    } else token = tokens.get((Player)sender);
+                    sender.sendMessage(replyPrefix + ChatColor.GREEN + "Your token is "+
+                            ChatColor.LIGHT_PURPLE+token);
+                }
                 else if(args[0].equalsIgnoreCase("data")) { // Data subcommand
                     if(args.length == 2) {
                         if(!sender.hasPermission("totalcomputers.manage.all")) {
@@ -1087,7 +1121,8 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      * @return List of autocompletes
      */
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias,
+                                      String[] args) {
         List<String> variants = new ArrayList<>();
         if(!(sender instanceof Player player)) return variants;
         if(!sender.hasPermission("totalcomputers.command.totalcomputers")) return variants;
@@ -1095,9 +1130,12 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         if(command.getName().equalsIgnoreCase("totalcomputers")) {
             if(args.length == 1) {
                 if(locked.containsKey(player)) all = new String[]{"help", "sound", "create", "remove", "selection", "list",
-                        "reload", "data", "wand", "paste", "erase", "release"};
+                        "reload", "data", "wand", "paste", "erase", "release", "token"};
                 else all = new String[]{"help", "sound", "create", "remove", "selection", "list",
-                        "reload", "data", "wand", "paste", "erase"};
+                        "reload", "data", "wand", "paste", "erase", "token"};
+            }
+            else if(args[0].equalsIgnoreCase("token")) {
+                if(args.length == 2) all = new String[] { "reset" };
             }
             else if(args[0].equalsIgnoreCase("selection")) {
                 if(args.length == 2) {

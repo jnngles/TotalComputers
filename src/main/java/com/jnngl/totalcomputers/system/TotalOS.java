@@ -61,7 +61,7 @@ public class TotalOS {
      * @return API version
      */
     public static int getApiVersion() {
-        return 7;
+        return 8;
     }
 
     /**
