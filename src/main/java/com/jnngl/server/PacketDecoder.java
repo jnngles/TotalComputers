@@ -14,7 +14,8 @@ public class PacketDecoder extends ByteToMessageDecoder {
         out.add(Packet.read(in));
 
         for(Object msg : out) {
-            System.out.println("C -> S: " + msg.getClass().getSimpleName() + " (" + ((Packet)msg).getPacketID() + ")");
+            System.out.println("C -> S: " + msg.getClass().getSimpleName() +
+                    " (0x" + String.format("%x", ((Packet)msg).getPacketID()) + ")");
         }
     }
 }
