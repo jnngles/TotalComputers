@@ -95,4 +95,8 @@ public class BufUtils {
         }
     }
 
+    public static int sizeofString(String str) {
+        return 4 + str.length();
+    }
+
 }

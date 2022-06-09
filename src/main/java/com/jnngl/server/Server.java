@@ -17,6 +17,10 @@ public class Server {
 
     private final EventLoopGroup group = new NioEventLoopGroup();
 
+    public static int protocolVersion() {
+        return 1;
+    }
+
     public void start(String ip, int port) {
         new Thread(() -> {
             System.out.println("Registering packets...");
@@ -35,6 +39,7 @@ public class Server {
                 protected void initChannel(@NotNull SocketChannel ch) {
                     System.out.println("Connected "+ch.remoteAddress().toString());
                     ch.pipeline().addLast("decoder", new PacketDecoder());
+                    ch.pipeline().addLast("encoder", new PacketEncoder());
                     ch.pipeline().addLast("packet_handler", new PacketHandler());
                     ch.pipeline().addLast("exception_handler", new ExceptionHandler());
                 }
