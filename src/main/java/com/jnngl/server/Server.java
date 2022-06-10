@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class Server {
 
-    private record BoundToken(Player player, String token, Channel channel) {}
+    public record BoundToken(Player player, String token, Channel channel) {}
 
     private final Map<String, Player> unboundRegisteredTokens = new HashMap<>();
     private final Map<String, BoundToken> boundRegisteredTokens = new HashMap<>();
@@ -77,18 +77,37 @@ public class Server {
     }
 
     public void unregisterToken(String token) {
-        unboundRegisteredTokens.remove(token);
         if(boundRegisteredTokens.containsKey(token)) {
             ClientboundDisconnectPacket s2c_disconnect = new ClientboundDisconnectPacket();
             s2c_disconnect.reason = "Token was reset";
             boundRegisteredTokens.get(token).channel.writeAndFlush(s2c_disconnect);
             boundRegisteredTokens.get(token).channel.disconnect();
+
+            {
+                long ms = System.currentTimeMillis();
+                while (System.currentTimeMillis() - ms < 500) ;
+            }
+
             boundRegisteredTokens.remove(token);
+        }
+        unboundRegisteredTokens.remove(token);
+        Channel channel = null;
+        for(Map.Entry<Channel, String> entry : channel2token.entrySet()) {
+            if(entry.getValue().equals(token)) {
+                channel = entry.getKey();
+            }
+        }
+        if(channel != null) {
+            channel2token.remove(channel);
         }
     }
 
     public String tokenFromChannel(Channel channel) {
         return channel2token.getOrDefault(channel, null);
+    }
+
+    public BoundToken getBoundToken(String token) {
+        return boundRegisteredTokens.getOrDefault(token, null);
     }
 
     public void unboundToken(String token) {
@@ -99,12 +118,14 @@ public class Server {
         registerToken(token, player);
     }
 
-    public void bindToken(String token, Channel channel) throws InvalidTokenException {
+    public BoundToken bindToken(String token, Channel channel) throws InvalidTokenException {
         if(!unboundRegisteredTokens.containsKey(token)) throw new InvalidTokenException();
         Player player = unboundRegisteredTokens.get(token);
         unboundRegisteredTokens.remove(token);
-        boundRegisteredTokens.put(token, new BoundToken(player, token, channel));
+        BoundToken bt = new BoundToken(player, token, channel);
+        boundRegisteredTokens.put(token, bt);
         channel2token.put(channel, token);
+        return bt;
     }
 
     public void registerToken(String token, Player player) {

@@ -9,6 +9,7 @@ public class Protocol {
         Packet.registerPacket(new ClientboundHandshakePacket());
         Packet.registerPacket(new ClientboundDisconnectPacket());
         Packet.registerPacket(new ServerboundConnectPacket());
+        Packet.registerPacket(new ClientboundConnectionSuccessPacket());
     }
 
 }

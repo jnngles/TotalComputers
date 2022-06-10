@@ -1,15 +1,15 @@
 package com.jnngl.server;
 
 import com.jnngl.server.exception.InvalidTokenException;
-import com.jnngl.server.protocol.ClientboundDisconnectPacket;
-import com.jnngl.server.protocol.ClientboundHandshakePacket;
-import com.jnngl.server.protocol.ServerboundConnectPacket;
-import com.jnngl.server.protocol.ServerboundHandshakePacket;
+import com.jnngl.server.protocol.*;
 import com.jnngl.totalcomputers.system.TotalOS;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 public class PacketHandler extends ChannelDuplexHandler {
@@ -38,7 +38,13 @@ public class PacketHandler extends ChannelDuplexHandler {
     }
 
     public void handleConnectC2S(ServerboundConnectPacket c2s_connect) throws InvalidTokenException {
-        server.bindToken(c2s_connect.token, ctx.channel());
+        Server.BoundToken token = server.bindToken(c2s_connect.token, ctx.channel());
+        ClientboundConnectionSuccessPacket s2c_connectionSuccess = new ClientboundConnectionSuccessPacket();
+        Player player = token.player();
+        s2c_connectionSuccess.name = player.getName();
+        player.sendMessage(ChatColor.GOLD+"[TotalComputers] "+
+                ChatColor.GREEN+"Connected "+ctx.channel().remoteAddress());
+        ctx.channel().writeAndFlush(s2c_connectionSuccess);
     }
 
     @Override
@@ -51,13 +57,21 @@ public class PacketHandler extends ChannelDuplexHandler {
         super.channelRead(ctx, msg);
     }
 
-    @Override
-    public void channelInactive(@NotNull ChannelHandlerContext ctx) throws Exception {
+    private void handleDisconnect() {
         String token = server.tokenFromChannel(ctx.channel());
-        if(token != null)
+        if(token != null) {
+            server.getBoundToken(server.tokenFromChannel(ctx.channel())).player()
+                    .sendMessage(ChatColor.GOLD+"[TotalComputers] "+
+                            ChatColor.RED+"Disconnected "+ctx.channel().remoteAddress());
             server.unboundToken(token);
+        }
         ctx.close();
         System.out.println("Closed "+ctx.channel().remoteAddress());
+    }
+
+    @Override
+    public void channelInactive(@NotNull ChannelHandlerContext ctx) throws Exception {
+        handleDisconnect();
         super.channelInactive(ctx);
     }
 
