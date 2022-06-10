@@ -10,6 +10,8 @@ public class Protocol {
         Packet.registerPacket(new ClientboundDisconnectPacket());
         Packet.registerPacket(new ServerboundConnectPacket());
         Packet.registerPacket(new ClientboundConnectionSuccessPacket());
+        Packet.registerPacket(new ClientboundPingPacket());
+        Packet.registerPacket(new ServerboundPongPacket());
     }
 
 }

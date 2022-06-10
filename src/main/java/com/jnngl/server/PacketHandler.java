@@ -3,22 +3,48 @@ package com.jnngl.server;
 import com.jnngl.server.exception.InvalidTokenException;
 import com.jnngl.server.protocol.*;
 import com.jnngl.totalcomputers.system.TotalOS;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class PacketHandler extends ChannelDuplexHandler {
 
+    private short unhandledPings;
+    private boolean connected = false;
     private ChannelHandlerContext ctx;
     private final Server server;
 
     public PacketHandler(Server server) {
         this.server = server;
+    }
+
+    @Override
+    public void channelActive(@NotNull ChannelHandlerContext ctx) throws Exception {
+        connected = true;
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if(unhandledPings >= 2) {
+                    ClientboundDisconnectPacket s2c_disconnect = new ClientboundDisconnectPacket();
+                    s2c_disconnect.reason = "Timed out";
+                    ctx.channel().writeAndFlush(s2c_disconnect);
+                    ctx.channel().disconnect();
+                    return;
+                }
+                unhandledPings++;
+                ClientboundPingPacket s2c_ping = new ClientboundPingPacket();
+                s2c_ping.payload = System.currentTimeMillis();
+                if(!connected) cancel();
+                else ctx.channel().writeAndFlush(s2c_ping);
+            }
+        }, 15000, 15000);
+        super.channelActive(ctx);
     }
 
     public void handleHandshakeC2S(ServerboundHandshakePacket c2s_handshake) {
@@ -47,13 +73,23 @@ public class PacketHandler extends ChannelDuplexHandler {
         ctx.channel().writeAndFlush(s2c_connectionSuccess);
     }
 
+    public void handlePongC2S(ServerboundPongPacket c2s_pong) {
+        if(System.currentTimeMillis() - c2s_pong.payload > 1000) {
+            ClientboundDisconnectPacket s2c_disconnect = new ClientboundDisconnectPacket();
+            s2c_disconnect.reason = "Ping is greater than 1000";
+            ctx.channel().writeAndFlush(s2c_disconnect);
+            ctx.disconnect();
+            return;
+        }
+        unhandledPings--;
+    }
+
     @Override
     public void channelRead(@NotNull ChannelHandlerContext ctx, @NotNull Object msg) throws Exception {
         this.ctx = ctx;
-        if(msg instanceof ServerboundHandshakePacket c2s_handshake)
-            handleHandshakeC2S(c2s_handshake);
-        else if(msg instanceof ServerboundConnectPacket c2s_connect)
-            handleConnectC2S(c2s_connect);
+        if(msg instanceof ServerboundHandshakePacket c2s_handshake) handleHandshakeC2S(c2s_handshake);
+        else if(msg instanceof ServerboundConnectPacket c2s_connect) handleConnectC2S(c2s_connect);
+        else if(msg instanceof ServerboundPongPacket c2s_pong) handlePongC2S(c2s_pong);
         super.channelRead(ctx, msg);
     }
 
@@ -65,6 +101,7 @@ public class PacketHandler extends ChannelDuplexHandler {
                             ChatColor.RED+"Disconnected "+ctx.channel().remoteAddress());
             server.unboundToken(token);
         }
+        connected = false;
         ctx.close();
         System.out.println("Closed "+ctx.channel().remoteAddress());
     }
