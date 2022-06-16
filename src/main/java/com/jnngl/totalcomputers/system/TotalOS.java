@@ -20,6 +20,7 @@ package com.jnngl.totalcomputers.system;
 
 import com.jnngl.totalcomputers.TotalComputers;
 import com.jnngl.totalcomputers.bsod.Cause;
+import com.jnngl.totalcomputers.motion.DummyControl;
 import com.jnngl.totalcomputers.motion.MotionCapture;
 import com.jnngl.totalcomputers.sound.discord.DiscordBot;
 import com.jnngl.totalcomputers.system.overlays.Information;
@@ -143,6 +144,7 @@ public class TotalOS {
      * Whether user has admin rights or not
      */
     private boolean hasAdminRights;
+    private boolean isClientbound;
 
     @RequiresAPI(apiLevel = 3)
     public MotionCapture motionCapture;
@@ -166,9 +168,17 @@ public class TotalOS {
         this.screenWidth = widthPix;
         this.screenHeight = heightPix;
         this.name = name;
+        motionCapture = new DummyControl();
         storage = singletonStorage;
         hasAdminRights = false;
+        isClientbound = false;
         stateManager = new StateManager();
+    }
+
+    public static TotalOS createClientbound(int widthPix, int heightPix, String name) {
+        TotalOS os = new TotalOS(widthPix, heightPix, name);
+        os.isClientbound = true;
+        return os;
     }
 
     /**
@@ -177,7 +187,12 @@ public class TotalOS {
      */
     @RequiresAPI(apiLevel = 3)
     public boolean supportsMotionCapture() {
-        return motionCapture != null;
+        return motionCapture != null && !(motionCapture instanceof DummyControl);
+    }
+
+    @RequiresAPI(apiLevel = 8)
+    public boolean isClientbound() {
+        return isClientbound;
     }
 
     /**

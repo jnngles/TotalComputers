@@ -2,6 +2,7 @@ package com.jnngl.server;
 
 import com.jnngl.server.exception.InvalidTokenException;
 import com.jnngl.server.protocol.*;
+import com.jnngl.totalcomputers.system.RemoteOS;
 import com.jnngl.totalcomputers.system.TotalOS;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -84,12 +85,17 @@ public class PacketHandler extends ChannelDuplexHandler {
         unhandledPings--;
     }
 
+    public void handleCreationStatusC2S(ServerboundCreationStatusPacket c2s_status) {
+        RemoteOS.handleResponse(server.tokenFromChannel(ctx.channel()), c2s_status);
+    }
+
     @Override
     public void channelRead(@NotNull ChannelHandlerContext ctx, @NotNull Object msg) throws Exception {
         this.ctx = ctx;
         if(msg instanceof ServerboundHandshakePacket c2s_handshake) handleHandshakeC2S(c2s_handshake);
         else if(msg instanceof ServerboundConnectPacket c2s_connect) handleConnectC2S(c2s_connect);
         else if(msg instanceof ServerboundPongPacket c2s_pong) handlePongC2S(c2s_pong);
+        else if(msg instanceof ServerboundCreationStatusPacket c2s_status) handleCreationStatusC2S(c2s_status);
         super.channelRead(ctx, msg);
     }
 

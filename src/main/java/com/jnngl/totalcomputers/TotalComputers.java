@@ -22,13 +22,18 @@ import com.jnngl.packet.MapPacketSender;
 import com.jnngl.packet.MapPacketSenderFactory;
 import com.jnngl.packet.PacketListener;
 import com.jnngl.server.Server;
+import com.jnngl.server.exception.InvalidTokenException;
 import com.jnngl.totalcomputers.motion.MotionCapabilities;
 import com.jnngl.totalcomputers.motion.MotionCapture;
 import com.jnngl.totalcomputers.motion.MotionCaptureDesc;
 import com.jnngl.totalcomputers.sound.SoundWebServer;
 import com.jnngl.totalcomputers.sound.SoundWebSocketServer;
 import com.jnngl.totalcomputers.sound.discord.DiscordBot;
+import com.jnngl.totalcomputers.system.RemoteOS;
 import com.jnngl.totalcomputers.system.TotalOS;
+import com.jnngl.totalcomputers.system.exception.AlreadyClientboundException;
+import com.jnngl.totalcomputers.system.exception.AlreadyRequestedException;
+import com.jnngl.totalcomputers.system.exception.TimedOutException;
 import org.apache.commons.lang.RandomStringUtils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -100,6 +105,8 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     private MapPacketSender sender;
     private Map<TotalOS, Player> executors;
     private Server server;
+    private Map<Player, String> tokens;
+    private Map<String, RemoteOS> remote;
 
     /* *************** CODE SECTION: MOTION CAPTURE *************** */
 
@@ -110,7 +117,6 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     private Map<TotalOS, CaptureTarget> targets;
     private Map<Player, SlotControl> slots;
     private List<Player> drop;
-    private Map<Player, String> tokens;
 
     @Override
     public MotionCapabilities getCapabilities() {
@@ -573,6 +579,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         locked = new HashMap<>();
         slots = new HashMap<>();
         tokens = new HashMap<>();
+        remote = new HashMap<>();
         slotsToRestore = new HashMap<>();
         playersThatQuitWhileControl = new ArrayList<>();
         drop = new ArrayList<>();
@@ -640,9 +647,6 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         if(!config.isSet("server-ip")) config.set("server-ip", "0.0.0.0");
         if(!config.isSet("server-port")) config.set("server-port", 29077);
         if(!config.isSet("server-name")) config.set("server-name", Bukkit.getServer().getName());
-        if(!config.isSet("allow-connections")) config.set("allow-connections", true); // TODO: Implement this
-        if(!config.isSet("force-encryption")) config.set("force-encryption", true); // TODO: Implement this
-        if(!config.isSet("enable-encryption")) config.set("enable-encryption", true); // TODO: Implement this
         if(!config.isSet("allow-serverbound-computers")) config.set("allow-serverbound-computers", true); // TODO: Implement this
         if(!config.isSet("allow-clientbound-computers")) config.set("allow-clientbound-computers", true); // TODO: Implement this
         if(!config.isSet("craft.row1")) config.set("craft.row1", "   ");
@@ -989,6 +993,57 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         sender.sendMessage(replyPrefix + ChatColor.RED + "Computer name cannot contain spaces!");
                     } else invalidUsage(sender);
                 }
+                else if(args[0].equalsIgnoreCase("client")) { // Client subcommand
+                    if(args.length == 3) {
+                        if(!sender.hasPermission("totalcomputers.manage.all")) {
+                            if(!sender.hasPermission("totalcomputers.manage.crafted")
+                                    || !playerOwns((Player) sender, args[2])) {
+                                sender.sendMessage(replyPrefix + ChatColor.RED +
+                                        "You do not have enough permissions!");
+                                return true;
+                            }
+                        }
+                        if(!registeredComputers.contains(args[2])) {
+                            sender.sendMessage(replyPrefix + ChatColor.RED + "There is no such computer with name '"+args[1]+"'.");
+                            return true;
+                        }
+                        if(args[1].equalsIgnoreCase("bind")) {
+                            String token = tokens.get((Player) sender);
+                            if(token == null) {
+                                sender.sendMessage(replyPrefix+ChatColor.RED+
+                                        "You should generate token and connect client before running this command.");
+                                return true;
+                            }
+                            TotalOS serverbound = systems.get(args[2]);
+                            new Thread(() -> {
+                                try {
+                                    sender.sendMessage(replyPrefix + ChatColor.GREEN + "Sending request... (This may take some time)");
+                                    RemoteOS os = RemoteOS.requestCreation(server, token,
+                                            serverbound.name, serverbound.screenWidth, serverbound.screenHeight);
+                                    remote.put(os.getName(), os);
+                                    sender.sendMessage(replyPrefix + ChatColor.GREEN + "Started clientbound computer.");
+                                } catch (AlreadyRequestedException e) {
+                                    sender.sendMessage(replyPrefix + ChatColor.RED + "Request has already been sent.");
+                                } catch (TimedOutException e) {
+                                    sender.sendMessage(replyPrefix + ChatColor.RED + "Timed out.");
+                                } catch (InvalidTokenException e) {
+                                    sender.sendMessage(replyPrefix + ChatColor.RED + "Invalid token. (Is there any connected clients?)");
+                                } catch (AlreadyClientboundException e) {
+                                    sender.sendMessage(replyPrefix + ChatColor.RED + "This computer is already clientbound.");
+                                }
+                            }).start();
+                            return true;
+                        } else if(args[1].equalsIgnoreCase("unbind")) {
+                            if(!remote.containsKey(args[2])) {
+                                sender.sendMessage(replyPrefix+ChatColor.RED+"There is no such clientbound computer.");
+                                return true;
+                            }
+                            remote.get(args[2]).destroy();
+                            remote.remove(args[2]);
+                            sender.sendMessage(replyPrefix+ChatColor.GREEN+"Destroyed clientbound computer");
+                        } else invalidUsage(sender);
+                    } else invalidUsage(sender);
+                }
                 else if(args[0].equalsIgnoreCase("remove")) { // Remove subcommand
                     if(args.length == 2) {
                         if(!sender.hasPermission("totalcomputers.manage.all")) {
@@ -1142,12 +1197,48 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         if(command.getName().equalsIgnoreCase("totalcomputers")) {
             if(args.length == 1) {
                 if(locked.containsKey(player)) all = new String[]{"help", "sound", "create", "remove", "selection", "list",
-                        "reload", "data", "wand", "paste", "erase", "release", "token"};
+                        "reload", "data", "wand", "paste", "erase", "release", "token", "client"};
                 else all = new String[]{"help", "sound", "create", "remove", "selection", "list",
-                        "reload", "data", "wand", "paste", "erase", "token"};
+                        "reload", "data", "wand", "paste", "erase", "token", "client"};
             }
             else if(args[0].equalsIgnoreCase("token")) {
                 if(args.length == 2) all = new String[] { "reset" };
+            }
+            else if(args[0].equalsIgnoreCase("client")) {
+                if(args.length == 2) {
+                    all = new String[] {"bind", "unbind"};
+                } else if(args.length == 3) {
+                    all = new String[0];
+                    if(args[1].equalsIgnoreCase("bind")) {
+                        List<String> comps;
+                        if(!sender.hasPermission("totalcomputers.manage.all")) {
+                            comps = new ArrayList<>();
+                            if(sender.hasPermission("totalcomputers.manage.crafted")) {
+                                for(String comp : registeredComputers) {
+                                    if(playerOwns(player, comp)) comps.add(comp);
+                                }
+                            }
+                        } else {
+                            comps = registeredComputers;
+                        }
+                        all = new String[comps.size()];
+                        comps.toArray(all);
+                    } else if(args[1].equalsIgnoreCase("unbind")) {
+                        Set<String> comps;
+                        if(!sender.hasPermission("totalcomputers.manage.all")) {
+                            comps = new HashSet<>();
+                            if(sender.hasPermission("totalcomputers.manage.crafted")) {
+                                for(String comp : remote.keySet()) {
+                                    if(playerOwns(player, comp)) comps.add(comp);
+                                }
+                            }
+                        } else {
+                            comps = remote.keySet();
+                        }
+                        all = new String[comps.size()];
+                        comps.toArray(all);
+                    }
+                }
             }
             else if(args[0].equalsIgnoreCase("selection")) {
                 if(args.length == 2) {
