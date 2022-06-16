@@ -5,7 +5,6 @@ import com.jnngl.server.protocol.*;
 import com.jnngl.totalcomputers.system.TotalOS;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -59,7 +58,8 @@ public class PacketHandler extends ChannelDuplexHandler {
             return;
         }
         ClientboundHandshakePacket s2c_handshake = new ClientboundHandshakePacket();
-        s2c_handshake.serverName = Bukkit.getServer().getName();
+        s2c_handshake.serverName = server.name;
+        if(s2c_handshake.serverName == null) s2c_handshake.serverName = "unknown";
         ctx.channel().writeAndFlush(s2c_handshake);
     }
 

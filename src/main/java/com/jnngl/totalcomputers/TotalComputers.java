@@ -636,6 +636,15 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         if(!config.isSet("selection")) config.set("selection", true);
         if(!config.isSet("allowCraft")) config.set("allowCraft", false);
         if(!config.isSet("discord_bot_token")) config.set("discord_bot_token", "yourdiscordbottoken");
+        if(!config.isSet("enable-server")) config.set("enable-server", true);
+        if(!config.isSet("server-ip")) config.set("server-ip", "0.0.0.0");
+        if(!config.isSet("server-port")) config.set("server-port", 29077);
+        if(!config.isSet("server-name")) config.set("server-name", Bukkit.getServer().getName());
+        if(!config.isSet("allow-connections")) config.set("allow-connections", true); // TODO: Implement this
+        if(!config.isSet("force-encryption")) config.set("force-encryption", true); // TODO: Implement this
+        if(!config.isSet("enable-encryption")) config.set("enable-encryption", true); // TODO: Implement this
+        if(!config.isSet("allow-serverbound-computers")) config.set("allow-serverbound-computers", true); // TODO: Implement this
+        if(!config.isSet("allow-clientbound-computers")) config.set("allow-clientbound-computers", true); // TODO: Implement this
         if(!config.isSet("craft.row1")) config.set("craft.row1", "   ");
         if(!config.isSet("craft.row2")) config.set("craft.row2", "   ");
         if(!config.isSet("craft.row3")) config.set("craft.row3", "   ");
@@ -762,10 +771,13 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             logger.warning("[SoundServer] -> "+e.getMessage());
         }
 
-        logger.info("Starting TotalComputers server...");
-        server = new Server();
-        server.start("localhost", 29077); // TODO: move hostname and port to config.yml
-        logger.info("Done.");
+        if(config.getBoolean("enable-server")) {
+            logger.info("Starting TotalComputers server...");
+            server = new Server();
+            server.name = config.getString("server-name");
+            server.start(config.getString("server-ip"), config.getInt("server-port"));
+            logger.info("Done.");
+        }
     }
 
     /* *************** CODE SECTION: COMMANDS AND AUTOCOMPLETION *************** */
@@ -1470,7 +1482,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                 toRemove.add(inputInfo);
         }
         packets.remove(systems.get(name));
-        unhandledInputs.removeAll(toRemove);
+        toRemove.forEach(unhandledInputs::remove);
         registeredComputers.remove(name);
         computersPhysicalData.remove(name);
         monitors.remove(name);

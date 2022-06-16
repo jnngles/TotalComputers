@@ -30,6 +30,8 @@ public class Server {
     private final EventLoopGroup group = new NioEventLoopGroup();
     private final Server server = this;
 
+    public String name;
+
     public static int protocolVersion() {
         return 1;
     }
