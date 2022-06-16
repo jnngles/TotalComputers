@@ -47,8 +47,7 @@ public class MapPacketSender_R1_14 extends PacketSender implements MapPacketSend
     }
 
     @Override
-    public void modifyPacket(Object packet, BufferedImage tile) throws ReflectiveOperationException {
-        data.set(packet, MapColor.toByteArray(tile));
+    public void modifyPacket(Object packet, byte[] raw) throws ReflectiveOperationException {
+        data.set(packet, raw);
     }
-
 }

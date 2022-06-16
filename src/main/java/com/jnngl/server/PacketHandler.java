@@ -10,6 +10,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -89,6 +90,12 @@ public class PacketHandler extends ChannelDuplexHandler {
         RemoteOS.handleResponse(server.tokenFromChannel(ctx.channel()), c2s_status);
     }
 
+    public void handleFrameC2S(ServerboundFramePacket c2s_frame) throws IOException {
+        RemoteOS remote = RemoteOS.fromId(c2s_frame.id);
+        if(remote == null) return;
+        remote.handleBuffer(c2s_frame.compressedData);
+    }
+
     @Override
     public void channelRead(@NotNull ChannelHandlerContext ctx, @NotNull Object msg) throws Exception {
         this.ctx = ctx;
@@ -96,6 +103,7 @@ public class PacketHandler extends ChannelDuplexHandler {
         else if(msg instanceof ServerboundConnectPacket c2s_connect) handleConnectC2S(c2s_connect);
         else if(msg instanceof ServerboundPongPacket c2s_pong) handlePongC2S(c2s_pong);
         else if(msg instanceof ServerboundCreationStatusPacket c2s_status) handleCreationStatusC2S(c2s_status);
+        else if(msg instanceof ServerboundFramePacket c2s_frame) handleFrameC2S(c2s_frame);
         super.channelRead(ctx, msg);
     }
 

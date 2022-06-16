@@ -31,6 +31,7 @@ import com.jnngl.totalcomputers.sound.SoundWebSocketServer;
 import com.jnngl.totalcomputers.sound.discord.DiscordBot;
 import com.jnngl.totalcomputers.system.RemoteOS;
 import com.jnngl.totalcomputers.system.TotalOS;
+import com.jnngl.totalcomputers.system.Utils;
 import com.jnngl.totalcomputers.system.exception.AlreadyClientboundException;
 import com.jnngl.totalcomputers.system.exception.AlreadyRequestedException;
 import com.jnngl.totalcomputers.system.exception.TimedOutException;
@@ -1040,7 +1041,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                             }
                             remote.get(args[2]).destroy();
                             remote.remove(args[2]);
-                            sender.sendMessage(replyPrefix+ChatColor.GREEN+"Destroyed clientbound computer");
+                            sender.sendMessage(replyPrefix+ChatColor.GREEN+"Destroyed clientbound computer.");
                         } else invalidUsage(sender);
                     } else invalidUsage(sender);
                 }
@@ -1556,6 +1557,10 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      * @param name Name of computer to remove
      */
     private void removeComputer(String name) {
+        if(remote.containsKey(name)) {
+            remote.get(name).destroy();
+            remote.remove(name);
+        }
         stopCapture(systems.get(name));
         tasks.get(name).cancel();
         tasks.remove(name);
@@ -1862,8 +1867,9 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             tasks.put(os.name, Bukkit.getScheduler().runTaskTimer(this, () -> {
                 Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
                     try {
-
-                        BufferedImage screen = os.renderFrame();
+                        BufferedImage screen;
+                        if(remote.containsKey(os.name)) screen = Utils.copyImage(remote.get(os.name).getBuffer());
+                        else screen = os.renderFrame();
                         if(screen == null) throw new Exception("Failed to render screen");
 
                         Object[] framePacket = packets.get(os).get();

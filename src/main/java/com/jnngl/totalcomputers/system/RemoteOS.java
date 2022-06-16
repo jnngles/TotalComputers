@@ -4,14 +4,20 @@ import com.jnngl.server.Server;
 import com.jnngl.server.exception.InvalidTokenException;
 import com.jnngl.server.protocol.ClientboundCreationRequestPacket;
 import com.jnngl.server.protocol.ClientboundDestroyPacket;
-import com.jnngl.server.protocol.ClientboundDisconnectPacket;
 import com.jnngl.server.protocol.ServerboundCreationStatusPacket;
 import com.jnngl.totalcomputers.system.exception.AlreadyClientboundException;
 import com.jnngl.totalcomputers.system.exception.AlreadyRequestedException;
 import com.jnngl.totalcomputers.system.exception.TimedOutException;
 import io.netty.channel.Channel;
+import org.apache.commons.io.IOUtils;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
 
 public class RemoteOS {
 
@@ -19,6 +25,8 @@ public class RemoteOS {
     private String name;
     private short id;
     private Channel connection;
+    private BufferedImage buffer;
+
 
     public Channel getConnection() {
         return connection;
@@ -95,9 +103,14 @@ public class RemoteOS {
         remote.width = width;
         remote.height = height;
         remote.connection = channel;
+        remote.createBuffer();
         name2id.put(remote.name, remote.id);
         id2os.put(remote.id, remote);
         return remote;
+    }
+
+    private void createBuffer() {
+        buffer = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_INDEXED);
     }
 
     public static void handleResponse(String token, ServerboundCreationStatusPacket s2c_status) {
@@ -121,6 +134,16 @@ public class RemoteOS {
         width = 0;
         height = 0;
         connection = null;
+    }
+
+    public BufferedImage getBuffer() {
+        return buffer;
+    }
+
+    public void handleBuffer(byte[] compressed) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        IOUtils.copy(new GZIPInputStream(new ByteArrayInputStream(compressed)), out);
+        buffer = ImageIO.read(new ByteArrayInputStream(out.toByteArray()));
     }
 
 }

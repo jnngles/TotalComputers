@@ -22,6 +22,8 @@ import com.jnngl.totalcomputers.MapColor;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.WritableRaster;
 
 /**
  * Common functions
@@ -151,6 +153,13 @@ public class Utils {
         }
 
         return img;
+    }
+
+    public static BufferedImage copyImage(BufferedImage source) {
+        ColorModel cm = source.getColorModel();
+        WritableRaster raster = source.copyData(null);
+        return new BufferedImage(cm, raster, cm.isAlphaPremultiplied(), null)
+                .getSubimage(0, 0, source.getWidth(), source.getHeight());
     }
 
 }
