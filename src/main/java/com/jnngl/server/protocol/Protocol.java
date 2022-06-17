@@ -18,6 +18,8 @@ public class Protocol {
         Packet.registerPacket(new ServerboundFramePacket());
         Packet.registerPacket(new ClientboundPalettePacket());
         Packet.registerPacket(new ClientboundTouchPacket());
+        Packet.registerPacket(new ClientboundEncryptionPacket());
+        Packet.registerPacket(new ServerboundEncryptionPacket());
     }
 
 }

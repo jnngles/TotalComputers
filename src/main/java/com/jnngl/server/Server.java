@@ -9,8 +9,6 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.DelimiterBasedFrameDecoder;
-import io.netty.handler.codec.Delimiters;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,6 +26,7 @@ public class Server {
 
     private final EventLoopGroup group = new NioEventLoopGroup();
     private final Server server = this;
+    public boolean enableEncryption = true;
 
     public String name;
 
