@@ -25,7 +25,7 @@ public class RemoteOS {
     private String name;
     private short id;
     private Channel connection;
-    private BufferedImage buffer;
+    private byte[] indexedBuffer;
     private String token;
     private boolean destroyed = false;
 
@@ -129,7 +129,7 @@ public class RemoteOS {
     }
 
     private void createBuffer() {
-        buffer = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_INDEXED);
+        indexedBuffer = new byte[width*height];
     }
 
     public static void handleResponse(String token, ServerboundCreationStatusPacket s2c_status) {
@@ -157,16 +157,16 @@ public class RemoteOS {
         connection = null;
     }
 
-    public BufferedImage getBuffer() {
-        return buffer;
+    public byte[] getBuffer() {
+        return indexedBuffer;
     }
 
     public void handleBuffer(byte[] compressed) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         IOUtils.copy(new GZIPInputStream(new ByteArrayInputStream(compressed)), out);
         byte[] data = out.toByteArray();
-        System.arraycopy(data, 0,
-                ((DataBufferByte)buffer.getRaster().getDataBuffer()).getData(), 0, data.length);
+        System.arraycopy(data, 0, indexedBuffer,
+                0, Math.min(data.length, indexedBuffer.length));
     }
 
 }

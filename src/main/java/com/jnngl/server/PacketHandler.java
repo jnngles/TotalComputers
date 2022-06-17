@@ -2,6 +2,7 @@ package com.jnngl.server;
 
 import com.jnngl.server.exception.InvalidTokenException;
 import com.jnngl.server.protocol.*;
+import com.jnngl.totalcomputers.MapColor;
 import com.jnngl.totalcomputers.system.RemoteOS;
 import com.jnngl.totalcomputers.system.TotalOS;
 import io.netty.channel.ChannelDuplexHandler;
@@ -73,6 +74,11 @@ public class PacketHandler extends ChannelDuplexHandler {
         player.sendMessage(ChatColor.GOLD+"[TotalComputers] "+
                 ChatColor.GREEN+"Connected "+ctx.channel().remoteAddress());
         ctx.channel().writeAndFlush(s2c_connectionSuccess);
+        ClientboundPalettePacket s2c_palette = new ClientboundPalettePacket();
+        s2c_palette.palette = new int[MapColor.colors.length];
+        for(int i = 0; i < s2c_palette.palette.length; i++)
+            s2c_palette.palette[i] = MapColor.colors[i].getRGB();
+        ctx.channel().writeAndFlush(s2c_palette);
     }
 
     public void handlePongC2S(ServerboundPongPacket c2s_pong) {

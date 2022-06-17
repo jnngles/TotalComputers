@@ -16,6 +16,7 @@ public class Protocol {
         Packet.registerPacket(new ServerboundCreationStatusPacket());
         Packet.registerPacket(new ClientboundDestroyPacket());
         Packet.registerPacket(new ServerboundFramePacket());
+        Packet.registerPacket(new ClientboundPalettePacket());
     }
 
 }

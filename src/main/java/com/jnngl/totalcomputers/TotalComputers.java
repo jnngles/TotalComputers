@@ -1861,12 +1861,13 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
 
             int[] uncaught = { -2 };
             Throwable[] prevException = { null };
+            final byte[] cbBuf = new byte[128*128];
             tasks.put(os.name, Bukkit.getScheduler().runTaskTimer(this, () -> {
                 Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
                     try {
-                        BufferedImage screen;
+                        Object screen;
                         RemoteOS remote = RemoteOS.fromName(os.name);
-                        if(remote != null) screen = Utils.copyImage(remote.getBuffer());
+                        if(remote != null) screen = remote.getBuffer();
                         else screen = os.renderFrame();
                         if(screen == null) throw new Exception("Failed to render screen");
 
@@ -1878,7 +1879,13 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                                 int absX = x * 128;
                                 int absY = y * 128;
                                 try {
-                                    sender.modifyPacket(framePacket[id], screen.getSubimage(absX, absY, 128, 128));
+                                    if(screen instanceof BufferedImage)
+                                        sender.modifyPacket(framePacket[id],
+                                                ((BufferedImage)screen).getSubimage(absX, absY, 128, 128));
+                                    else {
+                                        System.arraycopy((byte[])screen, id*128*128, cbBuf, 0, cbBuf.length);
+                                        sender.modifyPacket(framePacket[id], (byte[])screen);
+                                    }
                                 } catch (ReflectiveOperationException e) {
                                     logger.warning("Failed to create packet");
                                     logger.warning(" -> " + e.getMessage());
