@@ -29,6 +29,9 @@ public class Encryption {
 
     public SecretKey aes;
 
+    private Cipher decryptCipher;
+    private Cipher encryptCipher;
+
     public void initAES(byte[] secret) {
         aes = new SecretKeySpec(secret, "AES");
     }
@@ -36,17 +39,21 @@ public class Encryption {
     public byte[] encryptAES(byte[] data)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException,
             IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
-        Cipher cipher = Cipher.getInstance("AES/CFB8/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, aes, new IvParameterSpec(aes.getEncoded()));
-        return cipher.doFinal(data);
+        if(encryptCipher == null) {
+            encryptCipher = Cipher.getInstance("AES/CFB8/NoPadding");
+            encryptCipher.init(Cipher.ENCRYPT_MODE, aes, new IvParameterSpec(aes.getEncoded()));
+        }
+        return encryptCipher.doFinal(data);
     }
 
     public byte[] decryptAES(byte[] encrypted)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException,
             IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
-        Cipher cipher = Cipher.getInstance("AES/CFB8/NoPadding");
-        cipher.init(Cipher.DECRYPT_MODE, aes, new IvParameterSpec(aes.getEncoded()));
-        return cipher.doFinal(encrypted);
+        if(decryptCipher == null) {
+            decryptCipher = Cipher.getInstance("AES/CFB8/NoPadding");
+            decryptCipher.init(Cipher.DECRYPT_MODE, aes, new IvParameterSpec(aes.getEncoded()));
+        }
+        return decryptCipher.doFinal(encrypted);
     }
 
 }
