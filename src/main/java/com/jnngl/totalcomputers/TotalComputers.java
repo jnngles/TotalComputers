@@ -646,6 +646,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         if(!config.isSet("server-ip")) config.set("server-ip", "0.0.0.0");
         if(!config.isSet("server-port")) config.set("server-port", 29077);
         if(!config.isSet("server-name")) config.set("server-name", Bukkit.getServer().getName());
+        if(!config.isSet("enable-encryption")) config.set("enable-encryption", true); // TODO: Implement this
         if(!config.isSet("allow-serverbound-computers")) config.set("allow-serverbound-computers", true); // TODO: Implement this
         if(!config.isSet("allow-clientbound-computers")) config.set("allow-clientbound-computers", true); // TODO: Implement this
         if(!config.isSet("craft.row1")) config.set("craft.row1", "   ");
