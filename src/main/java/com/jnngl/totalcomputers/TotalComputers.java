@@ -31,6 +31,7 @@ import com.jnngl.totalcomputers.sound.SoundWebSocketServer;
 import com.jnngl.totalcomputers.sound.discord.DiscordBot;
 import com.jnngl.totalcomputers.system.RemoteOS;
 import com.jnngl.totalcomputers.system.TotalOS;
+import com.jnngl.totalcomputers.system.Utils;
 import com.jnngl.totalcomputers.system.exception.AlreadyClientboundException;
 import com.jnngl.totalcomputers.system.exception.AlreadyRequestedException;
 import com.jnngl.totalcomputers.system.exception.TimedOutException;
@@ -1860,7 +1861,6 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
 
             int[] uncaught = { -2 };
             Throwable[] prevException = { null };
-            final byte[] cbBuf = new byte[128*128];
             tasks.put(os.name, Bukkit.getScheduler().runTaskTimer(this, () -> {
                 Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
                     try {
@@ -1882,8 +1882,9 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                                         sender.modifyPacket(framePacket[id],
                                                 ((BufferedImage)screen).getSubimage(absX, absY, 128, 128));
                                     else {
+                                        final byte[] cbBuf = new byte[128*128];
                                         System.arraycopy((byte[])screen, id*128*128, cbBuf, 0, cbBuf.length);
-                                        sender.modifyPacket(framePacket[id], (byte[])screen);
+                                        sender.modifyPacket(framePacket[id], cbBuf);
                                     }
                                 } catch (ReflectiveOperationException e) {
                                     logger.warning("Failed to create packet");
