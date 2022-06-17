@@ -19,8 +19,12 @@ public class ServerboundFramePacket extends Packet {
     public void readData(ByteBuf buf, int length) throws Exception {
         if(length < 2) throw new TooSmallPacketException(length, 2);
         id = buf.readShort();
-        compressedData = new byte[length-2];
+        compressedData = new byte[buf.readableBytes()];
         buf.readBytes(compressedData, 0, compressedData.length);
+        if(compressedData.length != length-2) {
+            System.err.println("Received incomplete frame buffer");
+            compressedData = null;
+        }
     }
 
     @Override

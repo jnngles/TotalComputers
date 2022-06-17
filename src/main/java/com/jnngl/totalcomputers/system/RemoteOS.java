@@ -13,6 +13,7 @@ import org.apache.commons.io.IOUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -143,7 +144,9 @@ public class RemoteOS {
     public void handleBuffer(byte[] compressed) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         IOUtils.copy(new GZIPInputStream(new ByteArrayInputStream(compressed)), out);
-        buffer = ImageIO.read(new ByteArrayInputStream(out.toByteArray()));
+        byte[] data = out.toByteArray();
+        System.arraycopy(data, 0,
+                ((DataBufferByte)buffer.getRaster().getDataBuffer()).getData(), 0, data.length);
     }
 
 }

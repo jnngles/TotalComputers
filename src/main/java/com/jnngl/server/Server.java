@@ -5,10 +5,7 @@ import com.jnngl.server.exception.PacketAlreadyExistsException;
 import com.jnngl.server.protocol.ClientboundDisconnectPacket;
 import com.jnngl.server.protocol.Protocol;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -54,6 +51,8 @@ public class Server {
             bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 protected void initChannel(@NotNull SocketChannel ch) {
+                    ch.config().setOption(ChannelOption.TCP_NODELAY, true);
+                    ch.config().setOption(ChannelOption.RCVBUF_ALLOCATOR, new AdaptiveRecvByteBufAllocator());
                     System.out.println("Connected "+ch.remoteAddress().toString());
                     ch.pipeline().addLast("decoder", new PacketDecoder());
                     ch.pipeline().addLast("encoder", new PacketEncoder());

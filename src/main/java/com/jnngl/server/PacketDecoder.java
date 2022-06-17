@@ -10,8 +10,12 @@ import java.util.List;
 public class PacketDecoder extends ByteToMessageDecoder {
 
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        out.add(Packet.read(in));
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
+        try {
+            out.add(Packet.read(in));
+        } catch (Exception e) {
+            System.out.println("Bad packet: "+e.getMessage());
+        }
 
         for(Object msg : out) {
             System.out.println("C -> S: " + msg.getClass().getSimpleName() +
