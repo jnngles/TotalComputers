@@ -11,7 +11,6 @@ import com.jnngl.totalcomputers.system.exception.TimedOutException;
 import io.netty.channel.Channel;
 import org.apache.commons.io.IOUtils;
 
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.ByteArrayInputStream;
@@ -27,6 +26,8 @@ public class RemoteOS {
     private short id;
     private Channel connection;
     private BufferedImage buffer;
+    private String token;
+    private boolean destroyed = false;
 
 
     public Channel getConnection() {
@@ -49,12 +50,29 @@ public class RemoteOS {
         return id;
     }
 
+    public boolean isDestroyed() {
+        return destroyed;
+    }
+
     private static final Map<String, RemoteOS> requested = new HashMap<>();
 
     private static final Map<String, Short> name2id = new HashMap<>();
     private static final Map<Short, RemoteOS> id2os = new HashMap<>();
 
     public RemoteOS() {}
+
+    public static Set<String> allNames() {
+        return name2id.keySet();
+    }
+
+    public static Set<RemoteOS> fromToken(String token) {
+        Set<RemoteOS> remotes = new HashSet<>();
+        for(RemoteOS remote : id2os.values()) {
+            if(remote.token.equals(token))
+                remotes.add(remote);
+        }
+        return remotes;
+    }
 
     public static RemoteOS fromId(short id) {
         return id2os.get(id);
@@ -120,6 +138,7 @@ public class RemoteOS {
         synchronized(requested) {
             if (!requested.containsKey(token)) return;
             requested.get(token).id = s2c_status.id;
+            requested.get(token).token = token;
             requested.remove(token);
         }
     }
@@ -130,10 +149,11 @@ public class RemoteOS {
         connection.writeAndFlush(s2c_destroy);
         name2id.remove(name);
         id2os.remove(id);
-        id = -1;
+        id = 0;
         name = "";
         width = 0;
         height = 0;
+        destroyed = true;
         connection = null;
     }
 

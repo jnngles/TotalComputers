@@ -116,6 +116,7 @@ public class PacketHandler extends ChannelDuplexHandler {
                             ChatColor.RED+"Disconnected "+ctx.channel().remoteAddress());
             server.unboundToken(token);
         }
+        RemoteOS.fromToken(token).forEach(RemoteOS::destroy);
         connected = false;
         ctx.close();
         System.out.println("Closed "+ctx.channel().remoteAddress());

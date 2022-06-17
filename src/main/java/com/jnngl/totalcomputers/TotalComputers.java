@@ -107,7 +107,6 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     private Map<TotalOS, Player> executors;
     private Server server;
     private Map<Player, String> tokens;
-    private Map<String, RemoteOS> remote;
 
     /* *************** CODE SECTION: MOTION CAPTURE *************** */
 
@@ -580,7 +579,6 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         locked = new HashMap<>();
         slots = new HashMap<>();
         tokens = new HashMap<>();
-        remote = new HashMap<>();
         slotsToRestore = new HashMap<>();
         playersThatQuitWhileControl = new ArrayList<>();
         drop = new ArrayList<>();
@@ -1021,7 +1019,6 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                                     sender.sendMessage(replyPrefix + ChatColor.GREEN + "Sending request... (This may take some time)");
                                     RemoteOS os = RemoteOS.requestCreation(server, token,
                                             serverbound.name, serverbound.screenWidth, serverbound.screenHeight);
-                                    remote.put(os.getName(), os);
                                     sender.sendMessage(replyPrefix + ChatColor.GREEN + "Started clientbound computer.");
                                 } catch (AlreadyRequestedException e) {
                                     sender.sendMessage(replyPrefix + ChatColor.RED + "Request has already been sent.");
@@ -1035,12 +1032,12 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                             }).start();
                             return true;
                         } else if(args[1].equalsIgnoreCase("unbind")) {
-                            if(!remote.containsKey(args[2])) {
+                            RemoteOS remote = RemoteOS.fromName(args[2]);
+                            if(remote == null) {
                                 sender.sendMessage(replyPrefix+ChatColor.RED+"There is no such clientbound computer.");
                                 return true;
                             }
-                            remote.get(args[2]).destroy();
-                            remote.remove(args[2]);
+                            remote.destroy();
                             sender.sendMessage(replyPrefix+ChatColor.GREEN+"Destroyed clientbound computer.");
                         } else invalidUsage(sender);
                     } else invalidUsage(sender);
@@ -1229,12 +1226,12 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         if(!sender.hasPermission("totalcomputers.manage.all")) {
                             comps = new HashSet<>();
                             if(sender.hasPermission("totalcomputers.manage.crafted")) {
-                                for(String comp : remote.keySet()) {
+                                for(String comp : RemoteOS.allNames()) {
                                     if(playerOwns(player, comp)) comps.add(comp);
                                 }
                             }
                         } else {
-                            comps = remote.keySet();
+                            comps = RemoteOS.allNames();
                         }
                         all = new String[comps.size()];
                         comps.toArray(all);
@@ -1557,9 +1554,9 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      * @param name Name of computer to remove
      */
     private void removeComputer(String name) {
-        if(remote.containsKey(name)) {
-            remote.get(name).destroy();
-            remote.remove(name);
+        RemoteOS remote = RemoteOS.fromName(name);
+        if(name != null) {
+            remote.destroy();
         }
         stopCapture(systems.get(name));
         tasks.get(name).cancel();
@@ -1868,7 +1865,8 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                 Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
                     try {
                         BufferedImage screen;
-                        if(remote.containsKey(os.name)) screen = Utils.copyImage(remote.get(os.name).getBuffer());
+                        RemoteOS remote = RemoteOS.fromName(os.name);
+                        if(remote != null) screen = Utils.copyImage(remote.getBuffer());
                         else screen = os.renderFrame();
                         if(screen == null) throw new Exception("Failed to render screen");
 
