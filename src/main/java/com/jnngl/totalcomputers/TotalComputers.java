@@ -31,7 +31,6 @@ import com.jnngl.totalcomputers.sound.SoundWebSocketServer;
 import com.jnngl.totalcomputers.sound.discord.DiscordBot;
 import com.jnngl.totalcomputers.system.RemoteOS;
 import com.jnngl.totalcomputers.system.TotalOS;
-import com.jnngl.totalcomputers.system.Utils;
 import com.jnngl.totalcomputers.system.exception.AlreadyClientboundException;
 import com.jnngl.totalcomputers.system.exception.AlreadyRequestedException;
 import com.jnngl.totalcomputers.system.exception.TimedOutException;
@@ -1942,7 +1941,13 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         for (TotalComputers.InputInfo inputInfo : unhandledInputs.toArray(new InputInfo[0])) {
                             if (inputInfo.index().name().equals(name) && inputInfo.index().index() == id) {
                                 executors.put(os, inputInfo.player);
-                                os.processTouch(absX + inputInfo.x(), absY + inputInfo.y(), inputInfo.interactType(), inputInfo.player().hasPermission("totalcomputers.admin"));
+                                RemoteOS remote = RemoteOS.fromName(os.name);
+                                if(remote != null) remote.sendTouchEvent(absX + inputInfo.x(), absY + inputInfo.y(),
+                                        inputInfo.interactType(),
+                                        inputInfo.player().hasPermission("totalcomputers.admin"));
+                                else os.processTouch(absX + inputInfo.x(), absY + inputInfo.y(),
+                                        inputInfo.interactType(),
+                                        inputInfo.player().hasPermission("totalcomputers.admin"));
                                 executors.remove(os);
                                 handledInputs.add(inputInfo);
                             }

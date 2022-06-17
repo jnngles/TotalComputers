@@ -4,7 +4,9 @@ import com.jnngl.server.Server;
 import com.jnngl.server.exception.InvalidTokenException;
 import com.jnngl.server.protocol.ClientboundCreationRequestPacket;
 import com.jnngl.server.protocol.ClientboundDestroyPacket;
+import com.jnngl.server.protocol.ClientboundTouchPacket;
 import com.jnngl.server.protocol.ServerboundCreationStatusPacket;
+import com.jnngl.totalcomputers.TotalComputers;
 import com.jnngl.totalcomputers.system.exception.AlreadyClientboundException;
 import com.jnngl.totalcomputers.system.exception.AlreadyRequestedException;
 import com.jnngl.totalcomputers.system.exception.TimedOutException;
@@ -167,6 +169,17 @@ public class RemoteOS {
         byte[] data = out.toByteArray();
         System.arraycopy(data, 0, indexedBuffer,
                 0, Math.min(data.length, indexedBuffer.length));
+    }
+
+    public void sendTouchEvent(int x, int y, TotalComputers.InputInfo.InteractType type, boolean admin) {
+        ClientboundTouchPacket s2c_touch = new ClientboundTouchPacket();
+        s2c_touch.id = id;
+        s2c_touch.x = (short)x;
+        s2c_touch.y = (short)y;
+        s2c_touch.type = (type == TotalComputers.InputInfo.InteractType.LEFT_CLICK?
+                            ClientboundTouchPacket.LEFT_CLICK : ClientboundTouchPacket.RIGHT_CLICK);
+        s2c_touch.admin = admin;
+        connection.writeAndFlush(s2c_touch);
     }
 
 }
