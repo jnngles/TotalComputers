@@ -1392,6 +1392,10 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     @EventHandler(priority = EventPriority.HIGH)
     public void playerLeave(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+        if(tokens.containsKey(player)) {
+            server.unregisterToken(tokens.get(player));
+            tokens.remove(player);
+        }
         if(locked.containsKey(player)) {
             playersThatQuitWhileControl.add(player.getName());
         }
