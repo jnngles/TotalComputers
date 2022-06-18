@@ -1,5 +1,6 @@
 package com.jnngl.server.protocol;
 
+import com.jnngl.server.Server;
 import com.jnngl.server.exception.TooSmallPacketException;
 import io.netty.buffer.ByteBuf;
 
@@ -22,7 +23,8 @@ public class ServerboundFramePacket extends Packet {
         compressedData = new byte[buf.readableBytes()];
         buf.readBytes(compressedData, 0, compressedData.length);
         if(compressedData.length != length-2) {
-            System.err.println("Received incomplete frame buffer");
+            if(Server.DEBUG)
+                System.err.println("Received incomplete frame buffer");
             compressedData = null;
         }
     }
