@@ -14,12 +14,15 @@ public class PacketDecoder extends ByteToMessageDecoder {
         try {
             out.add(Packet.read(in));
         } catch (Exception e) {
-            System.out.println("Bad packet: "+e.getMessage());
+            if(Server.DEBUG)
+                System.out.println("Bad packet: "+e.getMessage());
         }
 
-        for(Object msg : out) {
-            System.out.println("C -> S: " + msg.getClass().getSimpleName() +
-                    " (0x" + String.format("%x", ((Packet)msg).getPacketID()) + ")");
+        if(Server.DEBUG) {
+            for (Object msg : out) {
+                System.out.println("C -> S: " + msg.getClass().getSimpleName() +
+                        " (0x" + String.format("%x", ((Packet) msg).getPacketID()) + ")");
+            }
         }
     }
 }

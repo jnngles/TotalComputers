@@ -18,6 +18,8 @@ import java.util.Map;
 
 public class Server {
 
+    public static boolean DEBUG = false;
+
     public record BoundToken(Player player, String token, Channel channel) {}
 
     private final Map<String, Player> unboundRegisteredTokens = new HashMap<>();

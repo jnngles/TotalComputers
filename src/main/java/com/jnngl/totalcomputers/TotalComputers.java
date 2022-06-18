@@ -650,6 +650,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         if(!config.isSet("allow-serverbound-computers")) config.set("allow-serverbound-computers", true);
         if(!config.isSet("allow-clientbound-computers")) config.set("allow-clientbound-computers", true);
         if(!config.isSet("client-download-link")) config.set("client-download-link", "https://github.com/JNNGL/TotalComputers-Client/releases");
+        if(!config.isSet("packet-debug")) config.set("packet-debug", false);
         if(!config.isSet("craft.row1")) config.set("craft.row1", "   ");
         if(!config.isSet("craft.row2")) config.set("craft.row2", "   ");
         if(!config.isSet("craft.row3")) config.set("craft.row3", "   ");
@@ -780,6 +781,9 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
 
         if(config.getBoolean("enable-server")) {
             logger.info("Starting TotalComputers server...");
+            Server.DEBUG = config.getBoolean("packet-debug");
+            if(Server.DEBUG)
+                System.out.println("Debug is enabled.");
             server = new Server();
             server.name = config.getString("server-name");
             server.enableEncryption = config.getBoolean("enable-encryption");
