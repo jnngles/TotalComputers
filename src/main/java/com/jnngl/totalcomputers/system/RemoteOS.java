@@ -1,5 +1,7 @@
 package com.jnngl.totalcomputers.system;
 
+import com.jcraft.jzlib.Inflater;
+import com.jcraft.jzlib.InflaterInputStream;
 import com.jnngl.server.Server;
 import com.jnngl.server.exception.InvalidTokenException;
 import com.jnngl.server.protocol.ClientboundCreationRequestPacket;
@@ -13,13 +15,10 @@ import com.jnngl.totalcomputers.system.exception.TimedOutException;
 import io.netty.channel.Channel;
 import org.apache.commons.io.IOUtils;
 
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
-import java.util.zip.GZIPInputStream;
 
 public class RemoteOS {
 
@@ -165,7 +164,7 @@ public class RemoteOS {
 
     public void handleBuffer(byte[] compressed) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        IOUtils.copy(new GZIPInputStream(new ByteArrayInputStream(compressed)), out);
+        IOUtils.copy(new InflaterInputStream(new ByteArrayInputStream(compressed), new Inflater()), out);
         byte[] data = out.toByteArray();
         System.arraycopy(data, 0, indexedBuffer,
                 0, Math.min(data.length, indexedBuffer.length));
