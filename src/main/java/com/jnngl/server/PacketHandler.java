@@ -36,6 +36,8 @@ public class PacketHandler extends ChannelDuplexHandler {
         this.server = server;
     }
 
+    private Encryption rsa = null;
+
 
     @Override
     public void channelActive(@NotNull ChannelHandlerContext ctx) throws Exception {
@@ -69,11 +71,13 @@ public class PacketHandler extends ChannelDuplexHandler {
         new Thread(() -> {
             try {
                 if (server.enableEncryption) {
-                    Encryption encryption = new Encryption();
-                    encryption.generateRSA();
-                    pendingEncryptionRequests.put(ctx.channel(), encryption);
+                    if(rsa == null) {
+                        rsa = new Encryption();
+                        rsa.generateRSA();
+                    }
+                    pendingEncryptionRequests.put(ctx.channel(), new Encryption());
                     ClientboundEncryptionPacket s2c_encryption = new ClientboundEncryptionPacket();
-                    s2c_encryption.publicKey = encryption.rsa.getPublic().getEncoded();
+                    s2c_encryption.publicKey = rsa.rsa.getPublic().getEncoded();
                     ctx.channel().writeAndFlush(s2c_encryption);
                     long lastTime = System.currentTimeMillis();
                     while (pendingEncryptionRequests.get(ctx.channel()).aes == null) {
@@ -85,7 +89,7 @@ public class PacketHandler extends ChannelDuplexHandler {
                             return;
                         }
                     }
-                    encryption = pendingEncryptionRequests.get(ctx.channel());
+                    Encryption encryption = pendingEncryptionRequests.get(ctx.channel());
                     pendingEncryptionRequests.remove(ctx.channel());
                     ctx.pipeline().addBefore("decoder", "decrypt", new PacketDecryptor(encryption));
                     ctx.pipeline().addBefore("encoder", "encrypt", new PacketEncryptor(encryption));
@@ -153,7 +157,7 @@ public class PacketHandler extends ChannelDuplexHandler {
             BadPaddingException, InvalidKeyException {
         if(!pendingEncryptionRequests.containsKey(ctx.channel())) return;
         Encryption encryption = pendingEncryptionRequests.get(ctx.channel());
-        encryption.initAES(encryption.decryptRSA(c2s_encryption.secret));
+        encryption.initAES(rsa.decryptRSA(c2s_encryption.secret));
     }
 
     @Override
