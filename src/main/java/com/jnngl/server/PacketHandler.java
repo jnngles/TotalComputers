@@ -119,6 +119,7 @@ public class PacketHandler extends ChannelDuplexHandler {
                 ChatColor.GREEN+"Connected "+ctx.channel().remoteAddress());
         ctx.channel().writeAndFlush(s2c_connectionSuccess);
         ClientboundPalettePacket s2c_palette = new ClientboundPalettePacket();
+        if(MapColor.colors == null) MapColor.loadColors();
         s2c_palette.palette = new int[MapColor.colors.length];
         for(int i = 0; i < s2c_palette.palette.length; i++)
             s2c_palette.palette[i] = MapColor.colors[i].getRGB();

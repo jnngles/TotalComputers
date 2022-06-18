@@ -9,8 +9,6 @@ import java.lang.reflect.Field;
  */
 public class MapColor {
 
-    private static byte BLACK = -1;
-
     /**
      * Deprecated function from bukkit.
      * <p>
@@ -34,7 +32,7 @@ public class MapColor {
      * Cached values
      */
     private static byte[] cache;
-    static {
+    public static void loadColors() {
         // Achieve map colors
         try { // from MapPalette
             Class<?> cls = Class.forName("org.bukkit.map.MapPalette");
@@ -115,7 +113,12 @@ public class MapColor {
         }
     }
 
+    static {
+        loadColors();
+    }
+
     public static byte matchColorFast(Color color) {
+        if(colors == null) loadColors();
         if(cache == null) {
             cache = new byte[0x1000];
             for(int i = 0x000; i <= 0xFFF; i++)

@@ -31,7 +31,6 @@ import com.jnngl.totalcomputers.sound.SoundWebSocketServer;
 import com.jnngl.totalcomputers.sound.discord.DiscordBot;
 import com.jnngl.totalcomputers.system.RemoteOS;
 import com.jnngl.totalcomputers.system.TotalOS;
-import com.jnngl.totalcomputers.system.Utils;
 import com.jnngl.totalcomputers.system.exception.AlreadyClientboundException;
 import com.jnngl.totalcomputers.system.exception.AlreadyRequestedException;
 import com.jnngl.totalcomputers.system.exception.TimedOutException;
@@ -107,6 +106,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     private Map<TotalOS, Player> executors;
     private Server server;
     private Map<Player, String> tokens;
+    private boolean allowServerboundComputers;
 
     /* *************** CODE SECTION: MOTION CAPTURE *************** */
 
@@ -647,8 +647,9 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         if(!config.isSet("server-port")) config.set("server-port", 29077);
         if(!config.isSet("server-name")) config.set("server-name", Bukkit.getServer().getName());
         if(!config.isSet("enable-encryption")) config.set("enable-encryption", true);
-        if(!config.isSet("allow-serverbound-computers")) config.set("allow-serverbound-computers", true); // TODO: Implement this
-        if(!config.isSet("allow-clientbound-computers")) config.set("allow-clientbound-computers", true); // TODO: Implement this
+        if(!config.isSet("allow-serverbound-computers")) config.set("allow-serverbound-computers", true);
+        if(!config.isSet("allow-clientbound-computers")) config.set("allow-clientbound-computers", true);
+        if(!config.isSet("client-download-link")) config.set("client-download-link", "https://github.com/JNNGL/TotalComputers-Client/releases");
         if(!config.isSet("craft.row1")) config.set("craft.row1", "   ");
         if(!config.isSet("craft.row2")) config.set("craft.row2", "   ");
         if(!config.isSet("craft.row3")) config.set("craft.row3", "   ");
@@ -657,6 +658,8 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         tasks = new HashMap<>();
         packets = new HashMap<>();
         loadComputers();
+
+        allowServerboundComputers = config.getBoolean("allow-serverbound-computers");
 
         if(config.getBoolean("allowCraft")) {
             do {
@@ -779,7 +782,13 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             logger.info("Starting TotalComputers server...");
             server = new Server();
             server.name = config.getString("server-name");
-            server.enableEncryption = computers.getBoolean("enable-encryption");
+            server.enableEncryption = config.getBoolean("enable-encryption");
+            if(!server.enableEncryption) {
+                logger.warning("!====================================!");
+                logger.warning("Encryption is disabled");
+                logger.warning("It is highly recommended to enable it!");
+                logger.warning("!====================================!");
+            }
             server.start(config.getString("server-ip"), config.getInt("server-port"));
             logger.info("Done.");
         }
@@ -817,8 +826,11 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers paste <text>" + ChatColor.WHITE + " - pastes text. (Keyboard alternative)");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers erase <all|numChars>" + ChatColor.WHITE + " - erases text. (Keyboard alternative)");
                     sender.sendMessage(ChatColor.GOLD + "/totalcomputers reload" + ChatColor.WHITE + " - reloads all configuration files.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers token reset" + ChatColor.WHITE + " - resets TotalComputers client token");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers token - prints your TotalComputers client token");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers token reset" + ChatColor.WHITE + " - resets TotalComputers client token.");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers token - prints your TotalComputers client token.");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers client - info about TotalComputers client.");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers client bind <name> - binds computers to client.");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers client unbind <name> - unbinds clientbound computer.");
                 }
                 else if(args[0].equalsIgnoreCase("sound")) { // Sound subcommand
                     String link;
@@ -847,6 +859,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                                 "successfully reloaded.");
                     }
                     else sender.sendMessage(replyPrefix + ChatColor.RED   + "Something went wrong!");
+                    sender.sendMessage(replyPrefix + ChatColor.BLUE + "Note: To reload discord bot and server settings you need to restart server");
                 }
                 else if(args[0].equalsIgnoreCase("paste")) { // Paste subcommand
                     if(!sender.hasPermission("totalcomputers.use")) {
@@ -990,11 +1003,23 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         sender.sendMessage(replyPrefix + ChatColor.GREEN + "Computer with name '"+args[1]+"' successfully created!");
                         decreaseUnregComputers(player);
                         addOwner(player, args[1]);
+                        if(!allowServerboundComputers) {
+                            sender.sendMessage(replyPrefix + ChatColor.GOLD + "Serverbound computers are disabled on this server, you need to bind this computer to client");
+                            sender.sendMessage(replyPrefix + ChatColor.GOLD + "Type `/tcmp client' for more info");
+                        }
                     } else if(args.length > 2) {
                         sender.sendMessage(replyPrefix + ChatColor.RED + "Computer name cannot contain spaces!");
                     } else invalidUsage(sender);
                 }
                 else if(args[0].equalsIgnoreCase("client")) { // Client subcommand
+                    if(!config.getBoolean("enable-server")) {
+                        sender.sendMessage(replyPrefix+ChatColor.RED+"TotalComputers server is disabled on this server :(");
+                        return true;
+                    }
+                    if(!config.getBoolean("allow-clientbound-computers")) {
+                        sender.sendMessage(replyPrefix+ChatColor.RED+"Clientbound computers are disabled on this server");
+                        return true;
+                    }
                     if(args.length == 3) {
                         if(!sender.hasPermission("totalcomputers.manage.all")) {
                             if(!sender.hasPermission("totalcomputers.manage.crafted")
@@ -1042,7 +1067,15 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                             remote.destroy();
                             sender.sendMessage(replyPrefix+ChatColor.GREEN+"Destroyed clientbound computer.");
                         } else invalidUsage(sender);
-                    } else invalidUsage(sender);
+                    } else {
+                        sender.sendMessage(replyPrefix+ChatColor.GREEN+"1. Download TotalComputers client: "
+                                +ChatColor.BLUE+config.getString("client-download-link"));
+                        sender.sendMessage(replyPrefix+ChatColor.GREEN+"2. Generate token with /tcmp token");
+                        sender.sendMessage(replyPrefix+ChatColor.GREEN+"3. Run client and connect to this server");
+                        sender.sendMessage(replyPrefix+ChatColor.GRAY+"(Server port: "+config.get("server-port")+")");
+                        sender.sendMessage(replyPrefix+ChatColor.GREEN+"4. Use `/tcmp client bind <name>' command to bind computer to your client");
+                        sender.sendMessage(replyPrefix+ChatColor.GRAY+"Type `/tcmp help' to more commands");
+                    }
                 }
                 else if(args[0].equalsIgnoreCase("remove")) { // Remove subcommand
                     if(args.length == 2) {
@@ -1557,7 +1590,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      */
     private void removeComputer(String name) {
         RemoteOS remote = RemoteOS.fromName(name);
-        if(name != null) {
+        if(remote != null) {
             remote.destroy();
         }
         stopCapture(systems.get(name));
@@ -1869,7 +1902,9 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         Object screen;
                         RemoteOS remote = RemoteOS.fromName(os.name);
                         if(remote != null) screen = remote.getBuffer();
-                        else screen = os.renderFrame();
+                        else if(allowServerboundComputers) screen = os.renderFrame();
+                        else return;
+
                         if(screen == null) throw new Exception("Failed to render screen");
 
                         Object[] framePacket = packets.get(os).get();
@@ -1948,7 +1983,8 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                                 if(remote != null) remote.sendTouchEvent(absX + inputInfo.x(), absY + inputInfo.y(),
                                         inputInfo.interactType(),
                                         inputInfo.player().hasPermission("totalcomputers.admin"));
-                                else os.processTouch(absX + inputInfo.x(), absY + inputInfo.y(),
+                                else if(allowServerboundComputers)
+                                    os.processTouch(absX + inputInfo.x(), absY + inputInfo.y(),
                                         inputInfo.interactType(),
                                         inputInfo.player().hasPermission("totalcomputers.admin"));
                                 executors.remove(os);
