@@ -43,11 +43,16 @@ public class PacketHandler extends ChannelDuplexHandler {
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
+                if(!ctx.channel().isActive()) {
+                    cancel();
+                    return;
+                }
                 if(unhandledPings >= 2) {
                     ClientboundDisconnectPacket s2c_disconnect = new ClientboundDisconnectPacket();
                     s2c_disconnect.reason = "Timed out";
                     ctx.channel().writeAndFlush(s2c_disconnect);
                     ctx.channel().disconnect();
+                    cancel();
                     return;
                 }
                 unhandledPings++;
