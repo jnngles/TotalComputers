@@ -22,7 +22,7 @@ public class ScreenCapture extends WindowApplication {
         ApplicationHandler.open(ScreenCapture.class, args[0]);
     }
 
-    private SC_AppState state;
+    public SC_AppState state;
 
     /*
         HWND -> HANDLE -> PVOID -> void* --> ByteBuffer
@@ -30,8 +30,8 @@ public class ScreenCapture extends WindowApplication {
      */
 
     public native ByteBuffer[] win32applications(); // HWND win32applications();
-    public native ByteBuffer win32screenScreenshot(); // void* win32screenScreenshot();
-    public native ByteBuffer win32appScreenshot(ByteBuffer hwnd); // void* win32appScreenshot(HWND hwnd);
+    public native ByteBuffer win32screenScreenshot(int[] width, int[] height); // void* win32screenScreenshot(int* width, int* height);
+    public native ByteBuffer win32appScreenshot(ByteBuffer hwnd, int[] width, int[] height); // void* win32appScreenshot(HWND hwnd, int* width, int* height);
     public native String win32appName(ByteBuffer hwnd); // const char* win32appName(HWND hwnd);
 
     public ScreenCapture(TotalOS os, String path) {

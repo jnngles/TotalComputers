@@ -18,18 +18,18 @@ JNIEXPORT jobjectArray JNICALL Java_com_jnngl_misc_ScreenCapture_win32applicatio
 /*
  * Class:     com_jnngl_misc_ScreenCapture
  * Method:    win32screenScreenshot
- * Signature: ()Ljava/nio/ByteBuffer;
+ * Signature: ([I[I)Ljava/nio/ByteBuffer;
  */
 JNIEXPORT jobject JNICALL Java_com_jnngl_misc_ScreenCapture_win32screenScreenshot
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jintArray, jintArray);
 
 /*
  * Class:     com_jnngl_misc_ScreenCapture
  * Method:    win32appScreenshot
- * Signature: (Ljava/nio/ByteBuffer;)Ljava/nio/ByteBuffer;
+ * Signature: (Ljava/nio/ByteBuffer;[I[I)Ljava/nio/ByteBuffer;
  */
 JNIEXPORT jobject JNICALL Java_com_jnngl_misc_ScreenCapture_win32appScreenshot
-  (JNIEnv *, jobject, jobject);
+  (JNIEnv *, jobject, jobject, jintArray, jintArray);
 
 /*
  * Class:     com_jnngl_misc_ScreenCapture

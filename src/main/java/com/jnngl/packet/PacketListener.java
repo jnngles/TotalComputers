@@ -49,26 +49,49 @@ public class PacketListener {
     }
 
     private static Channel getPlayerChannel(Object entityPlayer) {
-        try {
-            Object playerConnection;
+        Object playerConnection = null;
+        for(Field f : entityPlayer.getClass().getDeclaredFields()) {
             try {
-                playerConnection = entityPlayer.getClass().getField("playerConnection").get(entityPlayer);
-            } catch (Throwable e) {
-                playerConnection = entityPlayer.getClass().getField("b").get(entityPlayer);
+                if (f.getType().getSimpleName().equals("PlayerConnection")) {
+                    f.setAccessible(true);
+                    playerConnection = f.get(entityPlayer);
+                    break;
+                }
+            } catch (Throwable e2) {
+                System.err.println(" -> " + e2.getMessage());
             }
-            Object networkManager;
-            try {
-                networkManager = playerConnection.getClass().getField("networkManager").get(playerConnection);
-            } catch (Throwable e) {
-                networkManager = playerConnection.getClass().getField("a").get(playerConnection);
-            }
-            for(Field field : networkManager.getClass().getFields()) {
-                if(field.get(networkManager) instanceof Channel)
-                    return (Channel)field.get(networkManager);
-            }
-        } catch (Throwable e) {
-            System.err.println(" -> "+e.getMessage());
         }
+        if(playerConnection == null) {
+            System.err.println("Unable to find player connection");
+            return null;
+        }
+        Object networkManager = null;
+        for(Field f : playerConnection.getClass().getDeclaredFields()) {
+            if(f.getType().getSimpleName().contains("NetworkManager")) {
+                try {
+                    f.setAccessible(true);
+                    networkManager = f.get(playerConnection);
+                    break;
+                } catch (Throwable e2) {
+                    System.err.println(" -> "+e2.getMessage());
+                }
+            }
+        }
+        if(networkManager == null) {
+            System.err.println("Unable to find network manager");
+            return null;
+        }
+        for(Field field : networkManager.getClass().getDeclaredFields()) {
+            try {
+                field.setAccessible(true);
+                if (field.get(networkManager) instanceof Channel
+                        || (field.getType().getName().contains("netty") && field.getType().getName().contains("Channel")))
+                    return (Channel) field.get(networkManager);
+            } catch (Throwable e) {
+                System.err.println(" -> "+e.getMessage());
+            }
+        }
+        System.err.println("Unable to find player channel");
         return null;
     }
 
@@ -103,7 +126,8 @@ public class PacketListener {
         };
 
         try {
-            ChannelPipeline pipeline = getPlayerChannel(CraftPlayer$getHandle.invoke(player)).pipeline();
+            Object entityPlayer = CraftPlayer$getHandle.invoke(player);
+            ChannelPipeline pipeline = getPlayerChannel(entityPlayer).pipeline();
             pipeline.addBefore("packet_handler", player.getName(), channelDuplexHandler);
         } catch (Throwable e) {
             System.err.println("Failed to access channel -> "+e.getMessage());

@@ -20,15 +20,30 @@ JNIEXPORT jobjectArray JNICALL Java_com_jnngl_misc_ScreenCapture_win32applicatio
 }
 
 JNIEXPORT jobject JNICALL Java_com_jnngl_misc_ScreenCapture_win32screenScreenshot
-(JNIEnv*, jobject) {
+(JNIEnv*, jobject, jintArray, jintArray) {
 	// TODO: Implement this
 	return 0;
 }
 
 JNIEXPORT jobject JNICALL Java_com_jnngl_misc_ScreenCapture_win32appScreenshot
-(JNIEnv*, jobject, jobject) {
-	// TODO: Implement this
-	return 0;
+(JNIEnv* env, jobject, jobject hwnd_buf, jintArray jw, jintArray jh) {
+	HWND hwnd = (HWND)env->GetDirectBufferAddress(hwnd_buf);
+	RECT rc;
+	GetClientRect(hwnd, &rc);
+	jint width = rc.right - rc.left;
+	jint height = rc.bottom - rc.top;
+	HDC hdc = GetDC(hwnd);
+	HDC compatibleDC = CreateCompatibleDC(hdc);
+	HBITMAP hbmp = CreateCompatibleBitmap(hdc, width, height);
+	SelectObject(compatibleDC, hbmp);
+	DeleteDC(compatibleDC);
+	ReleaseDC(NULL, hdc);
+	PrintWindow(hwnd, compatibleDC, PW_CLIENTONLY);
+	char* data = (char*)calloc((size_t)3 * width * height, 1);
+	GetBitmapBits(hbmp, 3 * width * height, data);
+	env->SetIntArrayRegion(jw, 0, 1, &width);
+	env->SetIntArrayRegion(jh, 0, 1, &height);
+	return env->NewDirectByteBuffer(data, (size_t)3 * width * height);
 }
 
 JNIEXPORT jstring JNICALL Java_com_jnngl_misc_ScreenCapture_win32appName

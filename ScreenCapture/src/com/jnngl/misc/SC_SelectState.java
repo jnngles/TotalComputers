@@ -12,7 +12,7 @@ import java.util.List;
 
 public class SC_SelectState extends SC_AppState {
 
-    private final List<ByteBuffer> hwnds = new ArrayList<ByteBuffer>();
+    private final List<ByteBuffer> hwnds = new ArrayList<>();
     private final Button startBtn;
     private final ElementList variants;
 
@@ -29,6 +29,13 @@ public class SC_SelectState extends SC_AppState {
             hwnds.add(hwnd);
             variants.addEntry(name);
         }
+        startBtn.registerClickEvent(() -> {
+            if(variants.getSelectedIndex() < 0) return;
+            SC_CaptureState state = new SC_CaptureState(application);
+            if(variants.getSelectedIndex() > 0)
+                state.setHWND(hwnds.get(variants.getSelectedIndex()-1));
+            application.state = state;
+        });
     }
 
     @Override
