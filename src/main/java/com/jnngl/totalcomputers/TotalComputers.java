@@ -137,7 +137,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         }
         if(targets.containsKey(os)) {
             logger.warning("Motion capture is busy.");
-            executors.get(os).sendMessage(replyPrefix + ChatColor.RED + targets.get(os).target.getName() + " is already using this feature on this computer.");
+            executors.get(os).sendMessage(replyPrefix + ChatColor.RED + targets.get(os).target.getName() + Localization.get(2));
             return false;
         }
         if(desc.requiresGazeDirectionCapture() && !getCapabilities().supportsGaveDirectionCapture()) {
@@ -173,15 +173,15 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         targets.put(os, new CaptureTarget(desc, target));
         locked.put(target, os);
 
-        target.sendMessage(replyPrefix + ChatColor.BLUE + "You are now using motion capture!");
-        target.sendMessage(replyPrefix + ChatColor.BLUE + "Configuration: ");
-        target.sendMessage(replyPrefix + ChatColor.BLUE + "  Movement: " + (desc.requiresMovementCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
-        target.sendMessage(replyPrefix + ChatColor.BLUE + "  Gaze: " + (desc.requiresGazeDirectionCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
-        target.sendMessage(replyPrefix + ChatColor.BLUE + "  Jump: " + (desc.requiresJumpCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
-        target.sendMessage(replyPrefix + ChatColor.BLUE + "  Sneak: " + (desc.requiresSneakCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
-        target.sendMessage(replyPrefix + ChatColor.BLUE + "  Slot: " + (desc.requiresSlotCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
-        target.sendMessage(replyPrefix + ChatColor.BLUE + "  Item Drop: " + (desc.requiresItemDropCapture()? ChatColor.GREEN+"Yes" : ChatColor.RED+"No"));
-        target.sendMessage(replyPrefix + ChatColor.BLUE + "Type "+ChatColor.GREEN+"/tcmp release"+ChatColor.BLUE+" to stop it");
+        target.sendMessage(replyPrefix + ChatColor.BLUE + Localization.get(3));
+        target.sendMessage(replyPrefix + ChatColor.BLUE + Localization.get(4));
+        target.sendMessage(replyPrefix + ChatColor.BLUE + Localization.get(5) + (desc.requiresMovementCapture()? ChatColor.GREEN+Localization.get(13) : ChatColor.RED+Localization.get(14)));
+        target.sendMessage(replyPrefix + ChatColor.BLUE + Localization.get(6) + (desc.requiresGazeDirectionCapture()? ChatColor.GREEN+Localization.get(13) : ChatColor.RED+Localization.get(14)));
+        target.sendMessage(replyPrefix + ChatColor.BLUE + Localization.get(7) + (desc.requiresJumpCapture()? ChatColor.GREEN+Localization.get(13) : ChatColor.RED+Localization.get(14)));
+        target.sendMessage(replyPrefix + ChatColor.BLUE + Localization.get(8) + (desc.requiresSneakCapture()? ChatColor.GREEN+Localization.get(13) : ChatColor.RED+Localization.get(14)));
+        target.sendMessage(replyPrefix + ChatColor.BLUE + Localization.get(9) + (desc.requiresSlotCapture()? ChatColor.GREEN+Localization.get(13) : ChatColor.RED+Localization.get(14)));
+        target.sendMessage(replyPrefix + ChatColor.BLUE + Localization.get(10) + (desc.requiresItemDropCapture()? ChatColor.GREEN+Localization.get(13) : ChatColor.RED+Localization.get(14)));
+        target.sendMessage(replyPrefix + ChatColor.BLUE + Localization.get(11)+ChatColor.GREEN+"/tcmp release"+ChatColor.BLUE+Localization.get(12));
 
         Bukkit.getScheduler().runTask(this, () -> {
             Arrow arrow = target.getWorld().spawn(target.getLocation(), Arrow.class);
@@ -312,7 +312,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             return true;
         }
         logger.warning("Motion capture is busy.");
-        executors.get(os).sendMessage(replyPrefix + ChatColor.RED + targets.get(os).target.getName() + " is already using this feature on this computer.");
+        executors.get(os).sendMessage(replyPrefix + ChatColor.RED + targets.get(os).target.getName() + Localization.get(15));
         return false;
     }
 
@@ -345,7 +345,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             vehicle.remove();
         }
         target.sendMessage(replyPrefix + ChatColor.BLUE +
-                "You are no longer using the capture feature.");
+                Localization.get(16));
         locked.remove(target);
         targets.remove(os);
     }
@@ -564,6 +564,11 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         computers = configManager.getFileConfig("computers.yml");
         players = configManager.getFileConfig("players.yml");
         delay = config.getInt("delay-ticks");
+        String locale = config.getString("locale");
+        if(locale == null) return;
+        if(new Locale("ru").getLanguage().equals(new Locale(locale).getLanguage()))
+            Localization.init(new Localization.HeccrbqZpsr());
+        else Localization.init(new Localization.EnglishLang());
     }
 
     /**
@@ -639,6 +644,8 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         loadConfigs();
         if(!config.isSet("delay-ticks")) config.set("delay-ticks", 1);
         delay = config.getInt("delay-ticks");
+        if(!config.isSet("locale")) config.set("locale",
+                Locale.getDefault().getLanguage().equals(new Locale("ru").getLanguage())? "ru" : "en");
         if(!config.isSet("selection")) config.set("selection", true);
         if(!config.isSet("allowCraft")) config.set("allowCraft", false);
         if(!config.isSet("discord_bot_token")) config.set("discord_bot_token", "yourdiscordbottoken");
@@ -656,8 +663,14 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         if(!config.isSet("craft.row3")) config.set("craft.row3", "   ");
         if(!config.isSet("craft.ingredients")) config.set("craft.ingredients", new ArrayList<String>());
         configManager.saveAllConfigs(true);
+
         tasks = new HashMap<>();
         packets = new HashMap<>();
+
+        if(new Locale("ru").getLanguage().equals(new Locale(config.getString("locale")).getLanguage()))
+            Localization.init(new Localization.HeccrbqZpsr());
+        else Localization.init(new Localization.EnglishLang());
+
         loadComputers();
 
         allowServerboundComputers = config.getBoolean("allow-serverbound-computers");
@@ -736,12 +749,12 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                 }
                 ItemStack result = new ItemStack(expBottle, 1);
                 ItemMeta meta = result.getItemMeta();
-                meta.setDisplayName("Computer");
+                meta.setDisplayName(Localization.get(122));
                 List<String> lore = new ArrayList<>();
-                lore.add("Now you can create your own computer :D");
-                lore.add("1. /tcmp wand");
-                lore.add("2. Select area");
-                lore.add("3. /tcmp create <name>");
+                lore.add(Localization.get(123));
+                lore.add(Localization.get(124));
+                lore.add(Localization.get(125));
+                lore.add(Localization.get(126));
                 meta.setLore(lore);
                 result.setItemMeta(meta);
 
@@ -813,28 +826,28 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         if(sender instanceof Player) {
             if(command.getName().equalsIgnoreCase("totalcomputers")) {
                 if(!sender.hasPermission("totalcomputers.command.totalcomputers")) { // Check permissions
-                    sender.sendMessage(replyPrefix + ChatColor.RED + "You do not have enough permissions.");
+                    sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(37));
                     return true;
                 }
                 if(args.length == 0 || args[0].equalsIgnoreCase("help")) { // Help subcommand
-                    sender.sendMessage(replyPrefix + "Help [1/1]");
-                    sender.sendMessage(ChatColor.GOLD + "Aliases: " + ChatColor.WHITE  + " /tcomputers, /tcmp");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers help" + ChatColor.WHITE + " - show help menu.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers sound" + ChatColor.WHITE + " - creates a link to access audio.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers create <name>" + ChatColor.WHITE + " - creates new computer at area of wall selected with wand. (See also /totalcomputers selection)");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers remove <name>" + ChatColor.WHITE + " - removes computer.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers list" + ChatColor.WHITE + " - prints list of created computers.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers data <name>" + ChatColor.WHITE + " - prints information about computer.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers selection <enable|disable|toggle|state>" + ChatColor.WHITE + " - enables/disables/toggles/prints possibility of wall area selection with wand.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers wand" + ChatColor.WHITE + " - gives wand");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers paste <text>" + ChatColor.WHITE + " - pastes text. (Keyboard alternative)");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers erase <all|numChars>" + ChatColor.WHITE + " - erases text. (Keyboard alternative)");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers reload" + ChatColor.WHITE + " - reloads all configuration files.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers token reset" + ChatColor.WHITE + " - resets TotalComputers client token.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers token - prints your TotalComputers client token.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers client - info about TotalComputers client.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers client bind <name> - binds computers to client.");
-                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers client unbind <name> - unbinds clientbound computer.");
+                    sender.sendMessage(replyPrefix + Localization.get(17));
+                    sender.sendMessage(ChatColor.GOLD + Localization.get(18) + ChatColor.WHITE  + " /tcomputers, /tcmp");
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers help" + ChatColor.WHITE + Localization.get(19));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers sound" + ChatColor.WHITE + Localization.get(20));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers create <name>" + ChatColor.WHITE + Localization.get(21));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers remove <name>" + ChatColor.WHITE + Localization.get(22));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers list" + ChatColor.WHITE + Localization.get(23));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers data <name>" + ChatColor.WHITE + Localization.get(24));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers selection <enable|disable|toggle|state>" + ChatColor.WHITE + Localization.get(25));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers wand" + ChatColor.WHITE + Localization.get(26));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers paste <text>" + ChatColor.WHITE + Localization.get(27));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers erase <all|numChars>" + ChatColor.WHITE + Localization.get(28));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers reload" + ChatColor.WHITE + Localization.get(29));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers token reset" + ChatColor.WHITE + Localization.get(30));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers token" + ChatColor.WHITE + Localization.get(31));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers client" + ChatColor.WHITE + Localization.get(32));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers client bind <name>" + ChatColor.WHITE + Localization.get(33));
+                    sender.sendMessage(ChatColor.GOLD + "/totalcomputers client unbind <name>" + ChatColor.WHITE + Localization.get(34));
                 }
                 else if(args[0].equalsIgnoreCase("sound")) { // Sound subcommand
                     String link;
@@ -844,35 +857,33 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         link = "http://"+Bukkit.getServer().getIp()+":7254/index.html?name="+sender.getName()+"&sessionId="+(free_session++);
                         links.put((Player)sender, link);
                     }
-                    sender.sendMessage(replyPrefix + ChatColor.RED + "This subcommand is deprecated and highly not recommended to use! Use discord bot instead");
-                    sender.sendMessage(replyPrefix + ChatColor.GREEN + "Open this website in your browser: "+ChatColor.WHITE+link);
+                    sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(35));
+                    sender.sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(36)+ChatColor.WHITE+link);
                 }
                 else if(args[0].equalsIgnoreCase("reload")) { // Reload subcommand
                     if(!sender.hasPermission("totalcomputers.plugin.manage")) {
                         sender.sendMessage(replyPrefix + ChatColor.RED +
-                                "You do not have enough permissions!");
+                                Localization.get(37));
                         return true;
                     }
                     boolean success = configManager.reloadAllConfigs();
                     loadConfigs();
-                    sender.sendMessage(replyPrefix + ChatColor.GREEN + "Configuration files has been" +
-                            " successfully reloaded!");
+                    sender.sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(38));
                     if(success) {
                         loadComputers();
-                        sender.sendMessage(replyPrefix + ChatColor.GREEN + "All computers has been " +
-                                "successfully reloaded.");
+                        sender.sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(39));
                     }
-                    else sender.sendMessage(replyPrefix + ChatColor.RED   + "Something went wrong!");
-                    sender.sendMessage(replyPrefix + ChatColor.BLUE + "Note: To reload discord bot and server settings you need to restart the server");
+                    else sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(40));
+                    sender.sendMessage(replyPrefix + ChatColor.BLUE + Localization.get(41));
                 }
                 else if(args[0].equalsIgnoreCase("paste")) { // Paste subcommand
                     if(!sender.hasPermission("totalcomputers.use")) {
-                        sender.sendMessage(replyPrefix + ChatColor.GRAY + "You don't have enough permissions!");
+                        sender.sendMessage(replyPrefix + ChatColor.GRAY + Localization.get(42));
                         return true;
                     }
 
                     if(args.length == 1) {
-                        sender.sendMessage(replyPrefix + ChatColor.RED + "Nothing to paste.");
+                        sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(43));
                         return true;
                     }
                     StringBuilder toPaste = new StringBuilder();
@@ -888,7 +899,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                 }
                 else if(args[0].equalsIgnoreCase("erase")) { // Erase subcommand
                     if(!sender.hasPermission("totalcomputers.use")) {
-                        sender.sendMessage(replyPrefix + ChatColor.GRAY + "You don't have enough permissions!");
+                        sender.sendMessage(replyPrefix + ChatColor.GRAY + Localization.get(44));
                         return true;
                     }
 
@@ -905,7 +916,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         try {
                             os.keyboard.erase(Integer.parseInt(args[1]));
                         } catch (Throwable e) {
-                            sender.sendMessage(replyPrefix + ChatColor.RED + "`"+args[1]+"' is not a number.");
+                            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(45)+args[1]+Localization.get(46));
                         }
                     }
                     return true;
@@ -914,26 +925,26 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                     if(args.length >= 2) {
                         if(!sender.hasPermission("totalcomputers.plugin.manage")) {
                             sender.sendMessage(replyPrefix + ChatColor.RED +
-                                    "You do not have enough permissions!");
+                                    Localization.get(47));
                         }
                         if(args[1].equalsIgnoreCase("enable")) {
                             config.set("selection", true);
-                            sender.sendMessage(replyPrefix + "Selection using wand successfully enabled.");
+                            sender.sendMessage(replyPrefix + Localization.get(48));
                             configManager.saveConfig("config.yml");
                         }
                         else if(args[1].equalsIgnoreCase("disable")) {
                             config.set("selection", false);
-                            sender.sendMessage(replyPrefix + "Selection using wand successfully disabled.");
+                            sender.sendMessage(replyPrefix + Localization.get(49));
                             configManager.saveConfig("config.yml");
                         }
                         else if(args[1].equalsIgnoreCase("toggle")) {
                             boolean currentState;
                             config.set("selection", (currentState = !isSelectionEnabled()));
-                            sender.sendMessage(replyPrefix + "Selection using wand successfully " + (currentState? "enabled" : "disabled") + '.');
+                            sender.sendMessage(replyPrefix + Localization.get(50) + (currentState? Localization.get(51) : Localization.get(52)) + '.');
                             configManager.saveConfig("config.yml");
                         }
                         else if(args[1].equalsIgnoreCase("state")) {
-                            sender.sendMessage(replyPrefix + "Selection using wand is currently " + (config.getBoolean("selection")? "enabled" : "disabled") + '.');
+                            sender.sendMessage(replyPrefix + Localization.get(53) + (config.getBoolean("selection")? Localization.get(54) : Localization.get(55)) + '.');
                         }
                         else invalidUsage(sender);
                     } else invalidUsage(sender);
@@ -944,46 +955,46 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         if(!sender.hasPermission("totalcomputers.manage.all")) {
                             if(!sender.hasPermission("totalcomputers.manage.crafted")) {
                                 sender.sendMessage(replyPrefix + ChatColor.RED +
-                                        "You do not have enough permissions!");
+                                        Localization.get(56));
                                 return true;
                             }
                             if(getUnregComputers(player) <= 0) {
                                 sender.sendMessage(replyPrefix + ChatColor.RED +
-                                        "You have placed all your !");
+                                        Localization.get(57));
                                 return true;
                             }
                         }
                         if(!areas.containsKey(player)) {
-                            sender.sendMessage(replyPrefix + ChatColor.RED + "You have not selected area or it is invalid. Select it with wand. Make sure area selection is enabled.");
+                            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(58));
                             return true;
                         }
                         SelectionArea area = areas.get(player);
                         if((float)area.width / (float)area.height < 4f/3f) {
-                            sender.sendMessage(replyPrefix + ChatColor.RED + "Aspect ratio should be at least 4:3");
+                            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(59));
                             return true;
                         }
                         if(area.width > 16) {
-                            sender.sendMessage(replyPrefix + ChatColor.RED + "Maximum width in blocks is 16.");
+                            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(60));
                             return true;
                         }
                         if(area.height > 9) {
-                            sender.sendMessage(replyPrefix + ChatColor.RED + "Maximum height in blocks is 9.");
+                            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(61));
                             return true;
                         }
                         if(area.width < 4) {
-                            sender.sendMessage(replyPrefix + ChatColor.RED + "Minimum width in blocks is 4.");
+                            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(62));
                             return true;
                         }
                         if(area.height < 3) {
-                            sender.sendMessage(replyPrefix + ChatColor.RED + "Minimum height in blocks is 3.");
+                            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(63));
                             return true;
                         }
                         if(area.axis == SelectionArea.Axis.Y) {
-                            sender.sendMessage(replyPrefix + ChatColor.RED + "Computer cannot be placed on horizontal surface.");
+                            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(64));
                             return true;
                         }
                         if(registeredComputers.contains(args[1])) {
-                            sender.sendMessage(replyPrefix + ChatColor.RED + "Computer with this name already exists.");
+                            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(65));
                             return true;
                         }
 
@@ -1004,24 +1015,24 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         computers.set("computers.names", registeredComputers);
                         configManager.saveConfig("computers.yml", true);
                         initComputer(args[1]);
-                        sender.sendMessage(replyPrefix + ChatColor.GREEN + "Computer with name '"+args[1]+"' successfully created!");
+                        sender.sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(66)+args[1]+Localization.get(67));
                         decreaseUnregComputers(player);
                         addOwner(player, args[1]);
                         if(!allowServerboundComputers) {
-                            sender.sendMessage(replyPrefix + ChatColor.GOLD + "Serverbound computers are disabled on this server, you need to bind this computer to client");
-                            sender.sendMessage(replyPrefix + ChatColor.GOLD + "Type `/tcmp client' for more info");
+                            sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(68));
+                            sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(69));
                         }
                     } else if(args.length > 2) {
-                        sender.sendMessage(replyPrefix + ChatColor.RED + "Computer name cannot contain spaces!");
+                        sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(70));
                     } else invalidUsage(sender);
                 }
                 else if(args[0].equalsIgnoreCase("client")) { // Client subcommand
                     if(!config.getBoolean("enable-server")) {
-                        sender.sendMessage(replyPrefix+ChatColor.RED+"TotalComputers server is disabled on this server :(");
+                        sender.sendMessage(replyPrefix+ChatColor.RED+Localization.get(71));
                         return true;
                     }
                     if(!config.getBoolean("allow-clientbound-computers")) {
-                        sender.sendMessage(replyPrefix+ChatColor.RED+"Clientbound computers are disabled on this server");
+                        sender.sendMessage(replyPrefix+ChatColor.RED+Localization.get(72));
                         return true;
                     }
                     if(args.length == 3) {
@@ -1029,56 +1040,56 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                             if(!sender.hasPermission("totalcomputers.manage.crafted")
                                     || !playerOwns((Player) sender, args[2])) {
                                 sender.sendMessage(replyPrefix + ChatColor.RED +
-                                        "You do not have enough permissions!");
+                                        Localization.get(73));
                                 return true;
                             }
                         }
                         if(!registeredComputers.contains(args[2])) {
-                            sender.sendMessage(replyPrefix + ChatColor.RED + "There is no such computer with name '"+args[1]+"'.");
+                            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(74)+args[2]+Localization.get(75));
                             return true;
                         }
                         if(args[1].equalsIgnoreCase("bind")) {
                             String token = tokens.get((Player) sender);
                             if(token == null) {
                                 sender.sendMessage(replyPrefix+ChatColor.RED+
-                                        "You should generate token and connect client before running this command.");
+                                        Localization.get(76));
                                 return true;
                             }
                             TotalOS serverbound = systems.get(args[2]);
                             new Thread(() -> {
                                 try {
-                                    sender.sendMessage(replyPrefix + ChatColor.GREEN + "Sending request... (This may take some time)");
+                                    sender.sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(77));
                                     RemoteOS os = RemoteOS.requestCreation(server, token,
                                             serverbound.name, serverbound.screenWidth, serverbound.screenHeight);
-                                    sender.sendMessage(replyPrefix + ChatColor.GREEN + "Started clientbound computer.");
+                                    sender.sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(152));
                                 } catch (AlreadyRequestedException e) {
-                                    sender.sendMessage(replyPrefix + ChatColor.RED + "Request has already been sent.");
+                                    sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(78));
                                 } catch (TimedOutException e) {
-                                    sender.sendMessage(replyPrefix + ChatColor.RED + "Timed out.");
+                                    sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(79));
                                 } catch (InvalidTokenException e) {
-                                    sender.sendMessage(replyPrefix + ChatColor.RED + "Invalid token. (Is there any connected clients?)");
+                                    sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(80));
                                 } catch (AlreadyClientboundException e) {
-                                    sender.sendMessage(replyPrefix + ChatColor.RED + "This computer is already clientbound.");
+                                    sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(81));
                                 }
                             }).start();
                             return true;
                         } else if(args[1].equalsIgnoreCase("unbind")) {
                             RemoteOS remote = RemoteOS.fromName(args[2]);
                             if(remote == null) {
-                                sender.sendMessage(replyPrefix+ChatColor.RED+"There is no such clientbound computer.");
+                                sender.sendMessage(replyPrefix+ChatColor.RED+Localization.get(82));
                                 return true;
                             }
                             remote.destroy();
-                            sender.sendMessage(replyPrefix+ChatColor.GREEN+"Destroyed clientbound computer.");
+                            sender.sendMessage(replyPrefix+ChatColor.GREEN+Localization.get(83));
                         } else invalidUsage(sender);
                     } else {
-                        sender.sendMessage(replyPrefix+ChatColor.GREEN+"1. Download TotalComputers client: "
+                        sender.sendMessage(replyPrefix+ChatColor.GREEN+Localization.get(84)
                                 +ChatColor.BLUE+config.getString("client-download-link"));
-                        sender.sendMessage(replyPrefix+ChatColor.GREEN+"2. Generate token with /tcmp token");
-                        sender.sendMessage(replyPrefix+ChatColor.GREEN+"3. Run client and connect to this server");
-                        sender.sendMessage(replyPrefix+ChatColor.GRAY+"(Server port: "+config.get("server-port")+")");
-                        sender.sendMessage(replyPrefix+ChatColor.GREEN+"4. Use `/tcmp client bind <name>' command to bind computer to your client");
-                        sender.sendMessage(replyPrefix+ChatColor.GRAY+"Type `/tcmp help' to more commands");
+                        sender.sendMessage(replyPrefix+ChatColor.GREEN+Localization.get(85));
+                        sender.sendMessage(replyPrefix+ChatColor.GREEN+Localization.get(86));
+                        sender.sendMessage(replyPrefix+ChatColor.GRAY+Localization.get(87)+config.get("server-port")+Localization.get(88));
+                        sender.sendMessage(replyPrefix+ChatColor.GREEN+Localization.get(89));
+                        sender.sendMessage(replyPrefix+ChatColor.GRAY+Localization.get(90));
                     }
                 }
                 else if(args[0].equalsIgnoreCase("remove")) { // Remove subcommand
@@ -1087,31 +1098,30 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                             if(!sender.hasPermission("totalcomputers.manage.crafted")
                                     || !playerOwns((Player) sender, args[1])) {
                                 sender.sendMessage(replyPrefix + ChatColor.RED +
-                                        "You do not have enough permissions!");
+                                        Localization.get(91));
                                 return true;
                             }
                         }
                         if(!registeredComputers.contains(args[1])) {
-                            sender.sendMessage(replyPrefix + ChatColor.RED + "There is no such computer with name '"+args[1]+"'.");
+                            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(92)+args[1]+Localization.get(93));
                             return true;
                         }
                         removeComputer(args[1]);
                         computers.set("computers."+args[1], null);
                         computers.set("computers.names", registeredComputers);
                         configManager.saveConfig("computers.yml", true);
-                        sender.sendMessage(replyPrefix + ChatColor.GREEN + "Computer with name '"+args[1]+"' successfully removed!");
+                        sender.sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(94)+args[1]+Localization.get(95));
                         increaseUnregComputers((Player) sender);
                         removeOwner((Player) sender, args[1]);
                     } else if(args.length > 2) {
-                        sender.sendMessage(replyPrefix + ChatColor.RED + "Computer name cannot contain spaces!");
+                        sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(96));
                     } else invalidUsage(sender);
                 }
                 else if(args[0].equalsIgnoreCase("list")) { // List subcommand
                     List<String> comps;
                     if(!sender.hasPermission("totalcomputers.manage.all")) {
                         if(!sender.hasPermission("totalcomputers.manage.crafted")) {
-                            sender.sendMessage(replyPrefix + ChatColor.RED + "You do not have enough" +
-                                    " permissions!");
+                            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(97));
                             return true;
                         }
 
@@ -1121,20 +1131,20 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         }
                     } else comps = registeredComputers;
                     if(comps.isEmpty()) {
-                        sender.sendMessage(replyPrefix + ChatColor.GREEN + "None.");
+                        sender.sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(98));
                         return true;
                     }
                     StringBuilder list = new StringBuilder();
                     for(String name : comps) list.append(name).append(", ");
                     list.delete(list.length()-2, list.length()-1);
-                    sender.sendMessage(replyPrefix + ChatColor.GREEN + "Available computers: " + ChatColor.RESET + list);
+                    sender.sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(99) + ChatColor.RESET + list);
                 }
                 else if(args[0].equalsIgnoreCase("wand")) { // Wand subcommand
                     ItemStack wand = new ItemStack(Material.STICK, 1);
                     ItemMeta meta = wand.getItemMeta();
                     meta.setDisplayName("TotalComputers");
                     List<String> lore = new ArrayList<>();
-                    lore.add("Select area");
+                    lore.add(Localization.get(153));
                     meta.setLore(lore);
                     wand.setItemMeta(meta);
                     ((Player) sender).getInventory().addItem(wand);
@@ -1153,7 +1163,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         String oldToken = tokens.getOrDefault((Player)sender, null);
                         if(oldToken != null)
                             server.unregisterToken(oldToken);
-                        if(tokens.size() >= Integer.MAX_VALUE) token = ChatColor.RED+"There is no free tokens :(";
+                        if(tokens.size() >= Integer.MAX_VALUE) token = ChatColor.RED+Localization.get(154);
                         else {
                             while (true) {
                                 token = RandomStringUtils.randomAlphanumeric(6);
@@ -1171,7 +1181,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                             tokens.put((Player)sender, token);
                         }
                     } else token = tokens.get((Player)sender);
-                    sender.sendMessage(replyPrefix + ChatColor.GREEN + "Your token is "+
+                    sender.sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(100)+
                             ChatColor.LIGHT_PURPLE+token);
                 }
                 else if(args[0].equalsIgnoreCase("data")) { // Data subcommand
@@ -1179,40 +1189,39 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         if(!sender.hasPermission("totalcomputers.manage.all")) {
                             if(!sender.hasPermission("totalcomputers.manage.crafted")
                                     || !playerOwns((Player) sender, args[1])) {
-                                sender.sendMessage(replyPrefix + ChatColor.RED +
-                                        "You do not have enough permissions!");
+                                sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(101));
                                 return true;
                             }
                         }
                         if(!registeredComputers.contains(args[1])) {
-                            sender.sendMessage(replyPrefix + ChatColor.RED + "There is no such computer with name '"+args[1]+"'.");
+                            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(102)+args[1]+Localization.get(103));
                             return true;
                         }
                         SelectionArea area = computersPhysicalData.get(args[1]);
-                        sender.sendMessage(replyPrefix + "Information:");
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "Name: " + ChatColor.RESET + args[1]);
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "First Corner Position: " + ChatColor.RESET);
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "   X: " + ChatColor.RESET + area.firstPos.getBlockX());
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "   Y: " + ChatColor.RESET + area.firstPos.getBlockY());
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "   Z: " + ChatColor.RESET + area.firstPos.getBlockZ());
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "Second Corner Position: " + ChatColor.RESET);
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "   X: " + ChatColor.RESET + area.secondPos.getBlockX());
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "   Y: " + ChatColor.RESET + area.secondPos.getBlockY());
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "   Z: " + ChatColor.RESET + area.secondPos.getBlockZ());
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "Axis: " + ChatColor.RESET + area.axis);
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "Facing Direction: " + ChatColor.RESET + area.direction);
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "Width: " + ChatColor.RESET + area.width);
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "Height: " + ChatColor.RESET + area.height);
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "Area: " + ChatColor.RESET + area.area);
-                        sender.sendMessage(replyPrefix + ChatColor.GOLD + "World: " + ChatColor.RESET + area.firstPos.getWorld().getName());
+                        sender.sendMessage(replyPrefix + Localization.get(104));
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(105) + ChatColor.RESET + args[1]);
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(106) + ChatColor.RESET);
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(107) + ChatColor.RESET + area.firstPos.getBlockX());
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(108) + ChatColor.RESET + area.firstPos.getBlockY());
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(109) + ChatColor.RESET + area.firstPos.getBlockZ());
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(110) + ChatColor.RESET);
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(111) + ChatColor.RESET + area.secondPos.getBlockX());
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(112) + ChatColor.RESET + area.secondPos.getBlockY());
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(113) + ChatColor.RESET + area.secondPos.getBlockZ());
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(114) + ChatColor.RESET + area.axis);
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(115) + ChatColor.RESET + area.direction);
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(116) + ChatColor.RESET + area.width);
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(117) + ChatColor.RESET + area.height);
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(118) + ChatColor.RESET + area.area);
+                        sender.sendMessage(replyPrefix + ChatColor.GOLD + Localization.get(119) + ChatColor.RESET + area.firstPos.getWorld().getName());
                     } else if(args.length > 2) {
-                        sender.sendMessage(replyPrefix + ChatColor.RED + "Computer name cannot contain spaces!");
+                        sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(120));
                     } else invalidUsage(sender);
                 } else {
                     invalidUsage(sender);
                 }
             }
-        } else sender.sendMessage(replyPrefix + ChatColor.RED + "Only players can execute this command.");
+        } else sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(121));
         return true;
     }
 
@@ -1314,13 +1323,13 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         ItemMeta meta = result.getItemMeta();
         if(meta == null) return;
         String name = meta.getDisplayName();
-        if(!name.equals("Computer")) return;
+        if(!name.equals(Localization.get(122))) return;
         List<String> lore = meta.getLore();
         if(lore == null || lore.size() != 4) return;
-        if(!lore.get(0).equals("Now you can create your own computer :D")) return;
-        if(!lore.get(1).equals("1. /tcmp wand")) return;
-        if(!lore.get(2).equals("2. Select area")) return;
-        if(!lore.get(3).equals("3. /tcmp create <name>")) return;
+        if(!lore.get(0).equals(Localization.get(123))) return;
+        if(!lore.get(1).equals(Localization.get(124))) return;
+        if(!lore.get(2).equals(Localization.get(125))) return;
+        if(!lore.get(3).equals(Localization.get(126))) return;
         increaseUnregComputers(player);
         for(String msg : lore) player.sendMessage(replyPrefix + ChatColor.GREEN + msg);
     }
@@ -1347,7 +1356,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         if(!meta.getDisplayName().equals("TotalComputers")) return;
         List<String> lore = meta.getLore();
         if(lore == null || lore.size() != 1) return;
-        if(!lore.get(0).equals("Select area")) return;
+        if(!lore.get(0).equals(Localization.get(153))) return;
         Action action = event.getAction();
         Location loc, oldLoc = null;
         boolean displayArea = false;
@@ -1357,7 +1366,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             firstPoses.put(player, loc = event.getClickedBlock().getLocation());
             event.setCancelled(true);
             if(oldLoc == null || !oldLoc.equals(loc)) {
-                player.sendMessage(replyPrefix + ChatColor.LIGHT_PURPLE + "First position is set. (X: "+loc.getBlockX()+", Y: "+loc.getBlockY()+", Z: "+loc.getBlockZ()+")");
+                player.sendMessage(replyPrefix + ChatColor.LIGHT_PURPLE + Localization.get(127)+loc.getBlockX()+Localization.get(128)+loc.getBlockY()+Localization.get(129)+loc.getBlockZ()+Localization.get(130));
             }
             if(secondPoses.containsKey(player)) computeArea(player);
         } else if(action.equals(Action.RIGHT_CLICK_BLOCK)) {
@@ -1366,7 +1375,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             secondPoses.put(player, loc = event.getClickedBlock().getLocation());
             event.setCancelled(true);
             if(oldLoc == null || !oldLoc.equals(loc)) {
-                player.sendMessage(replyPrefix + ChatColor.LIGHT_PURPLE + "Second position is set. (X: "+loc.getBlockX()+", Y: "+loc.getBlockY()+", Z: "+loc.getBlockZ()+")");
+                player.sendMessage(replyPrefix + ChatColor.LIGHT_PURPLE + Localization.get(131)+loc.getBlockX()+Localization.get(132)+loc.getBlockY()+Localization.get(133)+loc.getBlockZ()+Localization.get(134));
             }
             if(firstPoses.containsKey(player)) computeArea(player);
         }
@@ -1504,13 +1513,13 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         }
 
         if(nearestD > 100) {
-            sender.sendMessage(replyPrefix + ChatColor.RED + "You are too far from the computer");
+            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(135));
             return null;
         }
 
         TotalOS os = systems.get(nearest);
         if(os.keyboard == null || !os.keyboard.isControlTaken()) {
-            sender.sendMessage(replyPrefix + ChatColor.RED + "Open keyboard first");
+            sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(136));
             return null;
         }
 
@@ -1678,9 +1687,9 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                         if(hasPerm && nHoldItem) {
                             unhandledInputs.add(new InputInfo(interactiveTiles.get(tile), subX, subY, interactType, entity));
                         } else if(!hasPerm) {
-                            entity.sendMessage(replyPrefix + ChatColor.GRAY + "You don't have enough permissions!");
+                            entity.sendMessage(replyPrefix + ChatColor.GRAY + Localization.get(137));
                         } else {
-                            entity.sendMessage(replyPrefix + ChatColor.GRAY + "You are trying to use the computer with an item in main hand!");
+                            entity.sendMessage(replyPrefix + ChatColor.GRAY + Localization.get(138));
                         }
                         return true;
                     }
@@ -1695,7 +1704,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      * @param sender Command executor
      */
     private void invalidUsage(CommandSender sender) {
-        sender.sendMessage(replyPrefix + ChatColor.RED + "Invalid usage! Use '/totalcomputers help' for information about commands.");
+        sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(139));
     }
 
     /**
@@ -1716,14 +1725,14 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         Location first = firstPoses.get(player);
         Location second = secondPoses.get(player);
         if(!first.getWorld().getName().equals(second.getWorld().getName())) {
-            player.sendMessage(replyPrefix + ChatColor.RED + "Positions are located in different worlds!");
+            player.sendMessage(replyPrefix + ChatColor.RED + Localization.get(140));
             return;
         }
         if (first.getBlockX() == second.getBlockX()) axis = SelectionArea.Axis.X;
         else if (first.getBlockY() == second.getBlockY()) axis = SelectionArea.Axis.Y;
         else if (first.getBlockZ() == second.getBlockZ()) axis = SelectionArea.Axis.Z;
         else {
-            player.sendMessage(replyPrefix + ChatColor.RED + "Selected area should be flat!");
+            player.sendMessage(replyPrefix + ChatColor.RED + Localization.get(141));
             return;
         }
 
@@ -1751,11 +1760,11 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         int area = width * height;
         areas.remove(player);
         if(area == 1) {
-            player.sendMessage(replyPrefix + ChatColor.RED + "Selected area cannot be 1*1.");
+            player.sendMessage(replyPrefix + ChatColor.RED + Localization.get(142));
             return;
         }
         areas.put(player, new SelectionArea(first, second, axis, direction, width, height, area));
-        player.sendMessage(replyPrefix + ChatColor.LIGHT_PURPLE + "Selected Area: [Direction: "+direction+", Area: "+area+" ("+width+"*"+height+")]");
+        player.sendMessage(replyPrefix + ChatColor.LIGHT_PURPLE + Localization.get(143)+direction+Localization.get(144)+area+Localization.get(145)+width+Localization.get(146)+height+Localization.get(147));
     }
 
     /**

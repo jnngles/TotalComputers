@@ -1,5 +1,6 @@
 package com.jnngl.totalcomputers.sound.discord;
 
+import com.jnngl.totalcomputers.Localization;
 import com.jnngl.totalcomputers.system.RequiresAPI;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -97,21 +98,21 @@ public class DiscordBot extends ListenerAdapter implements AudioSendHandler {
         if(messageText.equals("`join")) {
             if(!event.getGuild().getSelfMember().hasPermission(channel, Permission.VOICE_CONNECT)) {
                 message.addReaction("❌").queue();
-                channel.sendMessage("I don't have permissions to do that =(").queue();
+                channel.sendMessage(Localization.get(148)).queue();
                 return;
             }
 
             VoiceChannel voiceChannel = (VoiceChannel) event.getMember().getVoiceState().getChannel();
             if(voiceChannel == null) {
                 message.addReaction("❌").queue();
-                channel.sendMessage("You are not connected to a voice channel").queue();
+                channel.sendMessage(Localization.get(149)).queue();
                 return;
             }
 
             AudioManager audioManager = event.getGuild().getAudioManager();
             if(audioManager.isConnected()) {
                 message.addReaction("❌").queue();
-                channel.sendMessage("Already connected!").queue();
+                channel.sendMessage(Localization.get(150)).queue();
                 return;
             }
 
@@ -124,7 +125,7 @@ public class DiscordBot extends ListenerAdapter implements AudioSendHandler {
             VoiceChannel connected = (VoiceChannel) event.getGuild().getSelfMember().getVoiceState().getChannel();
             if(connected == null) {
                 message.addReaction("❌").queue();
-                channel.sendMessage("Uhh... I'm not connected!").queue();
+                channel.sendMessage(Localization.get(151)).queue();
                 return;
             }
 

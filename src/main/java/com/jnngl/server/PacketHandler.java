@@ -2,6 +2,7 @@ package com.jnngl.server;
 
 import com.jnngl.server.exception.InvalidTokenException;
 import com.jnngl.server.protocol.*;
+import com.jnngl.totalcomputers.Localization;
 import com.jnngl.totalcomputers.MapColor;
 import com.jnngl.totalcomputers.system.RemoteOS;
 import com.jnngl.totalcomputers.system.TotalOS;
@@ -120,7 +121,7 @@ public class PacketHandler extends ChannelDuplexHandler {
         Player player = token.player();
         s2c_connectionSuccess.name = player.getName();
         player.sendMessage(ChatColor.GOLD+"[TotalComputers] "+
-                ChatColor.GREEN+"Connected "+ctx.channel().remoteAddress());
+                ChatColor.GREEN+Localization.get(0)+ctx.channel().remoteAddress());
         ctx.channel().writeAndFlush(s2c_connectionSuccess);
         ClientboundPalettePacket s2c_palette = new ClientboundPalettePacket();
         if(MapColor.colors == null) MapColor.loadColors();
@@ -178,7 +179,7 @@ public class PacketHandler extends ChannelDuplexHandler {
         if(token != null) {
             server.getBoundToken(server.tokenFromChannel(ctx.channel())).player()
                     .sendMessage(ChatColor.GOLD+"[TotalComputers] "+
-                            ChatColor.RED+"Disconnected "+ctx.channel().remoteAddress());
+                            ChatColor.RED+Localization.get(1)+ctx.channel().remoteAddress());
             server.unboundToken(token);
         }
         RemoteOS.fromToken(token).forEach(RemoteOS::destroy);
