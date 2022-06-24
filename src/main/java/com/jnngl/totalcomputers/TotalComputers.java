@@ -863,7 +863,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                                 "successfully reloaded.");
                     }
                     else sender.sendMessage(replyPrefix + ChatColor.RED   + "Something went wrong!");
-                    sender.sendMessage(replyPrefix + ChatColor.BLUE + "Note: To reload discord bot and server settings you need to restart server");
+                    sender.sendMessage(replyPrefix + ChatColor.BLUE + "Note: To reload discord bot and server settings you need to restart the server");
                 }
                 else if(args[0].equalsIgnoreCase("paste")) { // Paste subcommand
                     if(!sender.hasPermission("totalcomputers.use")) {
