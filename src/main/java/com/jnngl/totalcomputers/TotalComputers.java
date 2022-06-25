@@ -845,13 +845,10 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             }
         } catch (IOException ignored) {}
 
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                loadComputers();
-                computersInitialized = true;
-            }
-        }, 10000);
+        Bukkit.getScheduler().scheduleSyncDelayedTask(this, () -> {
+            loadComputers();
+            computersInitialized = true;
+        }, 200);
     }
 
     /* *************** CODE SECTION: COMMANDS AND AUTOCOMPLETION *************** */
@@ -1295,6 +1292,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias,
                                       String[] args) {
+        if(!computersInitialized) return new ArrayList<>();
         List<String> variants = new ArrayList<>();
         if(!(sender instanceof Player player)) return variants;
         if(!sender.hasPermission("totalcomputers.command.totalcomputers")) return variants;
