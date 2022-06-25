@@ -618,6 +618,111 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         }
     }
 
+    private void createRecipe() {
+        try {
+            if (recipe != null) Bukkit.removeRecipe(recipe);
+        } catch (Throwable e) {
+            logger.warning("Unable to remove recipe");
+        }
+        if(config.getBoolean("allowCraft")) {
+            do {
+                String row1 = config.getString("craft.row1");
+                String row2 = config.getString("craft.row2");
+                String row3 = config.getString("craft.row3");
+                if (row1.trim().equals("") && row2.trim().equals("") && row3.trim().equals("")) {
+                    logger.log(Level.WARNING, "Crafting recipe is empty!");
+                    break;
+                }
+                List<String> raw = config.getStringList("craft.ingredients");
+
+                record Ingredient(char key, Material mat) {
+                }
+
+                List<Ingredient> ingredients = new ArrayList<>();
+
+                boolean isOK = true;
+
+                for (String line : raw) {
+                    String[] parts = line.split(" ");
+                    if (parts.length != 2) {
+                        logger.log(Level.WARNING, "Invalid ingredient data");
+                        logger.log(Level.WARNING, "Should be: '<key char> <material>'");
+                        isOK = false;
+                        break;
+                    }
+
+                    if (parts[0].length() != 1) {
+                        logger.log(Level.WARNING, "`" + parts[0] + "' is not a character!");
+                        isOK = false;
+                        break;
+                    }
+
+                    Material material = Material.matchMaterial(parts[1].replace('-', '_'));
+
+                    if (material == null) {
+                        logger.log(Level.WARNING, "Could not find material `" + parts[1] + "'!");
+                        isOK = false;
+                        break;
+                    }
+
+                    ingredients.add(new Ingredient(parts[0].charAt(0), material));
+                }
+
+                if (!isOK) break;
+
+                {
+                    String check = row1 + row2 + row3;
+                    for (char key : check.toCharArray()) {
+                        boolean found = false;
+                        for (Ingredient i : ingredients) {
+                            if (i.key == key) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            logger.log(Level.WARNING, "Ingredient `" + key + "' not found!");
+                            isOK = false;
+                            break;
+                        }
+                    }
+                    if (!isOK) break;
+                }
+
+                Material expBottle;
+                try {
+                    if (isLegacy) expBottle = (Material) Material.class.getField("EXP_BOTTLE").get(null);
+                    else expBottle = (Material) Material.class.getField("EXPERIENCE_BOTTLE").get(null);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Failed to find exp bottle material");
+                    break;
+                }
+                ItemStack result = new ItemStack(expBottle, 1);
+                ItemMeta meta = result.getItemMeta();
+                meta.setDisplayName(Localization.get(122));
+                List<String> lore = new ArrayList<>();
+                lore.add(Localization.get(123));
+                lore.add(Localization.get(124));
+                lore.add(Localization.get(125));
+                lore.add(Localization.get(126));
+                meta.setLore(lore);
+                result.setItemMeta(meta);
+
+                ShapedRecipe recipe = new ShapedRecipe(this.recipe = new NamespacedKey(this, "computer_recipe"), result);
+                recipe.shape(row1, row2, row3);
+
+                for (Ingredient i : ingredients) recipe.setIngredient(i.key, i.mat);
+
+                try {
+                    getServer().addRecipe(recipe);
+                } catch (Throwable e) {
+                    logger.warning("Unable to add recipe: " + e.getMessage());
+                }
+                logger.log(Level.INFO, "Crafting recipe successfully created!");
+            } while (false);
+        }
+    }
+
     /**
      * Initializes logger, config manager, computers etc.
      */
@@ -675,102 +780,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
 
         allowServerboundComputers = config.getBoolean("allow-serverbound-computers");
 
-        if(config.getBoolean("allowCraft")) {
-            do {
-                String row1 = config.getString("craft.row1");
-                String row2 = config.getString("craft.row2");
-                String row3 = config.getString("craft.row3");
-                if(row1.trim().equals("") && row2.trim().equals("") && row3.trim().equals("")) {
-                    logger.log(Level.WARNING, "Crafting recipe is empty!");
-                    break;
-                }
-                List<String> raw = config.getStringList("craft.ingredients");
-
-                record Ingredient(char key, Material mat) {}
-
-                List<Ingredient> ingredients = new ArrayList<>();
-
-                boolean isOK = true;
-
-                for(String line : raw) {
-                    String[] parts = line.split(" ");
-                    if(parts.length != 2) {
-                        logger.log(Level.WARNING, "Invalid ingredient data");
-                        logger.log(Level.WARNING, "Should be: '<key char> <material>'");
-                        isOK = false;
-                        break;
-                    }
-
-                    if(parts[0].length() != 1) {
-                        logger.log(Level.WARNING, "`"+parts[0]+"' is not a character!");
-                        isOK = false;
-                        break;
-                    }
-
-                    Material material = Material.matchMaterial(parts[1].replace('-', '_'));
-
-                    if(material == null) {
-                        logger.log(Level.WARNING, "Could not find material `"+parts[1]+"'!");
-                        isOK = false;
-                        break;
-                    }
-
-                    ingredients.add(new Ingredient(parts[0].charAt(0), material));
-                }
-
-                if(!isOK) break;
-
-                {
-                    String check = row1+row2+row3;
-                    for(char key : check.toCharArray()) {
-                        boolean found = false;
-                        for(Ingredient i : ingredients) {
-                            if(i.key == key) {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if(!found) {
-                            logger.log(Level.WARNING, "Ingredient `"+key+"' not found!");
-                            isOK = false;
-                            break;
-                        }
-                    }
-                    if(!isOK) break;
-                }
-
-                Material expBottle;
-                try {
-                    if (isLegacy) expBottle = (Material) Material.class.getField("EXP_BOTTLE").get(null);
-                    else expBottle = (Material) Material.class.getField("EXPERIENCE_BOTTLE").get(null);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Failed to find exp bottle material");
-                    break;
-                }
-                ItemStack result = new ItemStack(expBottle, 1);
-                ItemMeta meta = result.getItemMeta();
-                meta.setDisplayName(Localization.get(122));
-                List<String> lore = new ArrayList<>();
-                lore.add(Localization.get(123));
-                lore.add(Localization.get(124));
-                lore.add(Localization.get(125));
-                lore.add(Localization.get(126));
-                meta.setLore(lore);
-                result.setItemMeta(meta);
-
-                ShapedRecipe recipe = new ShapedRecipe(this.recipe = new NamespacedKey(this, "computer_recipe"), result);
-                recipe.shape(row1, row2, row3);
-
-                for(Ingredient i : ingredients) recipe.setIngredient(i.key, i.mat);
-
-                try {
-                    getServer().addRecipe(recipe);
-                } catch (Throwable e) {
-                    logger.warning("Unable to add recipe: "+e.getMessage());
-                }
-                logger.log(Level.INFO, "Crafting recipe successfully created!");
-            } while(false);
-        }
+        createRecipe();
 
         getServer().getPluginManager().registerEvents(this, this);
         firstPoses = new HashMap<>();
@@ -868,6 +878,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                     }
                     boolean success = configManager.reloadAllConfigs();
                     loadConfigs();
+                    createRecipe();
                     sender.sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(38));
                     if(success) {
                         loadComputers();
