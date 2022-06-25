@@ -102,7 +102,7 @@ publishing {
         mavenJava(MavenPublication) {
             groupId = 'com.jnngl'
             artifactId = 'totalcomputers'
-            version = '0.10.0b'
+            version = '0.10.1b'
             from components.java
 
             pom {
