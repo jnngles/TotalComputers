@@ -539,7 +539,7 @@ public class FileSystem {
             if(!file.exists()) {
                 file = new File(_path);
                 if(!file.exists()) {
-                    System.err.println("Failed to find file.");
+//                    System.err.println("Failed to find file.");
                     return null;
                 }
             }
