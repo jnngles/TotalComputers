@@ -109,6 +109,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     private Server server;
     private Map<Player, String> tokens;
     private boolean allowServerboundComputers;
+    private boolean computersInitialized = false;
 
     /* *************** CODE SECTION: MOTION CAPTURE *************** */
 
@@ -794,8 +795,6 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             Localization.init(new Localization.HeccrbqZpsr());
         else Localization.init(new Localization.EnglishLang());
 
-        loadComputers();
-
         allowServerboundComputers = config.getBoolean("allow-serverbound-computers");
 
         createRecipe();
@@ -845,6 +844,14 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                 logger.info(Localization.get(157)+"https://github.com/JNNGL/TotalComputers/releases");
             }
         } catch (IOException ignored) {}
+
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                loadComputers();
+                computersInitialized = true;
+            }
+        }, 10000);
     }
 
     /* *************** CODE SECTION: COMMANDS AND AUTOCOMPLETION *************** */
@@ -861,6 +868,10 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(sender instanceof Player) {
             if(command.getName().equalsIgnoreCase("totalcomputers")) {
+                if(!computersInitialized) {
+                    sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(158));
+                    return true;
+                }
                 if(!sender.hasPermission("totalcomputers.command.totalcomputers")) { // Check permissions
                     sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(37));
                     return true;

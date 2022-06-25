@@ -164,6 +164,7 @@ public class Localization {
                     "Не удалось проверить наличие обновлений", // 155
                     "Доступно обновление: ", // 156
                     "Ссылка на скачивание: ", // 157
+                    "Пожалуйста подождите несколько секунд...", // 158
             });
 
         }
@@ -310,6 +311,7 @@ public class Localization {
                     "Unable to check for updates", // 155
                     "An update is available: ", // 156
                     "Download link: ", // 157
+                    "Please wait some time...", // 158
             });
         }
     }
