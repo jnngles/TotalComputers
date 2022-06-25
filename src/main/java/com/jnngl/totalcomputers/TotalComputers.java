@@ -63,9 +63,11 @@ import org.jetbrains.annotations.NotNull;
 import org.spigotmc.event.entity.EntityDismountEvent;
 
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.logging.Level;
@@ -555,6 +557,20 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
 
     /* *************** CODE SECTION: INITIALIZATION *************** */
 
+    private String checkUpdates() throws IOException {
+        try {
+            Scanner scanner = new Scanner(new URL("https://raw.githubusercontent.com/JNNGL/TotalComputers/main/VERSION").openStream());
+            String latestVersion = scanner.nextLine();
+            if(!latestVersion.equals(super.getDescription().getVersion())) {
+                return latestVersion;
+            }
+        } catch (IOException e) {
+            logger.warning(Localization.get(155));
+            throw e;
+        }
+        return null;
+    }
+
     /**
      * Initializes config field
      */
@@ -569,6 +585,8 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         if(new Locale("ru").getLanguage().equals(new Locale(locale).getLanguage()))
             Localization.init(new Localization.HeccrbqZpsr());
         else Localization.init(new Localization.EnglishLang());
+
+
     }
 
     /**
@@ -819,6 +837,14 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             server.start(config.getString("server-ip"), config.getInt("server-port"));
             logger.info("Done.");
         }
+
+        try {
+            String update = checkUpdates();
+            if(update != null) {
+                logger.info(Localization.get(156)+update);
+                logger.info(Localization.get(157)+"https://github.com/JNNGL/TotalComputers/releases");
+            }
+        } catch (IOException ignored) {}
     }
 
     /* *************** CODE SECTION: COMMANDS AND AUTOCOMPLETION *************** */
@@ -876,6 +902,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                                 Localization.get(37));
                         return true;
                     }
+
                     boolean success = configManager.reloadAllConfigs();
                     loadConfigs();
                     createRecipe();
@@ -886,6 +913,16 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                     }
                     else sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(40));
                     sender.sendMessage(replyPrefix + ChatColor.BLUE + Localization.get(41));
+
+                    try {
+                        String update = checkUpdates();
+                        if(update != null) {
+                            sender.sendMessage(replyPrefix+ChatColor.GREEN+Localization.get(156)+ChatColor.RESET+update);
+                            sender.sendMessage(replyPrefix+ChatColor.GREEN+Localization.get(157)+ChatColor.BLUE+"https://github.com/JNNGL/TotalComputers/releases\n");
+                        }
+                    } catch (IOException ignored) {
+                        sender.sendMessage(replyPrefix+ChatColor.RED+Localization.get(155));
+                    }
                 }
                 else if(args[0].equalsIgnoreCase("paste")) { // Paste subcommand
                     if(!sender.hasPermission("totalcomputers.use")) {
@@ -1394,6 +1431,20 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void playerJoin(PlayerJoinEvent event) {
+        if(event.getPlayer().isOp()
+            || event.getPlayer().hasPermission("totalcomputers.plugin.manage")
+            || event.getPlayer().hasPermission("totalcomputers.admin")) {
+            try {
+                String update = checkUpdates();
+                if (update != null) {
+                    event.getPlayer().sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(156) + ChatColor.RESET + update);
+                    event.getPlayer().sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(157) + ChatColor.BLUE + "https://github.com/JNNGL/TotalComputers/releases\n");
+                }
+            } catch (IOException ignored) {
+                event.getPlayer().sendMessage(replyPrefix + ChatColor.RED + Localization.get(155));
+            }
+        }
+
         String player = event.getPlayer().getName();
         if (slotsToRestore.containsKey(player)) {
             SlotControl slot = slotsToRestore.get(player);

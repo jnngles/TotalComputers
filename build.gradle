@@ -7,10 +7,13 @@ plugins {
 
 group "com.jnngl"
 archivesBaseName = "totalcomputers"
-version '0.10.0b'
-
+version '0.10.1b'
 
 compileJava {
+    options.encoding = "UTF-8"
+}
+
+javadoc {
     options.encoding = "UTF-8"
 }
 

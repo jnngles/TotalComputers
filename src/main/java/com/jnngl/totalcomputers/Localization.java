@@ -161,6 +161,9 @@ public class Localization {
                     "Запущен компьютер привязанный к клиенту", // 152
                     "Выберете область", // 153
                     "Нет свободных токенов :(", // 154
+                    "Не удалось проверить наличие обновлений", // 155
+                    "Доступно обновление: ", // 156
+                    "Ссылка на скачивание: ", // 157
             });
 
         }
@@ -304,6 +307,9 @@ public class Localization {
                     "Started clientbound computer.", // 152
                     "Select area", // 153
                     "There is no free tokens :(", // 154
+                    "Unable to check for updates", // 155
+                    "An update is available: ", // 156
+                    "Download link: ", // 157
             });
         }
     }
