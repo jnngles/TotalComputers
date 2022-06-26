@@ -369,6 +369,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      */
     @EventHandler
     public void drop(PlayerDropItemEvent e) {
+        if(!computersInitialized) return;
         if(drop.contains(e.getPlayer())) {
             TotalOS os = locked.get(e.getPlayer());
             if(targets.get(os).desc.requiresItemDropCapture()) {
@@ -388,6 +389,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      */
     @EventHandler
     public void dismount(EntityDismountEvent e) {
+        if(!computersInitialized) return;
         if(!(e.getEntity() instanceof Player player)) return;
         if(!(e.getDismounted() instanceof Arrow vehicle)) return;
 
@@ -1375,6 +1377,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
 
     @EventHandler(priority = EventPriority.HIGH)
     public void craftEvent(CraftItemEvent e) {
+        if(!computersInitialized) return;
         if(!(e.getWhoClicked() instanceof Player player)) return;
         ItemStack result = e.getRecipe().getResult();
         ItemMeta meta = result.getItemMeta();
@@ -1397,6 +1400,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void selectionEvent(PlayerInteractEvent event) {
+        if(!computersInitialized) return;
         if(!isSelectionEnabled()) return;
         if(!is1_8)
             if(event.getHand() != EquipmentSlot.HAND) return;
@@ -1440,6 +1444,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void playerJoin(PlayerJoinEvent event) {
+        if(!computersInitialized) return;
         if(event.getPlayer().isOp()
             || event.getPlayer().hasPermission("totalcomputers.plugin.manage")
             || event.getPlayer().hasPermission("totalcomputers.admin")) {
@@ -1475,6 +1480,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void playerLeave(PlayerQuitEvent event) {
+        if(!computersInitialized) return;
         Player player = event.getPlayer();
         if(tokens.containsKey(player)) {
             server.unregisterToken(tokens.get(player));
@@ -1502,6 +1508,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onHit(EntityDamageByEntityEvent event) {
+        if(!computersInitialized) return;
         if(event.getEntity().getType() == EntityType.ITEM_FRAME) {
             if(interactiveTiles.containsKey(((ItemFrame) event.getEntity()))) {
                 if(event.getDamager() instanceof Player)
@@ -1517,6 +1524,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onInteract(PlayerInteractEntityEvent event) {
+        if(!computersInitialized) return;
         if(event.getRightClicked().getType() == EntityType.ITEM_FRAME) {
             if(interactiveTiles.containsKey(((ItemFrame) event.getRightClicked()))) {
                 processInput(event.getPlayer(), InputInfo.InteractType.RIGHT_CLICK);
@@ -1531,6 +1539,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void mapInteract(PlayerInteractEvent event) {
+        if(!computersInitialized) return;
         if(!is1_8)
             if(event.getHand() != EquipmentSlot.HAND) return;
         InputInfo.InteractType interactType;
