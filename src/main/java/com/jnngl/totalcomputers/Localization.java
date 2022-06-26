@@ -165,6 +165,7 @@ public class Localization {
                     "Доступно обновление: ", // 156
                     "Ссылка на скачивание: ", // 157
                     "Пожалуйста подождите несколько секунд...", // 158
+                    "Не удалось создать ID для компьютера", // 159
             });
 
         }
@@ -312,6 +313,7 @@ public class Localization {
                     "An update is available: ", // 156
                     "Download link: ", // 157
                     "Please wait some time...", // 158
+                    "Unable to create ID for clientbound computer", // 159
             });
         }
     }

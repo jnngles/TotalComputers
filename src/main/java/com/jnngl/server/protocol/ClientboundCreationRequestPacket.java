@@ -15,6 +15,7 @@ public class ClientboundCreationRequestPacket extends Packet {
     public void writeData(ByteBuf buf) {
         buf.writeShort(width);
         buf.writeShort(height);
+        buf.writeShort(id);
         BufUtils.writeString(buf, name);
     }
 
@@ -23,6 +24,7 @@ public class ClientboundCreationRequestPacket extends Packet {
         if(length < 9) throw new TooSmallPacketException(length, 9);
         width = buf.readShort();
         height = buf.readShort();
+        id = buf.readShort();
         name = BufUtils.readString(buf);
     }
 
@@ -33,6 +35,7 @@ public class ClientboundCreationRequestPacket extends Packet {
 
     public short width;
     public short height;
+    public short id;
     public String name;
 
 }

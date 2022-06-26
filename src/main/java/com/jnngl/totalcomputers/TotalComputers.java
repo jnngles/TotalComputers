@@ -23,6 +23,7 @@ import com.jnngl.packet.MapPacketSenderFactory;
 import com.jnngl.packet.PacketListener;
 import com.jnngl.server.Server;
 import com.jnngl.server.exception.InvalidTokenException;
+import com.jnngl.server.exception.NoFreeIDException;
 import com.jnngl.totalcomputers.motion.MotionCapabilities;
 import com.jnngl.totalcomputers.motion.MotionCapture;
 import com.jnngl.totalcomputers.motion.MotionCaptureDesc;
@@ -1128,6 +1129,8 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                                     sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(80));
                                 } catch (AlreadyClientboundException e) {
                                     sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(81));
+                                } catch (NoFreeIDException e) {
+                                    sender.sendMessage(replyPrefix + ChatColor.RED + Localization.get(159));
                                 }
                             }).start();
                             return true;

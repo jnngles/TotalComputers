@@ -4,6 +4,7 @@ import com.jcraft.jzlib.Inflater;
 import com.jcraft.jzlib.InflaterInputStream;
 import com.jnngl.server.Server;
 import com.jnngl.server.exception.InvalidTokenException;
+import com.jnngl.server.exception.NoFreeIDException;
 import com.jnngl.server.protocol.ClientboundCreationRequestPacket;
 import com.jnngl.server.protocol.ClientboundDestroyPacket;
 import com.jnngl.server.protocol.ClientboundTouchPacket;
@@ -21,6 +22,8 @@ import java.io.IOException;
 import java.util.*;
 
 public class RemoteOS {
+
+    private static int freeId = 0;
 
     private int width, height;
     private String name;
@@ -84,7 +87,8 @@ public class RemoteOS {
     }
 
     public static RemoteOS requestCreation(Server server, String token, String name, int width, int height)
-            throws AlreadyRequestedException, TimedOutException, InvalidTokenException, AlreadyClientboundException {
+            throws AlreadyRequestedException, TimedOutException, InvalidTokenException, AlreadyClientboundException,
+                NoFreeIDException {
         Server.BoundToken boundToken = server.getBoundToken(token);
         if(boundToken == null) throw new InvalidTokenException();
         if(name2id.containsKey(name)) throw new AlreadyClientboundException();
@@ -98,6 +102,8 @@ public class RemoteOS {
         ClientboundCreationRequestPacket s2c_request = new ClientboundCreationRequestPacket();
         s2c_request.width = (short)width;
         s2c_request.height = (short)height;
+        if(freeId >= 0xFFFF) throw new NoFreeIDException();
+        s2c_request.id = (short) freeId++;
         s2c_request.name = name;
         channel.writeAndFlush(s2c_request);
         Timer timeOutTimer = new Timer();
