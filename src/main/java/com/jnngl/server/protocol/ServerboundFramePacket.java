@@ -23,8 +23,7 @@ public class ServerboundFramePacket extends Packet {
         compressedData = new byte[buf.readableBytes()];
         buf.readBytes(compressedData, 0, compressedData.length);
         if(compressedData.length != length-2) {
-            if(Server.DEBUG)
-                System.err.println("Received incomplete frame buffer");
+            System.err.println("Received incomplete frame buffer");
             compressedData = null;
         }
     }

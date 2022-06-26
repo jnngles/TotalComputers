@@ -33,7 +33,7 @@ public class Server {
     public String name;
 
     public static int protocolVersion() {
-        return 1;
+        return 2;
     }
 
     public void start(String ip, int port) {

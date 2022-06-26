@@ -95,12 +95,9 @@ public class PacketHandler extends ChannelDuplexHandler {
                     ctx.pipeline().addBefore("decoder", "decrypt", new PacketDecryptor(encryption));
                     ctx.pipeline().addBefore("encoder", "encrypt", new PacketEncryptor(encryption));
                 }
-                if (c2s_handshake.protocolVersion != Server.protocolVersion() ||
-                        c2s_handshake.apiVersion != TotalOS.getApiVersion()) {
+                if (c2s_handshake.protocolVersion != Server.protocolVersion()) {
                     ClientboundDisconnectPacket s2c_disconnect = new ClientboundDisconnectPacket();
-                    s2c_disconnect.reason = c2s_handshake.protocolVersion != Server.protocolVersion() ?
-                            "Incompatible protocol version: " + c2s_handshake.protocolVersion :
-                            "Incompatible API version: " + c2s_handshake.apiVersion;
+                    s2c_disconnect.reason = "Incompatible protocol version: " + c2s_handshake.protocolVersion;
                     ctx.channel().writeAndFlush(s2c_disconnect);
                     ctx.channel().disconnect();
                     return;
@@ -109,6 +106,14 @@ public class PacketHandler extends ChannelDuplexHandler {
                 s2c_handshake.serverName = server.name;
                 if (s2c_handshake.serverName == null) s2c_handshake.serverName = "unknown";
                 ctx.channel().writeAndFlush(s2c_handshake);
+
+                if(server.enableEncryption) {
+                    ctx.pipeline().addBefore("decrypt", "defrag", new PacketDefragmentation());
+                    ctx.pipeline().addBefore("encrypt", "prefixer", new PacketLengthPrefixer());
+                } else {
+                    ctx.pipeline().addBefore("decoder", "defrag", new PacketDefragmentation());
+                    ctx.pipeline().addBefore("encoder", "prefixer", new PacketLengthPrefixer());
+                }
             } catch (NoSuchAlgorithmException e) {
                 e.printStackTrace();
             }
