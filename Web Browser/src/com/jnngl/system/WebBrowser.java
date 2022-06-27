@@ -202,12 +202,12 @@ public class WebBrowser extends WindowApplication {
         try {
             img = server.render();
         } catch (RemoteException e) {
-            throw new RuntimeException(e);
+            return;
         }
         if(img == null) {
             g.setFont(font);
             g.setColor(Color.WHITE);
-            g.drawString("Initializing CEF (It might take some time)", 10, 10);
+            g.drawString("Initializing CEF (It might take some time)", 10, 100);
             return;
         }
         try {

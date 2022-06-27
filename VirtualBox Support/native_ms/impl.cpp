@@ -318,16 +318,6 @@ JNIEXPORT void JNICALL Java_com_jnngl_system_VBoxMS_key
 
 		vm->keyboard->PutScancodes((LPSAFEARRAY)sarr, &stored);
 	}
-	{
-		CComSafeArray<long> sarr(length);
-
-		for (int i = 0; i < length; i++) {
-			sarr[i] = arr[i]+128;
-		}
-
-
-		vm->keyboard->PutScancodes((LPSAFEARRAY)sarr, &stored);
-	}
 
 	env->ReleaseIntArrayElements(scancodes, arr, 0);
 }

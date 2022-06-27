@@ -192,75 +192,113 @@ public class VBoxApplication extends WindowApplication {
                             private String buffer = "";
 
                             private int[] getScancode(Keyboard.Keys key, String text) {
-                                int[] s = switch (key) {
-                                    case HOME -> new int[]{0xe0, 0x47};
-                                    case FUNCTION -> new int[]{0xe0, 0x5b};
-                                    case LANG -> new int[]{0x2a, 0x38};
-                                    case BACKSPACE -> new int[]{0x01};
-                                    case SPACE -> new int[]{0x39};
-                                    case TAB -> new int[]{0x0f};
-                                    case ENTER -> new int[]{0x3a};
-                                    case SHIFT -> new int[]{0x2a};
-                                    case ALT -> new int[]{0x38};
-                                    case CONTROL -> new int[]{0x1d};
-
-                                    default -> new int[]{
-                                            switch (text.charAt(0)) {
-                                                case 'a' -> 0x1e;
-                                                case 'b' -> 0x30;
-                                                case 'c' -> 0x2e;
-                                                case 'd' -> 0x20;
-                                                case 'e' -> 0x12;
-                                                case 'f' -> 0x21;
-                                                case 'g' -> 0x22;
-                                                case 'h' -> 0x23;
-                                                case 'i' -> 0x17;
-                                                case 'j' -> 0x24;
-                                                case 'k' -> 0x25;
-                                                case 'l' -> 0x26;
-                                                case 'm' -> 0x32;
-                                                case 'n' -> 0x31;
-                                                case 'o' -> 0x18;
-                                                case 'p' -> 0x19;
-                                                case 'q' -> 0x10;
-                                                case 'r' -> 0x13;
-                                                case 's' -> 0x1f;
-                                                case 't' -> 0x14;
-                                                case 'u' -> 0x16;
-                                                case 'v' -> 0x2f;
-                                                case 'w' -> 0x11;
-                                                case 'x' -> 0x2d;
-                                                case 'y' -> 0x15;
-                                                case 'z' -> 0x2c;
-                                                case '0' -> 0x0b;
-                                                case '1' -> 0x02;
-                                                case '2' -> 0x03;
-                                                case '3' -> 0x04;
-                                                case '4' -> 0x05;
-                                                case '5' -> 0x06;
-                                                case '6' -> 0x07;
-                                                case '7' -> 0x08;
-                                                case '8' -> 0x09;
-                                                case '9' -> 0x0a;
-                                                case ' ' -> 0x39;
-                                                case '-' -> 0xc;
-                                                case '=' -> 0xd;
-                                                case '[' -> 0x1a;
-                                                case ']' -> 0x1b;
-                                                case ';' -> 0x27;
-                                                case '\'' -> 0x28;
-                                                case ',' -> 0x33;
-                                                case '.' -> 0x34;
-                                                case '/' -> 0x35;
-                                                case '`' -> 0x29;
-                                                default -> 0;
-                                            }
+                                return switch(key) {
+                                    case TILDE             -> new int[] { 0x2A, 0x29, 0xA9, 0xAA };
+                                    case BACKTICK          -> new int[] { 0x29, 0xA9 };
+                                    case ONE               -> new int[] { 0x02, 0x82 };
+                                    case EXCLAMATION_MARK  -> new int[] { 0x2A, 0x02, 0x82, 0xAA };
+                                    case TWO               -> new int[] { 0x03, 0x83 };
+                                    case AT_SIGN           -> new int[] { 0x2A, 0x03, 0x83, 0xAA };
+                                    case THREE             -> new int[] { 0x04, 0x84 };
+                                    case NUMBER_SIGN       -> new int[] { 0x2A, 0x04, 0x84, 0xAA };
+                                    case FOUR              -> new int[] { 0x05, 0x85 };
+                                    case DOLLAR_SIGN       -> new int[] { 0x2A, 0x05, 0x85, 0xAA };
+                                    case FIVE              -> new int[] { 0x06, 0x86 };
+                                    case PERCENT_SIGN      -> new int[] { 0x2A, 0x06, 0x86, 0xAA };
+                                    case SIX               -> new int[] { 0x07, 0x87 };
+                                    case CARET             -> new int[] { 0x2A, 0x07, 0x87, 0xAA };
+                                    case SEVEN             -> new int[] { 0x08, 0x88 };
+                                    case AMPERSAND         -> new int[] { 0x2A, 0x08, 0x88, 0xAA };
+                                    case EIGHT             -> new int[] { 0x09, 0x89 };
+                                    case ASTERISK          -> new int[] { 0x2A, 0x09, 0x89, 0xAA };
+                                    case NINE              -> new int[] { 0x0A, 0x8A };
+                                    case LEFT_PARENTHESIS  -> new int[] { 0x2A, 0x0A, 0x8A, 0xAA };
+                                    case ZERO              -> new int[] { 0x0B, 0x8B };
+                                    case RIGHT_PARENTHESIS -> new int[] { 0x2A, 0x0B, 0x8B, 0xAA };
+                                    case MINUS_SIGN        -> new int[] { 0x0C, 0x8C };
+                                    case UNDERSCORE        -> new int[] { 0x2A, 0x0C, 0x8C, 0xAA };
+                                    case PLUS_SIGN         -> new int[] { 0x2A, 0x0D, 0x8D, 0xAA };
+                                    case EQUALS_SIGN       -> new int[] { 0x0D, 0x8D };
+                                    case LEFT_BRACKET      -> new int[] { 0x1A, 0x9A };
+                                    case LEFT_BRACE        -> new int[] { 0x2A, 0x1A, 0x9A, 0xAA };
+                                    case RIGHT_BRACKET     -> new int[] { 0x1B, 0x9B };
+                                    case RIGHT_BRACE       -> new int[] { 0x2A, 0x1B, 0x9B, 0xAA };
+                                    case BACKSLASH         -> new int[] { 0x2B, 0xAB };
+                                    case VERTICAL_LINE     -> new int[] { 0x2A, 0x2B, 0xAB, 0xAA };
+                                    case SEMICOLON         -> new int[] { 0x27, 0xA7 };
+                                    case COLON             -> new int[] { 0x2A, 0x27, 0xA7, 0xAA };
+                                    case APOSTROPHE        -> new int[] { 0x28, 0xA8 };
+                                    case QUOTATION_MARK    -> new int[] { 0x2A, 0x28, 0xA8, 0xAA };
+                                    case COMMA             -> new int[] { 0x33, 0xB3 };
+                                    case LESS_THAN_SIGN    -> new int[] { 0x2A, 0x33, 0xB3, 0xAA };
+                                    case PERIOD            -> new int[] { 0x34, 0xB4 };
+                                    case GREATER_THAN_SIGN -> new int[] { 0x2A, 0x34, 0xB4, 0xAA };
+                                    case SLASH             -> new int[] { 0x35, 0xB5 };
+                                    case QUESTION_MARK     -> new int[] { 0x2A, 0x35, 0xB5, 0xAA };
+                                    case ENTER, OK         -> new int[] { 0x1C, 0x9C };
+                                    case SHIFT             -> new int[] { 0x2A, 0xAA };
+                                    case CONTROL           -> new int[] { 0x1D, 0x9D };
+                                    case HOME              -> new int[] { 0xE0, 0x47, 0xE0, 0xC7 };
+                                    case ALT               -> new int[] { 0x38, 0xB8 };
+                                    case SPACE             -> new int[] { 0x39, 0xB9 };
+                                    case BACKSPACE         -> new int[] { 0x0E, 0x8E };
+                                    case TAB               -> new int[] { 0x0F, 0x8F };
+                                    default -> switch (text) {
+                                        case "q" -> new int[] { 0x10, 0x90 };
+                                        case "w" -> new int[] { 0x11, 0x91 };
+                                        case "e" -> new int[] { 0x12, 0x92 };
+                                        case "r" -> new int[] { 0x13, 0x93 };
+                                        case "t" -> new int[] { 0x14, 0x94 };
+                                        case "y" -> new int[] { 0x15, 0x95 };
+                                        case "u" -> new int[] { 0x16, 0x96 };
+                                        case "i" -> new int[] { 0x17, 0x97 };
+                                        case "o" -> new int[] { 0x18, 0x98 };
+                                        case "p" -> new int[] { 0x19, 0x99 };
+                                        case "a" -> new int[] { 0x1E, 0x9E };
+                                        case "s" -> new int[] { 0x1F, 0x9F };
+                                        case "d" -> new int[] { 0x20, 0xA0 };
+                                        case "f" -> new int[] { 0x21, 0xA1 };
+                                        case "g" -> new int[] { 0x22, 0xA2 };
+                                        case "h" -> new int[] { 0x23, 0xA3 };
+                                        case "j" -> new int[] { 0x24, 0xA4 };
+                                        case "k" -> new int[] { 0x25, 0xA5 };
+                                        case "l" -> new int[] { 0x26, 0xA6 };
+                                        case "z" -> new int[] { 0x2C, 0xAC };
+                                        case "x" -> new int[] { 0x2D, 0xAD };
+                                        case "c" -> new int[] { 0x2E, 0xAE };
+                                        case "v" -> new int[] { 0x2F, 0xAF };
+                                        case "b" -> new int[] { 0x30, 0xB0 };
+                                        case "n" -> new int[] { 0x31, 0xB1 };
+                                        case "m" -> new int[] { 0x32, 0xB2 };
+                                        case "Q" -> new int[] { 0x2A, 0x10, 0x90, 0xAA };
+                                        case "W" -> new int[] { 0x2A, 0x11, 0x91, 0xAA };
+                                        case "E" -> new int[] { 0x2A, 0x12, 0x92, 0xAA };
+                                        case "R" -> new int[] { 0x2A, 0x13, 0x93, 0xAA };
+                                        case "T" -> new int[] { 0x2A, 0x14, 0x94, 0xAA };
+                                        case "Y" -> new int[] { 0x2A, 0x15, 0x95, 0xAA };
+                                        case "U" -> new int[] { 0x2A, 0x16, 0x96, 0xAA };
+                                        case "I" -> new int[] { 0x2A, 0x17, 0x97, 0xAA };
+                                        case "O" -> new int[] { 0x2A, 0x18, 0x98, 0xAA };
+                                        case "P" -> new int[] { 0x2A, 0x19, 0x99, 0xAA };
+                                        case "A" -> new int[] { 0x2A, 0x1E, 0x9E, 0xAA };
+                                        case "S" -> new int[] { 0x2A, 0x1F, 0x9F, 0xAA };
+                                        case "D" -> new int[] { 0x2A, 0x20, 0xA0, 0xAA };
+                                        case "F" -> new int[] { 0x2A, 0x21, 0xA1, 0xAA };
+                                        case "G" -> new int[] { 0x2A, 0x22, 0xA2, 0xAA };
+                                        case "H" -> new int[] { 0x2A, 0x23, 0xA3, 0xAA };
+                                        case "J" -> new int[] { 0x2A, 0x24, 0xA4, 0xAA };
+                                        case "K" -> new int[] { 0x2A, 0x25, 0xA5, 0xAA };
+                                        case "L" -> new int[] { 0x2A, 0x26, 0xA6, 0xAA };
+                                        case "Z" -> new int[] { 0x2A, 0x2C, 0xAC, 0xAA };
+                                        case "X" -> new int[] { 0x2A, 0x2D, 0xAD, 0xAA };
+                                        case "C" -> new int[] { 0x2A, 0x2E, 0xAE, 0xAA };
+                                        case "V" -> new int[] { 0x2A, 0x2F, 0xAF, 0xAA };
+                                        case "B" -> new int[] { 0x2A, 0x30, 0xB0, 0xAA };
+                                        case "N" -> new int[] { 0x2A, 0x31, 0xB1, 0xAA };
+                                        case "M" -> new int[] { 0x2A, 0x32, 0xB2, 0xAA };
+                                        default -> null;
                                     };
                                 };
-                                if (text != null && !text.isEmpty() && s[0] != 0 && !text.toLowerCase().equals(text)) {
-                                    return new int[]{s[0], 0x2a};
-                                }
-                                return s;
                             }
 
                             @Override
@@ -279,7 +317,7 @@ public class VBoxApplication extends WindowApplication {
                                 }
 
                                 int[] scancode = getScancode(key, text);
-                                if (scancode[0] != 0) {
+                                if (scancode != null) {
                                     try {
                                         server.key(scancode);
                                     } catch (RemoteException e) {
