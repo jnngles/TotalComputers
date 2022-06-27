@@ -153,7 +153,9 @@ public class TotalOS {
     public int x, y;
 
     public void runInSystemThread(Runnable action) {
-        threads.add(action);
+        synchronized (threads) {
+            threads.add(action);
+        }
     }
 
     /**
@@ -202,9 +204,11 @@ public class TotalOS {
     public BufferedImage renderFrame() {
         current = this;
         List<Runnable> finished = new ArrayList<>();
-        for (Runnable thread : threads) {
-            thread.run();
-            finished.add(thread);
+        synchronized (threads) {
+            for (Runnable thread : threads) {
+                thread.run();
+                finished.add(thread);
+            }
         }
         BufferedImage image = new BufferedImage(screenWidth, screenHeight, BufferedImage.TYPE_INT_RGB);
         Graphics2D imageGraphics = image.createGraphics();
@@ -213,7 +217,9 @@ public class TotalOS {
         imageGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
         imageGraphics.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_DISABLE);
         imageGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-        threads.removeAll(finished);
+        synchronized (threads) {
+            threads.removeAll(finished);
+        }
         stateManager.update();
         stateManager.render(imageGraphics);
         if (keyboard != null) keyboard.render(imageGraphics);
