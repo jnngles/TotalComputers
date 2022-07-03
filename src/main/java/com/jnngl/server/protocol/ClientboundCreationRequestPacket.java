@@ -30,7 +30,7 @@ public class ClientboundCreationRequestPacket extends Packet {
 
     @Override
     public int getLength() {
-        return 4 + BufUtils.sizeofString(name);
+        return 6 + BufUtils.sizeofString(name);
     }
 
     public short width;
