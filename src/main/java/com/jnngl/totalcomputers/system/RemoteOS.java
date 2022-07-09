@@ -168,9 +168,14 @@ public class RemoteOS {
         return indexedBuffer;
     }
 
-    public void handleBuffer(byte[] compressed) throws IOException {
+    public void handleBuffer(byte[] compressed) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        IOUtils.copy(new InflaterInputStream(new ByteArrayInputStream(compressed), new Inflater()), out);
+        try {
+            IOUtils.copy(new InflaterInputStream(new ByteArrayInputStream(compressed), new Inflater()), out);
+        } catch (IOException e) {
+            System.err.println(e.getClass().getName() + ": " + e.getMessage());
+            return;
+        }
         byte[] data = out.toByteArray();
         System.arraycopy(data, 0, indexedBuffer,
                 0, Math.min(data.length, indexedBuffer.length));

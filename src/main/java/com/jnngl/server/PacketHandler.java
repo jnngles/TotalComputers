@@ -151,7 +151,7 @@ public class PacketHandler extends ChannelDuplexHandler {
         RemoteOS.handleResponse(server.tokenFromChannel(ctx.channel()), c2s_status);
     }
 
-    public void handleFrameC2S(ServerboundFramePacket c2s_frame) throws IOException {
+    public void handleFrameC2S(ServerboundFramePacket c2s_frame) {
         RemoteOS remote = RemoteOS.fromId(c2s_frame.id);
         if(remote == null) return;
         if(c2s_frame.compressedData == null) return;
