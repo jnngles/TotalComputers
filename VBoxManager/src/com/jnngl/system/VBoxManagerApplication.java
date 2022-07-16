@@ -186,9 +186,9 @@ public class VBoxManagerApplication extends WindowApplication {
                     return;
                 }
                 try {
-                    Integer.parseInt(ram.getText());
-                    Integer.parseInt(vram.getText());
-                    Integer.parseInt(hdd.getText());
+                    Integer.parseInt(ram.getText().trim());
+                    Integer.parseInt(vram.getText().trim());
+                    Integer.parseInt(hdd.getText().trim());
                 } catch (Throwable e) {
                     create.setText(e.getMessage());
                     return;

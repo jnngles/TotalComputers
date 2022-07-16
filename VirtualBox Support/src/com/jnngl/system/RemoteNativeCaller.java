@@ -28,10 +28,10 @@ public class RemoteNativeCaller implements INativeCaller {
 
         Registry registry;
         try {
-            registry = LocateRegistry.createRegistry(2099);
+            registry = LocateRegistry.createRegistry(2199);
         } catch (RemoteException ignored) {
             try {
-                registry = LocateRegistry.getRegistry(null, 2099);
+                registry = LocateRegistry.getRegistry(null, 2199);
             } catch (RemoteException e) {
                 System.err.println("Failed to create RMI registry or it is already created. ("+
                         e.getClass().getSimpleName()+")");

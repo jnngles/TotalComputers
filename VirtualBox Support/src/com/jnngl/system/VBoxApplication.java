@@ -5,7 +5,6 @@ import com.jnngl.totalcomputers.system.TotalOS;
 import com.jnngl.totalcomputers.system.Utils;
 import com.jnngl.totalcomputers.system.desktop.ApplicationHandler;
 import com.jnngl.totalcomputers.system.desktop.WindowApplication;
-import com.jnngl.totalcomputers.system.overlays.Information;
 import com.jnngl.totalcomputers.system.overlays.Keyboard;
 import com.jnngl.totalcomputers.system.ui.Button;
 import com.jnngl.totalcomputers.system.ui.ElementList;
@@ -16,7 +15,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -161,7 +159,7 @@ public class VBoxApplication extends WindowApplication {
                         System.err.println("["+target+"] Remote session not found. Timed out.");
                         break;
                     }
-                    server = (INativeCaller) LocateRegistry.getRegistry(null, 2099).lookup(target);
+                    server = (INativeCaller) LocateRegistry.getRegistry(null, 2199).lookup(target);
                     System.out.println("Successfully found virtual box process -> PID: "+process.pid()+"");
                     try {
                         server.init(applicationPath);
@@ -169,7 +167,7 @@ public class VBoxApplication extends WindowApplication {
                         System.err.println("Error: Unable to initialize VBox ("+e.getClass().getName()+"): "+e.getMessage());
                         throw new Error(e);
                     }
-                    System.out.println("Successfully bound new session to '" + target + "' [localhost:2099]");
+                    System.out.println("Successfully bound new session to '" + target + "' [localhost:2199]");
 
                     String[] names = server.getMachineNames();
                     VMs.addEntries(names);
@@ -235,7 +233,7 @@ public class VBoxApplication extends WindowApplication {
                                     case GREATER_THAN_SIGN -> new int[] { 0x2A, 0x34, 0xB4, 0xAA };
                                     case SLASH             -> new int[] { 0x35, 0xB5 };
                                     case QUESTION_MARK     -> new int[] { 0x2A, 0x35, 0xB5, 0xAA };
-                                    case ENTER, OK         -> new int[] { 0x1C, 0x9C };
+                                    case ENTER             -> new int[] { 0x1C, 0x9C };
                                     case SHIFT             -> new int[] { 0x2A, 0xAA };
                                     case CONTROL           -> new int[] { 0x1D, 0x9D };
                                     case HOME              -> new int[] { 0xE0, 0x47, 0xE0, 0xC7 };

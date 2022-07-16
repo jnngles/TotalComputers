@@ -3,11 +3,12 @@ package com.jnngl.totalcomputers;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.IndexColorModel;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.Random;
 
 /**
  * Convert {@link Color} to map color
@@ -32,6 +33,11 @@ public class MapColor {
      * Colors used in map
      */
     public static Color[] colors;
+    public static int[] intColors;
+
+
+    private static ThreadLocal<BufferedImage> threadLocalBuffers;
+    private static ThreadLocal<Graphics2D> threadLocalGraphics;
 
     /**
      * Cached values
@@ -118,121 +124,76 @@ public class MapColor {
                 };
             }
         }
+
+        intColors = new int[colors.length];
+        for (int idx = 0; idx < intColors.length; idx++) {
+            intColors[idx] = colors[idx].getRGB();
+        }
+
+        IndexColorModel indexColorModel =
+                new IndexColorModel(8, intColors.length - 4, intColors, 4, false, 0, DataBuffer.TYPE_BYTE);
+        threadLocalBuffers = ThreadLocal.withInitial(() -> new BufferedImage(128, 128, BufferedImage.TYPE_BYTE_INDEXED, indexColorModel));
+        threadLocalGraphics = ThreadLocal.withInitial(() -> threadLocalBuffers.get().createGraphics());
     }
 
     static {
         loadColors();
     }
 
-    public static byte matchColorFast(Color color) {
-        if(colors == null) loadColors();;
-        if(cache == null) {
-            cache = new int[0x1000];
-            for(int i = 0x000; i <= 0xFFF; i++) {
-                cache[i] = matchColor(new Color((i & 0xF00) >> 4, i & 0xF0, (i & 0xF) << 4));
-            }
-        }
-        int rgb = color.getRGB();
-        return (byte)cache[(rgb & 0xF00000) >> 12 | (rgb & 0xF000) >> 8 | (rgb & 0xF0) >> 4];
-    }
-
-    public static byte matchColorInt(Color color) {
-        if(colors == null) loadColors();
-        if(cache == null) {
-            cache = new int[0x1000 / 4];
-            for(int i = 0x000; i <= 0xFFF; i++) {
-                int n = i / 4;
-                cache[n] |= ((((int)matchColor(
-                        new Color((i & 0xF00) >> 4, i & 0xF0, (i & 0xF) << 4))) & 0xFF) << ((i - n) * 8));
-            }
-        }
-        int rgb = color.getRGB();
-        int i = ((rgb & 0xF00000) >> 12 | (rgb & 0xF000) >> 8 | (rgb & 0xF0) >> 4);
-        int n = i / 4;
-        int bit = (i - n) * 8;
-        return (byte)((cache[n] & (0xFF << bit)) >>> bit);
-    }
-
-    private static double getDistance(Color c1, Color c2) {
-        double rMean = (double)(c1.getRed() + c2.getRed()) / 2.0D;
-        double r = c1.getRed() - c2.getRed();
-        double g = c1.getGreen() - c2.getGreen();
-        int b = c1.getBlue() - c2.getBlue();
-        double weightR = 2.0D + rMean / 256.0D;
-        double weightG = 4.0D;
-        double weightB = 2.0D + (255.0D - rMean) / 256.0D;
-        return weightR * r * r + weightG * g * g + weightB * (double)b * (double)b;
-    }
-
-    /**
-     * Deprecated function from bukkit
-     * @param color {@link java.awt.Color}
-     * @return Nearest color that can be used when drawing map
-     */
-    public static byte matchColor(Color color) {
-        if (color.getAlpha() < 128) {
-            return 0;
-        } else {
-            int index = 0;
-            double best = -1.0D;
-
-            for(int i = 4; i < colors.length; ++i) {
-                double distance = getDistance(color, colors[i]);
-                if (distance < best || best == -1.0D) {
-                    best = distance;
-                    index = i;
-                }
-            }
-
-            return (byte)(index < 128 ? index : -129 + (index - 127));
-        }
-    }
-
     /**
      * Converts image to byte color index array
      */
     public static byte[] toByteArray(BufferedImage data) {
-        byte[] bytes = new byte[128*128];
-        int[] pixels = data.getRGB(0, 0, 128, 128, null, 0, 128);
-        for(int i = 0; i < pixels.length; i++) {
-            bytes[i] = matchColorFast(new Color(pixels[i]));
+        if (threadLocalGraphics == null) {
+            loadColors();
         }
-        return bytes;
+        final byte[] dst = new byte[128*128];
+        threadLocalGraphics.get().drawImage(data, 0, 0, null);
+        System.arraycopy(((DataBufferByte) threadLocalBuffers.get().getRaster().getDataBuffer()).getData(), 0, dst, 0, dst.length);
+        for (int i = 0; i < dst.length; i++) {
+            dst[i] += 4;
+        }
+        return dst;
     }
 
     public static void main(String[] args) {
+        loadColors();
+
         long a = System.currentTimeMillis();
         System.out.println("Cache colors: "+(System.currentTimeMillis()-a)+"ms");
         a = System.currentTimeMillis();
-        BufferedImage[] imgs = new BufferedImage[1000];
-        Random rnd = new Random();
-        for(int i = 0; i < 1000; i++) {
-            imgs[i] = new BufferedImage(128, 128, BufferedImage.TYPE_INT_RGB);
-            int[] data = ((DataBufferInt)imgs[i].getRaster().getDataBuffer()).getData();
-            for(int j = 0; j < data.length; j++)
-                data[j] = rnd.nextInt();
-        }
-        System.out.println("Init images ("+imgs.length+"): "+(System.currentTimeMillis()-a)+"ms");
-        for(int i = 0; i < 10; i++) {
-            a = System.currentTimeMillis();
-            for (BufferedImage img : imgs)
-                MapColor.toByteArray(img);
-            System.out.println("Image -> indices: "+(System.currentTimeMillis()-a)+"ms");
-        }
-
+//        BufferedImage[] imgs = new BufferedImage[1000];
+//        Random rnd = new Random();
+//        for(int i = 0; i < 1000; i++) {
+//            imgs[i] = new BufferedImage(128, 128, BufferedImage.TYPE_INT_RGB);
+//            int[] data = ((DataBufferInt)imgs[i].getRaster().getDataBuffer()).getData();
+//            for(int j = 0; j < data.length; j++)
+//                data[j] = rnd.nextInt();
+//        }
+//        System.out.println("Init images ("+imgs.length+"): "+(System.currentTimeMillis()-a)+"ms");
+//        for(int i = 0; i < 10; i++) {
+//            a = System.currentTimeMillis();
+//            for (BufferedImage img : imgs)
+//                MapColor.toByteArray(img);
+//            System.out.println("Image -> indices: "+(System.currentTimeMillis()-a)+"ms");
+//        }
+//
         try {
-            BufferedImage b4image = ImageIO.read(new File("unknown.png"));
-            BufferedImage image = new BufferedImage(128, 128, BufferedImage.TYPE_INT_RGB);
-            image.setRGB(0, 0, 128, 128, b4image.getRGB(0, 0, 128, 128, null, 0, 128), 0, 128);
-            a = System.currentTimeMillis();
-            byte[] bytes = toByteArray(image);
-            System.out.println("Converted image in "+(System.currentTimeMillis()-a)+"ms");
-            for(int i = 0; i < image.getWidth(); i++) {
-                for(int j = 0; j < image.getHeight(); j++) {
-                    image.setRGB(i, j, colors[Byte.toUnsignedInt(bytes[j*image.getWidth()+i])].getRGB());
+            for (int k = 0; k < 25; k++) {
+                BufferedImage image = ImageIO.read(new File("unknown.png"));
+                a = System.currentTimeMillis();
+                byte[] bytes = null;
+                for (int i = 0; i < 1000; i++) {
+                    bytes = toByteArray(image);
                 }
+                System.out.println("Converted 1000 images in " + (System.currentTimeMillis() - a) + "ms");
+                for (int i = 0; i < image.getWidth(); i++) {
+                    for (int j = 0; j < image.getHeight(); j++) {
+                        image.setRGB(i, j, colors[Byte.toUnsignedInt(bytes[j * image.getWidth() + i])].getRGB());
+                    }
+                }
+                ImageIO.write(image, "PNG", new File("indexed.png"));
             }
-            ImageIO.write(image, "PNG", new File("indexed.png"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

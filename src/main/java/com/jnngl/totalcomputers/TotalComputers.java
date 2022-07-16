@@ -111,6 +111,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     private Map<Player, String> tokens;
     private boolean allowServerboundComputers;
     private boolean computersInitialized = false;
+    private boolean invisibleFrames = false;
 
     /* *************** CODE SECTION: MOTION CAPTURE *************** */
 
@@ -584,6 +585,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         computers = configManager.getFileConfig("computers.yml");
         players = configManager.getFileConfig("players.yml");
         delay = config.getInt("delay-ticks");
+        invisibleFrames = config.getBoolean("invisible-frames");
         String locale = config.getString("locale");
         if(locale == null) return;
         if(new Locale("ru").getLanguage().equals(new Locale(locale).getLanguage()))
@@ -775,6 +777,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                 Locale.getDefault().getLanguage().equals(new Locale("ru").getLanguage())? "ru" : "en");
         if(!config.isSet("selection")) config.set("selection", true);
         if(!config.isSet("allowCraft")) config.set("allowCraft", false);
+        if(!config.isSet("invisible-frames")) config.set("invisible-frames", false);
         if(!config.isSet("discord_bot_token")) config.set("discord_bot_token", "yourdiscordbottoken");
         if(!config.isSet("enable-server")) config.set("enable-server", true);
         if(!config.isSet("server-ip")) config.set("server-ip", "0.0.0.0");
@@ -790,6 +793,8 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         if(!config.isSet("craft.row3")) config.set("craft.row3", "   ");
         if(!config.isSet("craft.ingredients")) config.set("craft.ingredients", new ArrayList<String>());
         configManager.saveAllConfigs(true);
+
+        invisibleFrames = config.getBoolean("invisible-frames");
 
         tasks = new HashMap<>();
         packets = new HashMap<>();
@@ -1913,6 +1918,8 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                 else if(area.direction == SelectionArea.Direction.RIGHT) face = BlockFace.EAST;
                 else if(area.direction == SelectionArea.Direction.BACKWARD) face = BlockFace.NORTH;
                 else face = BlockFace.SOUTH;
+                if(invisibleFrames)
+                    f.setVisible(false);
                 f.setFacingDirection(face, true);
             }
 
