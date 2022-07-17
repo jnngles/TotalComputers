@@ -18,6 +18,11 @@
 
 package com.jnngl.totalcomputers;
 
+import com.jnngl.mapcolor.ColorMatcher;
+import com.jnngl.mapcolor.ColorMatchers;
+import com.jnngl.mapcolor.matchers.BufferedImageMatcher;
+import com.jnngl.mapcolor.matchers.CachedColorMatcher;
+import com.jnngl.mapcolor.palette.Palette;
 import com.jnngl.packet.MapPacketSender;
 import com.jnngl.packet.MapPacketSenderFactory;
 import com.jnngl.packet.PacketListener;
@@ -32,6 +37,7 @@ import com.jnngl.totalcomputers.sound.SoundWebSocketServer;
 import com.jnngl.totalcomputers.sound.discord.DiscordBot;
 import com.jnngl.totalcomputers.system.RemoteOS;
 import com.jnngl.totalcomputers.system.TotalOS;
+import com.jnngl.totalcomputers.system.Utils;
 import com.jnngl.totalcomputers.system.exception.AlreadyClientboundException;
 import com.jnngl.totalcomputers.system.exception.AlreadyRequestedException;
 import com.jnngl.totalcomputers.system.exception.TimedOutException;
@@ -112,6 +118,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
     private boolean allowServerboundComputers;
     private boolean computersInitialized = false;
     private boolean invisibleFrames = false;
+    private ThreadLocal<ColorMatcher> colorMatcher;
 
     /* *************** CODE SECTION: MOTION CAPTURE *************** */
 
@@ -775,6 +782,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
         delay = config.getInt("delay-ticks");
         if(!config.isSet("locale")) config.set("locale",
                 Locale.getDefault().getLanguage().equals(new Locale("ru").getLanguage())? "ru" : "en");
+        if(!config.isSet("color-matcher")) config.set("color-matcher", "buffered");
         if(!config.isSet("selection")) config.set("selection", true);
         if(!config.isSet("allowCraft")) config.set("allowCraft", false);
         if(!config.isSet("invisible-frames")) config.set("invisible-frames", false);
@@ -857,6 +865,13 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             loadComputers();
             computersInitialized = true;
         }, 200);
+
+        Palette palette = Utils.CURRENT_PALETTE;
+        if (Objects.equals(config.get("color-matcher"), "buffered")) {
+            colorMatcher = ColorMatchers.makeThreadLocal(new BufferedImageMatcher(palette));
+        } else {
+            colorMatcher = ColorMatchers.makeThreadLocal(new CachedColorMatcher(palette));
+        }
     }
 
     /* *************** CODE SECTION: COMMANDS AND AUTOCOMPLETION *************** */
@@ -923,6 +938,14 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                     loadConfigs();
                     createRecipe();
                     sender.sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(38));
+
+                    Palette palette = Utils.CURRENT_PALETTE;
+                    if (Objects.equals(config.get("color-matcher"), "buffered")) {
+                        colorMatcher = ColorMatchers.makeThreadLocal(new BufferedImageMatcher(palette));
+                    } else {
+                        colorMatcher = ColorMatchers.makeThreadLocal(new CachedColorMatcher(palette));
+                    }
+
                     if(success) {
                         loadComputers();
                         sender.sendMessage(replyPrefix + ChatColor.GREEN + Localization.get(39));
@@ -1991,10 +2014,10 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
             BufferedImage empty = new BufferedImage(128, 128, BufferedImage.TYPE_INT_RGB);
             for(int j = 0; j < area.area; j++) {
                 try {
-                    frame1[j] = sender.createPacket(maps[j], empty);
-                    frame2[j] = sender.createPacket(maps[j], empty);
-                    frame3[j] = sender.createPacket(maps[j], empty);
-                    frame4[j] = sender.createPacket(maps[j], empty);
+                    frame1[j] = sender.createPacket(maps[j], colorMatcher, empty);
+                    frame2[j] = sender.createPacket(maps[j], colorMatcher, empty);
+                    frame3[j] = sender.createPacket(maps[j], colorMatcher, empty);
+                    frame4[j] = sender.createPacket(maps[j], colorMatcher, empty);
                 } catch (ReflectiveOperationException e) {
                     logger.warning("Failed to create packet");
                 }
@@ -2023,7 +2046,7 @@ public class TotalComputers extends JavaPlugin implements Listener, MotionCaptur
                                 int absY = y * 128;
                                 try {
                                     if(screen instanceof BufferedImage)
-                                        sender.modifyPacket(framePacket[id],
+                                        sender.modifyPacket(framePacket[id], colorMatcher,
                                                 ((BufferedImage)screen).getSubimage(absX, absY, 128, 128));
                                     else {
                                         final byte[] cbBuf = new byte[128*128];

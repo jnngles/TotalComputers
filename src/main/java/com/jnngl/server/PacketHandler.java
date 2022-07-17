@@ -3,9 +3,8 @@ package com.jnngl.server;
 import com.jnngl.server.exception.InvalidTokenException;
 import com.jnngl.server.protocol.*;
 import com.jnngl.totalcomputers.Localization;
-import com.jnngl.totalcomputers.MapColor;
 import com.jnngl.totalcomputers.system.RemoteOS;
-import com.jnngl.totalcomputers.system.TotalOS;
+import com.jnngl.totalcomputers.system.Utils;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -16,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -129,10 +127,7 @@ public class PacketHandler extends ChannelDuplexHandler {
                 ChatColor.GREEN+Localization.get(0)+ctx.channel().remoteAddress());
         ctx.channel().writeAndFlush(s2c_connectionSuccess);
         ClientboundPalettePacket s2c_palette = new ClientboundPalettePacket();
-        if(MapColor.colors == null) MapColor.loadColors();
-        s2c_palette.palette = new int[MapColor.colors.length];
-        for(int i = 0; i < s2c_palette.palette.length; i++)
-            s2c_palette.palette[i] = MapColor.colors[i].getRGB();
+        s2c_palette.palette = Utils.CURRENT_PALETTE.getIntColors();
         ctx.channel().writeAndFlush(s2c_palette);
     }
 

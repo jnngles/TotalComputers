@@ -1,6 +1,6 @@
 package com.jnngl.packet;
 
-import com.jnngl.totalcomputers.MapColor;
+import com.jnngl.mapcolor.ColorMatcher;
 import org.bukkit.entity.Player;
 
 import java.awt.image.BufferedImage;
@@ -30,9 +30,9 @@ public class MapPacketSender_R1_9 extends PacketSender implements MapPacketSende
     }
 
     @Override
-    public void sendMap(Player player, int mapId, BufferedImage data) {
+    public void sendMap(Player player, int mapId, ThreadLocal<ColorMatcher> matcher, BufferedImage data) {
         try {
-            Object packet = createPacket(mapId, data);
+            Object packet = createPacket(mapId, matcher, data);
             sendPacket(player, packet);
         } catch (Throwable e) {
             System.err.println("Failed to create/send packet");
@@ -41,9 +41,9 @@ public class MapPacketSender_R1_9 extends PacketSender implements MapPacketSende
     }
 
     @Override
-    public Object createPacket(int mapId, BufferedImage data) throws ReflectiveOperationException {
+    public Object createPacket(int mapId, ThreadLocal<ColorMatcher> matcher, BufferedImage data) throws ReflectiveOperationException {
         return packet
-                .newInstance(mapId, (byte)0, false, new ArrayList<>(), MapColor.toByteArray(data), 0, 0, 128, 128);
+                .newInstance(mapId, (byte)0, false, new ArrayList<>(), matcher.get().matchImage(data), 0, 0, 128, 128);
     }
 
     @Override

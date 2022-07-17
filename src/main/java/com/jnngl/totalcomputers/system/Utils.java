@@ -18,7 +18,8 @@
 
 package com.jnngl.totalcomputers.system;
 
-import com.jnngl.totalcomputers.MapColor;
+import com.jnngl.mapcolor.palette.Palette;
+import org.bukkit.Bukkit;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -29,6 +30,8 @@ import java.awt.image.WritableRaster;
  * Common functions
  */
 public class Utils {
+
+    public static final Palette CURRENT_PALETTE = Palette.getPaletteForVersion(Bukkit.getBukkitVersion());
 
     private static Graphics2D g;
 
@@ -100,16 +103,20 @@ public class Utils {
 
     private static C3[] palette = null;
 
+    public static BufferedImage floydSteinbergDithering(BufferedImage img) {
+        return floydSteinbergDithering(img, Utils.CURRENT_PALETTE);
+    }
+
     /**
      * Dithers image using Floyd-Steinberg method
      * @param img Source image
      * @return Dithered image
      */
-    public static BufferedImage floydSteinbergDithering(BufferedImage img) {
+    public static BufferedImage floydSteinbergDithering(BufferedImage img, Palette matcherPalette) {
         if(palette == null) {
-            palette = new C3[MapColor.colors.length];
+            palette = new C3[matcherPalette.length()];
             for (int i = 0; i < palette.length; i++) {
-                Color c = MapColor.colors[i];
+                Color c = matcherPalette.getColorAt((byte) i);
                 palette[i] = new C3(c.getRed(), c.getGreen(), c.getBlue());
             }
         }
