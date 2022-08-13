@@ -1,9 +1,9 @@
+## <b>No longer maintained.</b>
+
 Total Computers
 ---------------
 
 Total Computers allows you to create computers in vanilla minecraft with it own operating system.
-
-Plugin is currently under active development.
 
 **Note**: This plugin supports only amd64</br>
 **Note**: This plugin does **not** support CraftBukkit</br>
